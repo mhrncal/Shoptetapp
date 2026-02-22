@@ -22,8 +22,10 @@ return [
     ['POST', '/profile',  'ProfileController@update',  ['auth', 'approved']],
 
     // ---- Nastavení ------------------------------------------
-    ['GET',  '/settings', 'SettingsController@index',  ['auth', 'approved', 'module:settings']],
-    ['POST', '/settings', 'SettingsController@update', ['auth', 'approved', 'module:settings']],
+    ['GET',  '/settings',          'SettingsController@index',         ['auth', 'approved', 'module:settings']],
+    ['POST', '/settings/profile',  'SettingsController@updateProfile', ['auth', 'approved', 'module:settings']],
+    ['POST', '/settings/password', 'SettingsController@updatePassword',['auth', 'approved', 'module:settings']],
+    ['POST', '/settings/delete',   'SettingsController@deleteAccount', ['auth', 'approved', 'module:settings']],
 
     // ---- Statistiky -----------------------------------------
     ['GET', '/statistics', 'StatisticsController@index', ['auth', 'approved', 'module:statistics']],
