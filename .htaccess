@@ -1,7 +1,7 @@
 Options -Indexes
 RewriteEngine On
 
-# Přesměruj vše kromě existujících souborů na index.php
+# Přesměruj vše kromě existujících souborů a složek na index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php [QSA,L]
@@ -13,6 +13,12 @@ RewriteRule ^(.*)$ index.php [QSA,L]
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
+
+# Zakázat přístup k citlivým složkám
+RedirectMatch 403 ^/config/
+RedirectMatch 403 ^/src/
+RedirectMatch 403 ^/database/
+RedirectMatch 403 ^/docs/
 
 # Cache pro statické assety
 <FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|woff2?)$">
