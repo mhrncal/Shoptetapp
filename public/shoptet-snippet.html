@@ -1,0 +1,137 @@
+<!-- 
+  SHOPTET FOTORECENZE — snippet pro šablonu produktu
+  Vložit do: Doplňkový obsah / sekce pod popisem produktu
+  
+  Nahradit: https://reviews.vaseshop.cz  ← vaší doménou ShopCode
+-->
+<div id="fotorecenze-widget">
+  <h3 style="margin-bottom:16px;">📸 Sdílejte vaši fotku s produktem</h3>
+  
+  <!-- Honeypot (skryté pole — bot vyplní, člověk ne) -->
+  <input type="text" name="website" id="hp-field" 
+         style="opacity:0;position:absolute;height:0;width:0;" 
+         tabindex="-1" autocomplete="off">
+
+  <form id="review-form" enctype="multipart/form-data">
+    <div style="display:grid;gap:12px;max-width:560px;">
+      <div>
+        <label>Jméno *</label><br>
+        <input type="text"  name="name"   required maxlength="100" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
+      </div>
+      <div>
+        <label>E-mail *</label><br>
+        <input type="email" name="email"  required style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
+      </div>
+      <div>
+        <label>Hodnocení</label><br>
+        <select name="rating" style="padding:8px;border:1px solid #ccc;border-radius:4px;">
+          <option value="">— bez hodnocení —</option>
+          <option value="5">★★★★★ (5)</option>
+          <option value="4">★★★★☆ (4)</option>
+          <option value="3">★★★☆☆ (3)</option>
+          <option value="2">★★☆☆☆ (2)</option>
+          <option value="1">★☆☆☆☆ (1)</option>
+        </select>
+      </div>
+      <div>
+        <label>Komentář (max 500 znaků)</label><br>
+        <textarea name="comment" maxlength="500" rows="3"
+                  style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;"></textarea>
+      </div>
+      <div>
+        <label>Fotografie * (max 5, JPG/PNG/WEBP, max 10 MB)</label><br>
+        <input type="file" name="photos[]" accept="image/jpeg,image/png,image/webp"
+               multiple required id="photo-input">
+        <div id="photo-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>
+      </div>
+      
+      <!-- Skrytá pole — automaticky načtena -->
+      <input type="hidden" name="product_id" id="fi-product-id">
+      <input type="hidden" name="sku"        id="fi-sku">
+      <input type="hidden" name="website"><!-- honeypot prázdné -->
+      
+      <div>
+        <button type="submit" id="submit-btn"
+                style="background:#e31e24;color:#fff;border:none;padding:10px 24px;border-radius:4px;font-size:15px;cursor:pointer;">
+          Odeslat recenzi
+        </button>
+      </div>
+      
+      <div id="form-message" style="display:none;padding:12px;border-radius:4px;"></div>
+    </div>
+  </form>
+</div>
+
+<script>
+(function() {
+  var ENDPOINT = 'https://reviews.vaseshop.cz/api/submit-review.php'; // ← změňte!
+  
+  // Načtení Product ID a SKU z Shoptet dat
+  try {
+    var sd = window.ShoptetData || {};
+    document.getElementById('fi-product-id').value = sd.productId || 
+      document.querySelector('[data-product-id]')?.dataset?.productId || '';
+    document.getElementById('fi-sku').value = sd.sku || 
+      document.querySelector('[data-product-sku]')?.dataset?.productSku || '';
+  } catch(e) {}
+
+  // Náhled fotek
+  document.getElementById('photo-input').addEventListener('change', function() {
+    var preview = document.getElementById('photo-preview');
+    preview.innerHTML = '';
+    Array.from(this.files).slice(0, 5).forEach(function(file) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid #ddd;';
+        preview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  // Odeslání formuláře
+  document.getElementById('review-form').addEventListener('submit', function(ev) {
+    ev.preventDefault();
+    
+    var btn = document.getElementById('submit-btn');
+    var msg = document.getElementById('form-message');
+    
+    btn.disabled = true;
+    btn.textContent = 'Odesílám...';
+    msg.style.display = 'none';
+
+    var formData = new FormData(this);
+    // Přidáme honeypot
+    formData.set('website', document.getElementById('hp-field').value);
+
+    fetch(ENDPOINT, { method: 'POST', body: formData })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          msg.style.background = '#d1fae5';
+          msg.style.color = '#065f46';
+          msg.textContent = data.message || 'Recenze odeslána ke schválení. Děkujeme!';
+          document.getElementById('review-form').reset();
+          document.getElementById('photo-preview').innerHTML = '';
+        } else {
+          msg.style.background = '#fee2e2';
+          msg.style.color = '#991b1b';
+          msg.textContent = data.error || 'Chyba při odesílání.';
+          btn.disabled = false;
+          btn.textContent = 'Odeslat recenzi';
+        }
+        msg.style.display = 'block';
+      })
+      .catch(function() {
+        msg.style.background = '#fee2e2';
+        msg.style.color = '#991b1b';
+        msg.textContent = 'Síťová chyba. Zkuste to znovu.';
+        msg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Odeslat recenzi';
+      });
+  });
+})();
+</script>

@@ -114,6 +114,16 @@ return [
     ['POST', '/password/reset/{token}',   'PasswordResetController@resetSubmit',  []],
 
     // ============================================================
+    // Fotorecenze
+    // ============================================================
+    ['GET',    '/reviews',                    'ReviewController@index',      ['auth','approved','module:reviews']],
+    ['GET',    '/reviews/{id}',               'ReviewController@detail',     ['auth','approved','module:reviews']],
+    ['POST',   '/reviews/{id}/approve',       'ReviewController@approve',    ['auth','approved','module:reviews']],
+    ['POST',   '/reviews/{id}/reject',        'ReviewController@reject',     ['auth','approved','module:reviews']],
+    ['DELETE', '/reviews/{id}',               'ReviewController@delete',     ['auth','approved','module:reviews']],
+    ['POST',   '/reviews/bulk',               'ReviewController@bulkAction', ['auth','approved','module:reviews']],
+    ['POST',   '/reviews/export-csv',         'ReviewController@exportCsv',  ['auth','approved','module:reviews']],
+
     // Product Tabs & Videos
     // ============================================================
     ['POST',   '/products/{product_id}/tabs',   'ProductTabController@tabStore',    ['auth','approved','module:product_tabs']],

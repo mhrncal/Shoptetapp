@@ -49,3 +49,20 @@ define('MAIL_PASSWORD',   'your-smtp-password');
 define('MAIL_ENCRYPTION', 'tls');              // tls | ssl | ''
 define('MAIL_FROM',       'notifications@example.com');
 define('MAIL_FROM_NAME',  APP_NAME);
+
+// ============================================================
+// FOTORECENZE — Shoptet integrace
+// ============================================================
+// Povolené originy pro CORS (vaše Shoptet domény)
+define('SHOPTET_DOMAINS', [
+    'https://www.vaseshop.cz',
+    'https://vaseshop.cz',
+]);
+
+// Shoptet přihlašovací údaje pro Selenium import robot
+define('SHOPTET_URL',      'https://admin.shoptet.cz');
+define('SHOPTET_EMAIL',    'admin@vaseshop.cz');
+define('SHOPTET_PASSWORD', 'shoptet_password');
+
+// ChromeDriver URL (na serveru: chromedriver --port=9515 &)
+define('CHROMEDRIVER_URL', 'http://localhost:9515');

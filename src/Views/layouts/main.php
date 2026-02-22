@@ -102,6 +102,14 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
             </li>
             <?php endif; ?>
 
+            <?php if ($hasModule('reviews')): ?>
+            <li class="nav-item">
+                <a href="<?= APP_URL ?>/reviews" class="nav-link <?= $active('/reviews') ?>">
+                    <i class="bi bi-camera"></i> Fotorecenze
+                </a>
+            </li>
+            <?php endif; ?>
+
             <?php if ($hasModule('api_access')): ?>
             <li class="nav-item">
                 <a href="<?= APP_URL ?>/api-tokens" class="nav-link <?= $active('/api-tokens') ?>">
