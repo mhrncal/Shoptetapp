@@ -3,6 +3,7 @@
 namespace ShopCode\Services;
 
 use ShopCode\Models\Webhook;
+use ShopCode\Services\AdminNotifier;
 
 /**
  * Odesílá webhook notifikace.
@@ -33,11 +34,15 @@ class WebhookDispatcher
 
     private static function deliver(array $wh, string $event, array $payload, string $body): void
     {
-        $signature = 't=' . time() . ',v1=' . hash_hmac('sha256', $body, $wh['secret']);
+        $signature  = 't=' . time() . ',v1=' . hash_hmac('sha256', $body, $wh['secret']);
         $maxRetries = (int)($wh['retry_count'] ?? 3);
+        $lastStatus = null;
+        $lastError  = null;
 
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
             [$status, $response, $error] = self::post($wh['url'], $body, $signature);
+            $lastStatus = $status;
+            $lastError  = $error;
 
             Webhook::logDelivery($wh['id'], $event, $payload, $status, $response ?? $error, $attempt);
 
@@ -46,8 +51,29 @@ class WebhookDispatcher
 
             // Neúspěch — krátká pauza před dalším pokusem
             if ($attempt < $maxRetries) {
-                sleep($attempt * 2); // 2s, 4s, ...
+                sleep($attempt * 2);
             }
+        }
+
+        // Všechny pokusy vyčerpány — notifikuj superadmina
+        try {
+            $db   = \ShopCode\Core\Database::getInstance();
+            $stmt = $db->prepare('SELECT email FROM users WHERE id = ? LIMIT 1');
+            $stmt->execute([$wh['user_id']]);
+            $userEmail = $stmt->fetchColumn() ?: 'neznámý';
+
+            AdminNotifier::webhookFailed(
+                userId:         $wh['user_id'],
+                userEmail:      $userEmail,
+                webhookName:    $wh['name'],
+                webhookUrl:     $wh['url'],
+                eventType:      $event,
+                attempts:       $maxRetries,
+                lastStatusCode: $lastStatus,
+                lastError:      $lastError
+            );
+        } catch (\Throwable $e) {
+            // Tichá chyba — neblokujeme hlavní flow
         }
     }
 

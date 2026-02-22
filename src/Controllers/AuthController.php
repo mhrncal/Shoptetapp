@@ -42,9 +42,25 @@ class AuthController extends BaseController
         }
 
         if (!password_verify($password, $user['password_hash'])) {
-            User::incrementLoginAttempts($email);
+            $justLocked = User::incrementLoginAttempts($email);
             Session::flash('error', 'Nesprávný e-mail nebo heslo.');
             AuditLog::log('login_failed', 'user', (string)$user['id'], null, ['email' => $email]);
+
+            // Notifikuj superadmina pokud byl účet právě zamknut
+            if ($justLocked) {
+                try {
+                    \ShopCode\Services\AdminNotifier::userLocked(
+                        userId:      $user['id'],
+                        email:       $email,
+                        ipAddress:   $_SERVER['REMOTE_ADDR'] ?? 'neznámá',
+                        attempts:    LOGIN_MAX_ATTEMPTS,
+                        lockMinutes: LOGIN_LOCKOUT_MINUTES
+                    );
+                } catch (\Throwable $e) {
+                    // Tichá chyba — nepřerušujeme flow
+                }
+            }
+
             Response::redirect('/login');
         }
 

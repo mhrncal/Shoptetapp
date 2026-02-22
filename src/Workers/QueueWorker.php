@@ -172,7 +172,7 @@ class QueueWorker
         $newRetryCount = (int)$item['retry_count'] + 1;
         $maxRetries    = (int)$item['max_retries'];
         $isFinal       = $newRetryCount >= $maxRetries;
-        $newStatus     = $isFinal ? 'failed' : 'pending'; // pending = zkusí znovu příště
+        $newStatus     = $isFinal ? 'failed' : 'pending';
 
         $this->db->prepare("
             UPDATE xml_processing_queue
@@ -182,6 +182,26 @@ class QueueWorker
                 updated_at    = NOW()
             WHERE id = ?
         ")->execute([$newStatus, $newRetryCount, substr($error, 0, 1000), $item['id']]);
+
+        // Notifikace superadmina pouze při finálním selhání
+        if ($isFinal) {
+            try {
+                $stmt = $this->db->prepare('SELECT email FROM users WHERE id = ? LIMIT 1');
+                $stmt->execute([$item['user_id']]);
+                $userEmail = $stmt->fetchColumn() ?: 'neznámý';
+
+                \ShopCode\Services\AdminNotifier::xmlImportFailed(
+                    userId:       $item['user_id'],
+                    userEmail:    $userEmail,
+                    feedUrl:      $item['xml_feed_url'],
+                    errorMessage: $error,
+                    retryCount:   $newRetryCount,
+                    maxRetries:   $maxRetries
+                );
+            } catch (\Throwable $e) {
+                $this->log($item['id'], "⚠️ Nepodařilo se odeslat email notifikaci: " . $e->getMessage());
+            }
+        }
     }
 
     private function createImportRecord(int $userId, int $queueId): int

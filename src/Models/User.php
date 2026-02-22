@@ -147,9 +147,22 @@ class User
         $stmt->execute([$id]);
     }
 
-    public static function incrementLoginAttempts(string $email): void
+    /**
+     * Zvýší počítadlo neúspěšných přihlášení.
+     * Vrátí true pokud byl účet právě v tomto volání zamknut (přechod na locked).
+     */
+    public static function incrementLoginAttempts(string $email): bool
     {
         $db   = Database::getInstance();
+
+        // Načteme aktuální stav před inkrementem
+        $stmt = $db->prepare('SELECT id, login_attempts, locked_until FROM users WHERE email = ? LIMIT 1');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if (!$user) return false;
+
+        $wasAlreadyLocked = $user['locked_until'] && strtotime($user['locked_until']) > time();
+
         $stmt = $db->prepare('
             UPDATE users
             SET login_attempts = login_attempts + 1,
@@ -160,6 +173,13 @@ class User
             WHERE email = ?
         ');
         $stmt->execute([LOGIN_MAX_ATTEMPTS, LOGIN_LOCKOUT_MINUTES, $email]);
+
+        // Zjistíme jestli jsme právě zamkli
+        if (!$wasAlreadyLocked && ($user['login_attempts'] + 1) >= LOGIN_MAX_ATTEMPTS) {
+            return true; // Právě zamknuto
+        }
+
+        return false;
     }
 
     public static function isLocked(array $user): bool

@@ -38,3 +38,14 @@ define('LOGIN_LOCKOUT_MINUTES', 15);        // délka lockouta
 // ---- Upload -------------------------------------------------
 define('UPLOAD_DIR',      ROOT . '/public/uploads/');
 define('UPLOAD_MAX_SIZE', 10 * 1024 * 1024); // 10 MB
+
+// ============================================================
+// EMAIL / SMTP (PHPMailer)
+// ============================================================
+define('MAIL_HOST',       'smtp.example.com');
+define('MAIL_PORT',       587);
+define('MAIL_USERNAME',   'notifications@example.com');
+define('MAIL_PASSWORD',   'your-smtp-password');
+define('MAIL_ENCRYPTION', 'tls');              // tls | ssl | ''
+define('MAIL_FROM',       'notifications@example.com');
+define('MAIL_FROM_NAME',  APP_NAME);
