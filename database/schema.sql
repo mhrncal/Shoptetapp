@@ -379,29 +379,6 @@ CREATE TABLE IF NOT EXISTS `product_videos` (
 -- FOTORECENZE
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `reviews` (
-    `id`           INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `user_id`      INT UNSIGNED NOT NULL,
-    `product_id`   INT UNSIGNED DEFAULT NULL,
-    `author_name`  VARCHAR(255) NOT NULL,
-    `author_email` VARCHAR(255) NOT NULL,
-    `text`         TEXT DEFAULT NULL,
-    `photo_url`    VARCHAR(500) DEFAULT NULL,
-    `status`       ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
-    `sort_order`   SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-    `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    KEY `idx_rv_user`    (`user_id`),
-    KEY `idx_rv_product` (`product_id`),
-    KEY `idx_rv_status`  (`status`),
-    CONSTRAINT `fk_rv_user`    FOREIGN KEY (`user_id`)    REFERENCES `users`(`id`)    ON DELETE CASCADE,
-    CONSTRAINT `fk_rv_product` FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================================
--- FOTORECENZE
--- ============================================================
-CREATE TABLE IF NOT EXISTS `reviews` (
     `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`       INT UNSIGNED NOT NULL COMMENT 'Majitel e-shopu (ShopCode user)',
     `product_id`    INT UNSIGNED DEFAULT NULL COMMENT 'Produkt ze ShopCode (nullable = obecná)',
