@@ -249,3 +249,89 @@ class AdminNotifier
 HTML;
     }
 }
+
+    // ----------------------------------------------------------------
+    // 4. Nová registrace čeká na schválení
+    // ----------------------------------------------------------------
+
+    public static function newRegistration(
+        int    $userId,
+        string $email,
+        string $firstName,
+        string $lastName,
+        string $shopName
+    ): bool {
+        $appName = defined('APP_NAME') ? APP_NAME : 'ShopCode';
+        $appUrl  = defined('APP_URL')  ? APP_URL  : '';
+
+        $subject = "[{$appName}] 🆕 Nová registrace — {$email}";
+
+        $html = self::layout($subject, "
+            <h2 style='color:#fff;margin-top:0;'>🆕 Nová registrace</h2>
+            <p>Nový uživatel se zaregistroval a čeká na schválení.</p>
+
+            <table style='width:100%;border-collapse:collapse;margin:20px 0;'>
+                <tr style='border-bottom:1px solid #374151;'>
+                    <td style='padding:10px 0;color:#9ca3af;width:120px;'>Jméno</td>
+                    <td style='padding:10px 0;'><strong>" . htmlspecialchars("{$firstName} {$lastName}") . "</strong></td>
+                </tr>
+                <tr style='border-bottom:1px solid #374151;'>
+                    <td style='padding:10px 0;color:#9ca3af;'>E-mail</td>
+                    <td style='padding:10px 0;'>" . htmlspecialchars($email) . "</td>
+                </tr>
+                <tr style='border-bottom:1px solid #374151;'>
+                    <td style='padding:10px 0;color:#9ca3af;'>E-shop</td>
+                    <td style='padding:10px 0;'>" . htmlspecialchars($shopName ?: '—') . "</td>
+                </tr>
+                <tr>
+                    <td style='padding:10px 0;color:#9ca3af;'>User ID</td>
+                    <td style='padding:10px 0;'>{$userId}</td>
+                </tr>
+            </table>
+
+            <a href='{$appUrl}/admin/users/{$userId}'
+               style='display:inline-block;background:#3b82f6;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;'>
+               Schválit / zamítnout
+            </a>
+        ");
+
+        return Mailer::notifySuperadmin($subject, $html);
+    }
+
+    // ----------------------------------------------------------------
+    // 5. Uvítací email novému uživateli
+    // ----------------------------------------------------------------
+
+    public static function welcomeUser(string $toEmail, string $firstName): bool
+    {
+        $appName = defined('APP_NAME') ? APP_NAME : 'ShopCode';
+        $subject = "Vítejte v {$appName}";
+
+        $html = self::layout($subject, "
+            <h2 style='color:#fff;margin-top:0;'>Vítejte, " . htmlspecialchars($firstName) . "!</h2>
+            <p>Váš účet byl úspěšně vytvořen.</p>
+            <p>Než budete moci systém plně používat, musí váš účet schválit administrátor. Jakmile bude váš účet schválen, dostanete notifikaci.</p>
+            <p style='color:#9ca3af;margin-top:24px;font-size:14px;'>Děkujeme za registraci.</p>
+        ");
+
+    // ----------------------------------------------------------------
+    // 6. Schválení účtu — email uživateli (vrací HTML string, neodesílá)
+    // ----------------------------------------------------------------
+
+    public static function approvalEmail(string $firstName, string $appUrl): string
+    {
+        $appName = defined('APP_NAME') ? APP_NAME : 'ShopCode';
+
+        return self::layout("Váš účet byl schválen", "
+            <h2 style='color:#22c55e;margin-top:0;'>✅ Váš účet byl schválen</h2>
+            <p>Ahoj " . htmlspecialchars($firstName) . ",</p>
+            <p>Váš účet v systému <strong>{$appName}</strong> byl schválen administrátorem. Nyní máte plný přístup k aplikaci.</p>
+            <p style='margin:32px 0;'>
+                <a href='{$appUrl}/dashboard'
+                   style='display:inline-block;background:#22c55e;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;'>
+                   Přejít do aplikace
+                </a>
+            </p>
+        ");
+    }
+}

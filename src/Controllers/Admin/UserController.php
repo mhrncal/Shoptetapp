@@ -76,7 +76,17 @@ class UserController extends BaseController
 
         User::update($user['id'], ['status' => 'approved']);
         AuditLog::log('user_approved', 'user', (string)$user['id']);
-        Session::flash('success', 'Uživatel byl schválen.');
+
+        // Email uživateli o schválení
+        try {
+            $appName = defined('APP_NAME') ? APP_NAME : 'ShopCode';
+            $appUrl  = defined('APP_URL')  ? APP_URL  : '';
+            $name    = $user['first_name'] ?? 'uživateli';
+            $html    = \ShopCode\Services\AdminNotifier::approvalEmail($name, $appUrl);
+            \ShopCode\Services\Mailer::send($user['email'], "Váš účet byl schválen — {$appName}", $html);
+        } catch (\Throwable $ignored) {}
+
+        Session::flash('success', 'Uživatel byl schválen a upozorněn e-mailem.');
         $this->redirect('/admin/users');
     }
 
