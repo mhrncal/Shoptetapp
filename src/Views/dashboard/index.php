@@ -10,6 +10,18 @@
     </div>
 </div>
 
+<?php if ($activeImport): ?>
+<div class="alert alert-info d-flex align-items-center gap-3 mb-4">
+    <span class="spinner-border spinner-border-sm flex-shrink-0"></span>
+    <div>
+        <strong>Probíhá XML import</strong> —
+        <?= number_format($activeImport['products_processed']) ?> produktů zpracováno
+        (<?= $activeImport['progress_percentage'] ?>%)
+        <a href="<?= APP_URL ?>/xml" class="ms-2 alert-link">Zobrazit detail →</a>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Stat karty -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
@@ -17,7 +29,7 @@
             <div class="stat-icon bg-primary bg-opacity-10 text-primary">
                 <i class="bi bi-box"></i>
             </div>
-            <div class="stat-value"><?= number_format($productCount) ?></div>
+            <div class="stat-value"><?= number_format($counts["products"]) ?></div>
             <div class="stat-label">Produktů</div>
         </div>
     </div>
@@ -27,7 +39,7 @@
             <div class="stat-icon bg-success bg-opacity-10 text-success">
                 <i class="bi bi-question-circle"></i>
             </div>
-            <div class="stat-value"><?= number_format($faqCount) ?></div>
+            <div class="stat-value"><?= number_format($counts["faqs"]) ?></div>
             <div class="stat-label">FAQ položek</div>
         </div>
     </div>
@@ -38,7 +50,7 @@
             <div class="stat-icon bg-warning bg-opacity-10 text-warning">
                 <i class="bi bi-geo-alt"></i>
             </div>
-            <div class="stat-value"><?= number_format($branchCount) ?></div>
+            <div class="stat-value"><?= number_format($counts["branches"]) ?></div>
             <div class="stat-label">Poboček</div>
         </div>
     </div>
@@ -49,7 +61,7 @@
             <div class="stat-icon bg-info bg-opacity-10 text-info">
                 <i class="bi bi-calendar-event"></i>
             </div>
-            <div class="stat-value"><?= number_format($upcomingEvents) ?></div>
+            <div class="stat-value"><?= number_format($counts["upcoming_events"]) ?></div>
             <div class="stat-label">Nadch. akcí</div>
         </div>
     </div>
