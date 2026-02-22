@@ -45,6 +45,12 @@
             </button>
         </form>
 
+        <div class="text-center mt-3">
+            <a href="<?= APP_URL ?>/password/reset" class="text-muted small">
+                Zapomenuté heslo?
+            </a>
+        </div>
+
         <hr class="border-secondary my-4">
         <p class="text-center text-secondary mb-0">
             Nemáte účet?

@@ -78,9 +78,31 @@ class QueueWorker
             // ---- Krok 4: Označení jako completed ----
             $this->markCompleted($item['id'], $stats, $importId);
 
+            // ---- Krok 5: Webhook notifikace ----
+            try {
+                \ShopCode\Services\WebhookDispatcher::fire($item['user_id'], 'import.completed', [
+                    'queue_id'          => $item['id'],
+                    'import_id'         => $importId,
+                    'products_inserted' => $stats['inserted'],
+                    'products_updated'  => $stats['updated'],
+                    'products_total'    => $stats['processed'],
+                ]);
+            } catch (\Throwable $e) {
+                $this->log($item['id'], "⚠️ Webhook fire failed: " . $e->getMessage());
+            }
+
         } catch (\Throwable $e) {
             $this->log($item['id'], "❌ CHYBA: " . $e->getMessage());
             $this->markFailed($item, $e->getMessage());
+
+            try {
+                \ShopCode\Services\WebhookDispatcher::fire($item['user_id'], 'import.failed', [
+                    'queue_id' => $item['id'],
+                    'feed_url' => $item['xml_feed_url'],
+                    'error'    => $e->getMessage(),
+                ]);
+            } catch (\Throwable $ignored) {}
+
         } finally {
             // Vždy smaž tmp soubor
             if (file_exists($tmpFile)) {

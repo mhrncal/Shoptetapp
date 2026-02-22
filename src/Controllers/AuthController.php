@@ -181,6 +181,65 @@ class AuthController extends BaseController
 
         AuditLog::log('register', 'user', (string)$userId, null, ['email' => $email]);
 
+        // Email uživateli — uvítání
+        try {
+            $appName = defined('APP_NAME') ? APP_NAME : 'ShopCode';
+            $appUrl  = defined('APP_URL')  ? APP_URL  : '';
+            $welcomeHtml = "
+                <!DOCTYPE html><html lang='cs'><head><meta charset='UTF-8'></head>
+                <body style='background:#0f1117;font-family:sans-serif;color:#e5e7eb;margin:0;padding:40px 20px;'>
+                <table width='100%' cellpadding='0' cellspacing='0'><tr><td align='center'>
+                <table width='560' style='background:#1a1d27;border-radius:12px;padding:40px;'>
+                <tr><td>
+                  <p style='font-size:20px;font-weight:700;color:#fff;margin-top:0;'>{$appName}</p>
+                  <h2 style='color:#fff;'>Vítejte, {$firstName}!</h2>
+                  <p>Váš účet byl úspěšně vytvořen. Před tím než budete moci pokračovat, musí váš účet schválit administrátor.</p>
+                  <p>O schválení vás budeme informovat e-mailem.</p>
+                  <hr style='border-color:#374151;margin:24px 0;'>
+                  <p style='color:#6b7280;font-size:13px;'>© " . date('Y') . " {$appName}</p>
+                </td></tr></table></td></tr></table>
+                </body></html>
+            ";
+            \ShopCode\Services\Mailer::send($email, "Vítejte v {$appName}", $welcomeHtml);
+        } catch (\Throwable $ignored) {}
+
+        // Notifikace superadmina o nové registraci
+        try {
+            $appName = defined('APP_NAME') ? APP_NAME : 'ShopCode';
+            $appUrl  = defined('APP_URL')  ? APP_URL  : '';
+            $adminHtml = "
+                <!DOCTYPE html><html><head><meta charset='UTF-8'></head>
+                <body style='background:#0f1117;font-family:sans-serif;color:#e5e7eb;margin:0;padding:40px 20px;'>
+                <table width='100%' cellpadding='0' cellspacing='0'><tr><td align='center'>
+                <table width='560' style='background:#1a1d27;border-radius:12px;padding:40px;'>
+                <tr><td>
+                  <p style='font-size:20px;font-weight:700;color:#fff;margin-top:0;'>{$appName}</p>
+                  <h2 style='color:#fff;'>🆕 Nová registrace</h2>
+                  <p>Nový uživatel se zaregistroval a čeká na schválení.</p>
+                  <table style='width:100%;border-collapse:collapse;margin:20px 0;'>
+                    <tr style='border-bottom:1px solid #374151;'>
+                      <td style='padding:8px 0;color:#9ca3af;width:120px;'>Jméno</td>
+                      <td style='padding:8px 0;'><strong>{$firstName} {$lastName}</strong></td>
+                    </tr>
+                    <tr style='border-bottom:1px solid #374151;'>
+                      <td style='padding:8px 0;color:#9ca3af;'>E-mail</td>
+                      <td style='padding:8px 0;'>{$email}</td>
+                    </tr>
+                    <tr>
+                      <td style='padding:8px 0;color:#9ca3af;'>E-shop</td>
+                      <td style='padding:8px 0;'>" . htmlspecialchars($shopName ?: '—') . "</td>
+                    </tr>
+                  </table>
+                  <a href='{$appUrl}/admin/users/{$userId}'
+                     style='display:inline-block;background:#3b82f6;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;'>
+                     Schválit / zamítnout
+                  </a>
+                </td></tr></table></td></tr></table>
+                </body></html>
+            ";
+            \ShopCode\Services\Mailer::notifySuperadmin("[$appName] Nová registrace — {$email}", $adminHtml);
+        } catch (\Throwable $ignored) {}
+
         Session::regenerate();
         Session::set('user', [
             'id'         => $userId,

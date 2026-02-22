@@ -25,9 +25,21 @@ class ProductController extends BaseController
     public function detail(): void
     {
         $id      = (int)$this->request->param('id');
-        $product = Product::findById($id, $this->user['id']);
+        $userId  = $this->user['id'];
+        $product = Product::findById($id, $userId);
+
         if (!$product) Response::notFound();
-        $variants = Product::getVariants($id, $this->user['id']);
-        $this->view('products/detail', ['pageTitle'=>$product['name'],'product'=>$product,'variants'=>$variants]);
+
+        $variants = Product::getVariants($id, $userId);
+        $tabs     = \ShopCode\Models\ProductTab::forProduct($id, $userId);
+        $videos   = \ShopCode\Models\ProductVideo::forProduct($id, $userId);
+
+        $this->view('products/detail', [
+            'pageTitle' => $product['name'],
+            'product'   => $product,
+            'variants'  => $variants,
+            'tabs'      => $tabs,
+            'videos'    => $videos,
+        ]);
     }
 }

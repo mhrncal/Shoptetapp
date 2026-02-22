@@ -8,9 +8,9 @@ return [
     // ---- Auth -----------------------------------------------
     ['GET',  '/login',    'AuthController@loginForm',  []],
     ['POST', '/login',    'AuthController@login',       []],
-    ['GET',  '/logout',   'AuthController@logout',      ['auth']],
-    ['GET',  '/register', 'AuthController@registerForm',[]],
-    ['POST', '/register', 'AuthController@register',    []],
+    ['GET',  '/logout',               'AuthController@logout',                    ['auth']],
+    ['GET',  '/register',             'AuthController@registerForm',              []],
+    ['POST', '/register',             'AuthController@register',                  []],
     ['GET',  '/pending',  'AuthController@pending',     ['auth']],
 
     // ---- Dashboard ------------------------------------------
@@ -95,4 +95,30 @@ return [
     // Systém
     ['GET',  '/admin/system',             'Admin\SystemController@index',   ['auth', 'approved', 'superadmin']],
     ['GET',  '/admin/audit-log',          'Admin\SystemController@auditLog',['auth', 'approved', 'superadmin']],
+
+    // ============================================================
+    // REST API v1 (Bearer token auth)
+    // ============================================================
+    ['GET', '/api/v1/products',      'ApiController@products', []],
+    ['GET', '/api/v1/products/{id}', 'ApiController@product',  []],
+    ['GET', '/api/v1/faq',           'ApiController@faq',      []],
+    ['GET', '/api/v1/branches',      'ApiController@branches', []],
+    ['GET', '/api/v1/events',        'ApiController@events',   []],
+
+    // ============================================================
+    // Password reset
+    // ============================================================
+    ['GET',  '/password/reset',           'PasswordResetController@requestForm',  []],
+    ['POST', '/password/reset',           'PasswordResetController@requestSubmit',[]],
+    ['GET',  '/password/reset/{token}',   'PasswordResetController@resetForm',    []],
+    ['POST', '/password/reset/{token}',   'PasswordResetController@resetSubmit',  []],
+
+    // ============================================================
+    // Product Tabs & Videos
+    // ============================================================
+    ['POST',   '/products/{product_id}/tabs',   'ProductTabController@tabStore',    ['auth','approved','module:product_tabs']],
+    ['POST',   '/products/tabs/{id}',           'ProductTabController@tabUpdate',   ['auth','approved','module:product_tabs']],
+    ['DELETE', '/products/tabs/{id}',           'ProductTabController@tabDelete',   ['auth','approved','module:product_tabs']],
+    ['POST',   '/products/{product_id}/videos', 'ProductTabController@videoStore',  ['auth','approved','module:product_videos']],
+    ['DELETE', '/products/videos/{id}',         'ProductTabController@videoDelete', ['auth','approved','module:product_videos']],
 ];
