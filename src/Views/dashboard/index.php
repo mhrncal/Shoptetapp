@@ -1,13 +1,11 @@
 <?php $pageTitle = 'Dashboard'; ?>
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_HTML5, 'UTF-8'); ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="fw-bold mb-0">Dashboard</h4>
-        <p class="text-muted small mb-0">
-            Vítejte zpět, <?= $e($currentUser['first_name'] ?? $currentUser['email']) ?>!
-        </p>
-    </div>
+<div class="mb-4">
+    <h1 class="fw-bold gradient-text mb-1" style="font-size:1.75rem;">Vítejte zpět!</h1>
+    <p style="color:var(--sc-muted-fg);font-size:.9rem;">
+        Zde je přehled e-shopu <strong><?= $e($currentUser['shop_name'] ?? $currentUser['email']) ?></strong>
+    </p>
 </div>
 
 <?php if ($activeImport): ?>

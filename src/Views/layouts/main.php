@@ -18,100 +18,124 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
 ?>
 
 <?php if ($impersonating): ?>
-<div class="impersonation-bar text-center py-2 px-3">
-    <i class="bi bi-person-fill-gear me-2"></i>
-    Zobrazujete aplikaci jako <strong><?= $e($currentUser['first_name'] . ' ' . $currentUser['last_name']) ?></strong>
-    (<?= $e($currentUser['email']) ?>)
-    <form method="POST" action="<?= APP_URL ?>/admin/impersonate/stop" class="d-inline ms-3">
+<div class="impersonation-bar d-flex align-items-center justify-content-center px-3 py-2 gap-3">
+    <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+    <span><strong>IMPERSONATION MÓD AKTIVNÍ</strong> — Přihlášen jako:
+        <strong><?= $e($currentUser['first_name'] . ' ' . $currentUser['last_name']) ?></strong>
+        (<?= $e($currentUser['email']) ?>)
+    </span>
+    <form method="POST" action="<?= APP_URL ?>/admin/impersonate/stop" class="d-inline">
         <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-        <button type="submit" class="btn btn-sm btn-warning">
-            <i class="bi bi-box-arrow-left me-1"></i>Ukončit impersonaci
+        <button type="submit" class="btn btn-sm btn-danger">
+            <i class="bi bi-box-arrow-left me-1"></i>Vrátit se zpět
         </button>
     </form>
 </div>
 <?php endif; ?>
 
-<div class="d-flex" id="wrapper">
+<div id="wrapper">
 
-    <!-- Sidebar -->
-    <nav id="sidebar" class="d-flex flex-column">
+    <!-- ── Sidebar ──────────────────────────────────────── -->
+    <nav id="sidebar">
+
+        <!-- Logo -->
         <div class="sidebar-brand">
-            <a href="<?= APP_URL ?>/dashboard" class="text-decoration-none">
-                <i class="bi bi-box-seam text-primary me-2"></i>
-                <span class="fw-bold text-white fs-5">ShopCode</span>
+            <a href="<?= APP_URL ?>/dashboard" class="text-decoration-none d-flex align-items-center gap-2">
+                <img src="<?= APP_URL ?>/assets/shopcode-logo.png" alt="ShopCode">
+                <div class="sidebar-brand-text">
+                    <h2>Admin</h2>
+                    <p>Shoptet systém</p>
+                </div>
             </a>
         </div>
 
+        <!-- Uživatel -->
         <div class="sidebar-user">
-            <div class="d-flex align-items-center gap-2">
-                <div class="avatar-circle">
-                    <?= strtoupper(substr($currentUser['first_name'] ?? $currentUser['email'], 0, 1)) ?>
+            <div class="avatar-circle">
+                <?= strtoupper(substr($currentUser['first_name'] ?? $currentUser['email'], 0, 1)) ?>
+            </div>
+            <div class="overflow-hidden">
+                <div class="fw-medium text-truncate" style="font-size:.875rem;color:var(--sc-fg)">
+                    <?= $e(trim($currentUser['first_name'] . ' ' . $currentUser['last_name'])) ?>
                 </div>
-                <div class="overflow-hidden">
-                    <div class="text-white fw-semibold text-truncate small">
-                        <?= $e($currentUser['first_name'] . ' ' . $currentUser['last_name']) ?>
-                    </div>
-                    <div class="text-secondary" style="font-size:.7rem;">
-                        <?= $e($currentUser['shop_name'] ?? $currentUser['email']) ?>
-                    </div>
+                <div style="font-size:.7rem;color:var(--sc-muted-fg);" class="text-truncate">
+                    <?= $e($currentUser['email']) ?>
                 </div>
             </div>
         </div>
 
-        <ul class="sidebar-nav nav flex-column flex-grow-1">
-            <li class="nav-item">
-                <a href="<?= APP_URL ?>/dashboard" class="nav-link <?= $active('/dashboard') ?: ($currentPath === '/' ? 'active' : '') ?>">
+        <!-- Navigace -->
+        <ul class="sidebar-nav">
+            <li>
+                <a href="<?= APP_URL ?>/dashboard"
+                   class="nav-link <?= $active('/dashboard') ?: ($currentPath === '/' ? 'active' : '') ?>">
                     <i class="bi bi-grid-1x2"></i> Dashboard
                 </a>
             </li>
-            <li class="nav-item">
+            <li>
                 <a href="<?= APP_URL ?>/products" class="nav-link <?= $active('/products') ?>">
                     <i class="bi bi-box"></i> Produkty
                 </a>
             </li>
 
-            <?php if ($hasModule('xml_import')): ?>
-            <li class="nav-item">
-                <a href="<?= APP_URL ?>/xml" class="nav-link <?= $active('/xml') ?>">
-                    <i class="bi bi-file-earmark-arrow-down"></i> XML Import
-                </a>
-            </li>
-            <?php endif; ?>
-
             <?php if ($hasModule('faq')): ?>
-            <li class="nav-item">
+            <li>
                 <a href="<?= APP_URL ?>/faq" class="nav-link <?= $active('/faq') ?>">
                     <i class="bi bi-question-circle"></i> FAQ
                 </a>
             </li>
             <?php endif; ?>
 
+            <?php if ($hasModule('reviews')): ?>
+            <li>
+                <a href="<?= APP_URL ?>/reviews" class="nav-link <?= $active('/reviews') ?>">
+                    <i class="bi bi-star"></i> Fotorecenze
+                </a>
+            </li>
+            <?php endif; ?>
+
             <?php if ($hasModule('branches')): ?>
-            <li class="nav-item">
+            <li>
                 <a href="<?= APP_URL ?>/branches" class="nav-link <?= $active('/branches') ?>">
                     <i class="bi bi-geo-alt"></i> Pobočky
                 </a>
             </li>
             <?php endif; ?>
 
+            <?php if ($hasModule('product_videos')): ?>
+            <li>
+                <a href="<?= APP_URL ?>/products" class="nav-link">
+                    <i class="bi bi-play-circle"></i> Videa k produktům
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <?php if ($hasModule('product_tabs')): ?>
+            <li>
+                <a href="<?= APP_URL ?>/products" class="nav-link">
+                    <i class="bi bi-bookmark"></i> Vlastní záložky
+                </a>
+            </li>
+            <?php endif; ?>
+
             <?php if ($hasModule('event_calendar')): ?>
-            <li class="nav-item">
+            <li>
                 <a href="<?= APP_URL ?>/events" class="nav-link <?= $active('/events') ?>">
                     <i class="bi bi-calendar-event"></i> Kalendář akcí
                 </a>
             </li>
             <?php endif; ?>
 
-            <?php if ($hasModule('reviews')): ?>
-            <li class="nav-item">
-                <a href="<?= APP_URL ?>/reviews" class="nav-link <?= $active('/reviews') ?>">
-                    <i class="bi bi-camera"></i> Fotorecenze
+            <?php if ($hasModule('xml_import')): ?>
+            <li>
+                <a href="<?= APP_URL ?>/xml" class="nav-link <?= $active('/xml') ?>">
+                    <i class="bi bi-file-earmark-arrow-down"></i> XML Import
                 </a>
             </li>
             <?php endif; ?>
 
             <?php if ($hasModule('api_access')): ?>
-            <li class="nav-item">
+            <li>
                 <a href="<?= APP_URL ?>/api-tokens" class="nav-link <?= $active('/api-tokens') ?>">
                     <i class="bi bi-key"></i> API tokeny
                 </a>
@@ -119,7 +143,7 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
             <?php endif; ?>
 
             <?php if ($hasModule('webhooks')): ?>
-            <li class="nav-item">
+            <li>
                 <a href="<?= APP_URL ?>/webhooks" class="nav-link <?= $active('/webhooks') ?>">
                     <i class="bi bi-broadcast"></i> Webhooky
                 </a>
@@ -127,17 +151,16 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
             <?php endif; ?>
 
             <?php if ($hasModule('statistics')): ?>
-            <li class="nav-item">
+            <li>
                 <a href="<?= APP_URL ?>/statistics" class="nav-link <?= $active('/statistics') ?>">
                     <i class="bi bi-bar-chart-line"></i> Statistiky
                 </a>
             </li>
             <?php endif; ?>
 
-            <!-- Admin sekce -->
             <?php if ($currentUser['role'] === 'superadmin'): ?>
             <li class="sidebar-section-title">Administrace</li>
-            <li class="nav-item">
+            <li>
                 <a href="<?= APP_URL ?>/admin" class="nav-link <?= $active('/admin') ?>">
                     <i class="bi bi-shield-check"></i> Admin panel
                 </a>
@@ -145,6 +168,7 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
             <?php endif; ?>
         </ul>
 
+        <!-- Spodní část -->
         <div class="sidebar-bottom">
             <a href="<?= APP_URL ?>/profile" class="nav-link <?= $active('/profile') ?>">
                 <i class="bi bi-person-circle"></i> Profil
@@ -155,39 +179,50 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
             </a>
             <?php endif; ?>
             <a href="<?= APP_URL ?>/logout" class="nav-link text-danger">
-                <i class="bi bi-box-arrow-right"></i> Odhlásit
+                <i class="bi bi-box-arrow-right"></i> Odhlásit se
             </a>
         </div>
     </nav>
 
-    <!-- Hlavní obsah -->
+    <!-- ── Hlavní obsah ──────────────────────────────────── -->
     <div id="page-content">
+
         <!-- Topbar -->
-        <div class="topbar d-flex align-items-center justify-content-between px-4">
-            <button class="btn btn-sm btn-outline-secondary d-md-none" id="sidebarToggle">
+        <header class="topbar">
+            <!-- Mobile toggle -->
+            <button class="btn btn-sm btn-outline-secondary d-md-none me-2" id="sidebarToggle">
                 <i class="bi bi-list"></i>
             </button>
+
+            <!-- Search box -->
+            <div class="search-box d-none d-md-flex">
+                <i class="bi bi-search"></i>
+                <input type="text" placeholder="Hledat v systému...">
+            </div>
+
             <div class="d-flex align-items-center gap-2 ms-auto">
                 <?php if ($currentUser['role'] === 'superadmin'): ?>
-                <span class="badge bg-warning text-dark">
+                <span class="badge" style="background:var(--sc-primary-light);color:var(--sc-primary);font-size:.75rem;">
                     <i class="bi bi-shield-fill me-1"></i>Superadmin
                 </span>
                 <?php endif; ?>
             </div>
-        </div>
+        </header>
 
         <!-- Flash zprávy -->
+        <?php if (!empty($flash)): ?>
         <div class="px-4 pt-3">
             <?php foreach ($flash as $f): ?>
-            <div class="alert alert-<?= $f['type'] === 'error' ? 'danger' : $f['type'] ?> alert-dismissible fade show" role="alert">
+            <div class="alert alert-<?= $f['type'] === 'error' ? 'danger' : $f['type'] ?> alert-dismissible fade show animate-fade-in" role="alert">
                 <?= $f['message'] ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             <?php endforeach; ?>
         </div>
+        <?php endif; ?>
 
         <!-- Obsah stránky -->
-        <main class="p-4">
+        <main class="p-4 animate-fade-in">
             <?= $content ?>
         </main>
     </div>
