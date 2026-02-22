@@ -1,0 +1,30 @@
+# Konfigurace (obsahuje hesla a DB přístupy)
+config/config.php
+
+# PHP závislosti (pokud by se přidal Composer)
+vendor/
+
+# OS soubory
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logy
+*.log
+logs/
+
+# Upload složky
+public/uploads/
+
+# Cache
+cache/
+tmp/
+
+# Env soubory
+.env
+.env.local
