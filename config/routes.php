@@ -52,9 +52,10 @@ return [
     ['DELETE', '/events/{id}',  'EventController@delete',  ['auth', 'approved', 'module:event_calendar']],
 
     // ---- XML Import -----------------------------------------
-    ['GET',  '/xml',         'XmlController@index',   ['auth', 'approved', 'module:xml_import']],
+    ['GET',  '/xml',          'XmlController@index',   ['auth', 'approved', 'module:xml_import']],
     ['POST', '/xml/start',   'XmlController@start',   ['auth', 'approved', 'module:xml_import']],
     ['GET',  '/xml/status',  'XmlController@status',  ['auth', 'approved', 'module:xml_import']],
+    ['POST', '/xml/cancel',  'XmlController@cancel',  ['auth', 'approved', 'module:xml_import']],
 
     // ---- API Tokeny -----------------------------------------
     ['GET',    '/api-tokens',        'ApiTokenController@index',   ['auth', 'approved', 'module:api_access']],

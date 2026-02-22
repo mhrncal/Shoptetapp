@@ -28,3 +28,8 @@ tmp/
 # Env soubory
 .env
 .env.local
+
+# Tmp složka (XML feedy, lock soubory)
+/tmp/
+tmp/
+*.lock

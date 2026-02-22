@@ -201,6 +201,7 @@ CREATE TABLE IF NOT EXISTS `xml_imports` (
     `error_message`     TEXT DEFAULT NULL,
     `started_at`        DATETIME DEFAULT NULL,
     `completed_at`      DATETIME DEFAULT NULL,
+    `queue_id`          INT UNSIGNED DEFAULT NULL,
     `created_at`        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_xml_user` (`user_id`),
