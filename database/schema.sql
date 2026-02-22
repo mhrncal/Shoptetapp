@@ -166,6 +166,22 @@ CREATE TABLE IF NOT EXISTS `branches` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+-- OTEVÍRACÍ DOBY POBOČEK
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `branch_hours` (
+    `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `branch_id`  INT UNSIGNED NOT NULL,
+    `day_of_week` TINYINT UNSIGNED NOT NULL COMMENT '0=Po, 1=Út, 2=St, 3=Čt, 4=Pá, 5=So, 6=Ne',
+    `is_closed`  TINYINT(1) NOT NULL DEFAULT 0,
+    `open_from`  TIME DEFAULT NULL,
+    `open_to`    TIME DEFAULT NULL,
+    `note`       VARCHAR(255) DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_branch_day` (`branch_id`, `day_of_week`),
+    CONSTRAINT `fk_bh_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- UDÁLOSTI
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `events` (

@@ -41,6 +41,7 @@ return [
     // ---- Pobočky --------------------------------------------
     ['GET',    '/branches',        'BranchController@index',   ['auth', 'approved', 'module:branches']],
     ['POST',   '/branches',        'BranchController@store',   ['auth', 'approved', 'module:branches']],
+    ['GET',    '/branches/new',    'BranchController@edit',    ['auth', 'approved', 'module:branches']],
     ['GET',    '/branches/{id}',   'BranchController@edit',    ['auth', 'approved', 'module:branches']],
     ['POST',   '/branches/{id}',   'BranchController@update',  ['auth', 'approved', 'module:branches']],
     ['DELETE', '/branches/{id}',   'BranchController@delete',  ['auth', 'approved', 'module:branches']],
