@@ -25,6 +25,7 @@ try {
         ['event_calendar', 'Kalendář akcí',      'Správa akcí a událostí s ICS exportem',         'calendar-event'],
         ['product_tabs',   'Záložky produktů',   'Vlastní záložky k produktům',                   'layout-text-window'],
         ['product_videos', 'Videa k produktům',  'Přiřazení videí k produktům',                   'play-circle'],
+        ['reviews',        'Fotorecenze',         'Sběr fotorecenzí ze Shoptetu, schvalování, CSV import', 'camera'],
         ['reviews',        'Fotorecenze',        'Sběr a správa fotorecenzí zákazníků ze Shoptetu','camera'],
         ['api_access',     'API přístup',        'API tokeny a přístup k datům přes REST API',    'key'],
         ['webhooks',       'Webhooky',           'Webhooky pro externí integrace',                'broadcast'],
