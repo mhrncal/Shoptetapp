@@ -248,7 +248,6 @@ class AdminNotifier
 </html>
 HTML;
     }
-}
 
     // ----------------------------------------------------------------
     // 4. Nová registrace čeká na schválení
@@ -313,6 +312,9 @@ HTML;
             <p>Než budete moci systém plně používat, musí váš účet schválit administrátor. Jakmile bude váš účet schválen, dostanete notifikaci.</p>
             <p style='color:#9ca3af;margin-top:24px;font-size:14px;'>Děkujeme za registraci.</p>
         ");
+
+        return Mailer::send($toEmail, $subject, $html);
+    }
 
     // ----------------------------------------------------------------
     // 6. Schválení účtu — email uživateli (vrací HTML string, neodesílá)

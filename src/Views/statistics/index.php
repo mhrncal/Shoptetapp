@@ -9,12 +9,14 @@
 <!-- Přehledové karty -->
 <div class="row g-3 mb-4">
     <?php $cards = [
-        ['icon'=>'box',         'label'=>'Produkty',      'value'=>$counts['products'],   'color'=>'primary'],
-        ['icon'=>'question-circle','label'=>'FAQ',         'value'=>$counts['faqs'],       'color'=>'info'],
-        ['icon'=>'geo-alt',     'label'=>'Pobočky',       'value'=>$counts['branches'],   'color'=>'success'],
-        ['icon'=>'calendar-event','label'=>'Akce',        'value'=>$counts['events'],     'color'=>'warning'],
-        ['icon'=>'broadcast',   'label'=>'Webhooky',      'value'=>$counts['webhooks'],   'color'=>'secondary'],
-        ['icon'=>'key',         'label'=>'API tokeny',    'value'=>$counts['api_tokens'], 'color'=>'secondary'],
+        ['icon'=>'box',         'label'=>'Produkty',      'value'=>$counts['products'],        'color'=>'primary'],
+        ['icon'=>'question-circle','label'=>'FAQ',         'value'=>$counts['faqs'],            'color'=>'info'],
+        ['icon'=>'geo-alt',     'label'=>'Pobočky',       'value'=>$counts['branches'],        'color'=>'success'],
+        ['icon'=>'calendar-event','label'=>'Akce',        'value'=>$counts['events'],          'color'=>'warning'],
+        ['icon'=>'camera',      'label'=>'Recenze',       'value'=>$counts['reviews'] ?? 0,    'color'=>'danger',
+         'sub' => ($counts['reviews_pending'] ?? 0) > 0 ? ($counts['reviews_pending'] . ' čeká') : null],
+        ['icon'=>'broadcast',   'label'=>'Webhooky',      'value'=>$counts['webhooks'],        'color'=>'secondary'],
+        ['icon'=>'key',         'label'=>'API tokeny',    'value'=>$counts['api_tokens'],      'color'=>'secondary'],
     ]; ?>
     <?php foreach ($cards as $c): ?>
     <div class="col-6 col-md-4 col-xl-2">
@@ -23,6 +25,9 @@
                 <i class="bi bi-<?= $c['icon'] ?> fs-3 text-<?= $c['color'] ?> mb-2 d-block"></i>
                 <div class="fs-4 fw-bold"><?= $fmt($c['value']) ?></div>
                 <div class="text-muted small"><?= $c['label'] ?></div>
+                <?php if (!empty($c['sub'])): ?>
+                <div class="badge bg-warning text-dark mt-1" style="font-size:.65rem;"><?= htmlspecialchars($c['sub']) ?></div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

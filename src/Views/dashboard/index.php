@@ -66,6 +66,20 @@
         </div>
     </div>
     <?php endif; ?>
+
+    <?php if (in_array('reviews', $activeModules)): ?>
+    <div class="col-6 col-md-3">
+        <a href="<?= APP_URL ?>/reviews?status=pending" class="text-decoration-none">
+        <div class="stat-card <?= ($counts['reviews_pending'] ?? 0) > 0 ? 'border border-warning border-opacity-50' : '' ?>">
+            <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                <i class="bi bi-camera"></i>
+            </div>
+            <div class="stat-value"><?= number_format($counts['reviews_pending'] ?? 0) ?></div>
+            <div class="stat-label">Recenzí čeká</div>
+        </div>
+        </a>
+    </div>
+    <?php endif; ?>
 </div>
 
 <div class="row g-4">

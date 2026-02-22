@@ -22,6 +22,10 @@ class DashboardController extends BaseController
         $s->execute([$userId]);
         $counts['upcoming_events'] = (int)$s->fetchColumn();
 
+        $s = $db->prepare("SELECT COUNT(*) FROM reviews WHERE user_id = ? AND status = 'pending'");
+        $s->execute([$userId]);
+        $counts['reviews_pending'] = (int)$s->fetchColumn();
+
         // Posledních 5 importů
         $s = $db->prepare('SELECT * FROM xml_imports WHERE user_id = ? ORDER BY created_at DESC LIMIT 5');
         $s->execute([$userId]);

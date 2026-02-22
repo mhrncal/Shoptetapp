@@ -59,7 +59,7 @@ class User
     public static function update(int $id, array $data): bool
     {
         $db      = Database::getInstance();
-        $allowed = ['first_name', 'last_name', 'shop_name', 'shop_url', 'xml_feed_url', 'status', 'role'];
+        $allowed = ['first_name', 'last_name', 'shop_name', 'shop_url', 'xml_feed_url', 'status', 'role', 'password_hash'];
         $sets    = [];
         $values  = [];
 

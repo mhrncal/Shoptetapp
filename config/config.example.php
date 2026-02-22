@@ -70,13 +70,3 @@ define('CHROMEDRIVER_URL', 'http://localhost:9515');
 // ============================================================
 // FOTORECENZE — Shoptet integrace
 // ============================================================
-// Domény ze kterých je povolen CORS pro submit-review endpoint
-define('SHOPTET_DOMAINS', [
-    'https://www.vaseshop.cz',
-    'https://vaseshop.cz',
-]);
-// Shoptet admin přihlašovací údaje (pro Selenium robot)
-define('SHOPTET_URL',      'https://admin.shoptet.cz');
-define('SHOPTET_EMAIL',    'admin@vaseshop.cz');
-define('SHOPTET_PASSWORD', 'shoptet_password');
-define('CHROMEDRIVER_URL', 'http://localhost:9515');

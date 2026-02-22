@@ -12,11 +12,16 @@ class StatisticsController extends BaseController
 
         // Přehledové počty
         $counts = [];
-        foreach (['products','faqs','branches','events'] as $tbl) {
+        foreach (['products','faqs','branches','events','reviews'] as $tbl) {
             $s = $db->prepare("SELECT COUNT(*) FROM {$tbl} WHERE user_id = ?");
             $s->execute([$userId]);
             $counts[$tbl] = (int)$s->fetchColumn();
         }
+
+        // Pending recenze
+        $s = $db->prepare("SELECT COUNT(*) FROM reviews WHERE user_id = ? AND status = 'pending'");
+        $s->execute([$userId]);
+        $counts['reviews_pending'] = (int)$s->fetchColumn();
 
         // Počet produktů po kategorii (top 10)
         $stmt = $db->prepare("
