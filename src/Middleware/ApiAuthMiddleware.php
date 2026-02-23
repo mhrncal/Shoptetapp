@@ -22,8 +22,9 @@ class ApiAuthMiddleware
             self::unauthorized('Neplatný nebo vypršelý token');
         }
 
+        // $token['status'] je status UŽIVATELE (z JOIN users)
         if ($token['status'] !== 'approved') {
-            self::unauthorized('Účet není schválený');
+            self::unauthorized('Účet není schválený nebo je pozastavený');
         }
 
         // Uložíme do requestu pro controller
