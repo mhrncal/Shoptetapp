@@ -1,0 +1,306 @@
+{
+  "info": {
+    "name": "ShopCode API v1",
+    "_postman_id": "shopcode-api-v1",
+    "description": "Complete API collection for ShopCode e-commerce platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{api_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products?page=1&per_page=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "description": "Items per page (max: 200, default: 50)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Search in name and description"
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by category"
+                },
+                {
+                  "key": "brand",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by brand"
+                }
+              ]
+            },
+            "description": "Returns paginated list of products with optional filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "Product ID"
+                }
+              ]
+            },
+            "description": "Returns single product with all details and variants"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products?search=tričko&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "tričko"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Search products by name or description"
+          },
+          "response": []
+        },
+        {
+          "name": "Filter by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products?category=Oblečení",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Oblečení"
+                }
+              ]
+            },
+            "description": "Filter products by category"
+          },
+          "response": []
+        },
+        {
+          "name": "Filter by Brand",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products?brand=Nike",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products"],
+              "query": [
+                {
+                  "key": "brand",
+                  "value": "Nike"
+                }
+              ]
+            },
+            "description": "Filter products by brand"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "FAQ",
+      "item": [
+        {
+          "name": "Get All FAQ",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/faq",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "faq"]
+            },
+            "description": "Returns all public FAQ entries"
+          },
+          "response": []
+        },
+        {
+          "name": "Get FAQ for Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/faq?product_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "faq"],
+              "query": [
+                {
+                  "key": "product_id",
+                  "value": "1",
+                  "description": "Filter by product ID"
+                }
+              ]
+            },
+            "description": "Returns FAQ for specific product"
+          },
+          "response": []
+        },
+        {
+          "name": "Search FAQ",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/faq?search=péče",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "faq"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "péče"
+                }
+              ]
+            },
+            "description": "Search in FAQ questions and answers"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Branches",
+      "item": [
+        {
+          "name": "Get All Branches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/branches",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "branches"]
+            },
+            "description": "Returns all branches with opening hours"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Get All Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "events"]
+            },
+            "description": "Returns all active events"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Upcoming Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/events?upcoming=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "events"],
+              "query": [
+                {
+                  "key": "upcoming",
+                  "value": "1",
+                  "description": "Only upcoming events"
+                }
+              ]
+            },
+            "description": "Returns only upcoming events"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Past Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/events?past=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "events"],
+              "query": [
+                {
+                  "key": "past",
+                  "value": "1",
+                  "description": "Only past events"
+                }
+              ]
+            },
+            "description": "Returns only past events"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://tvoje-domena.cz",
+      "type": "string"
+    },
+    {
+      "key": "api_token",
+      "value": "sc_your_token_here",
+      "type": "string"
+    }
+  ]
+}
