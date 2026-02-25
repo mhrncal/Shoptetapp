@@ -9,9 +9,9 @@ $variantCodes = [];
 if (!empty($productIds)) {
     $ph   = implode(',', array_fill(0, count($productIds), '?'));
     $stmt = $db->prepare("
-        SELECT product_id, GROUP_CONCAT(sku ORDER BY sku SEPARATOR ', ') AS codes
+        SELECT product_id, GROUP_CONCAT(code ORDER BY code SEPARATOR ', ') AS codes
         FROM product_variants
-        WHERE product_id IN ({$ph}) AND sku IS NOT NULL AND sku != ''
+        WHERE product_id IN ({$ph}) AND code IS NOT NULL AND code != ''
         GROUP BY product_id
     ");
     $stmt->execute($productIds);
@@ -90,11 +90,11 @@ if (!empty($productIds)) {
                 </thead>
                 <tbody>
                     <?php foreach ($products as $p):
-                        // Kód: varianta má skupinové kódy, produkt má svůj sku
+                        // Kód: varianta má skupinové kódy, produkt má svůj code
                         $hasVariants  = isset($variantCodes[$p['id']]);
                         $displayCode  = $hasVariants
                             ? $variantCodes[$p['id']]   // "KOD1, KOD2, KOD3"
-                            : ($p['sku'] ?? null);       // vlastní SKU produktu
+                            : ($p['code'] ?? null);      // vlastní code produktu
                     ?>
                     <tr>
                         <td>

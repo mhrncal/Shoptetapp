@@ -488,15 +488,31 @@ textarea.form-control { height: auto; min-height: 5rem; }
 
 /* ── Modály ──────────────────────────────────────────────── */
 .modal-content {
-    background-color: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
-    border-radius: var(--radius);
-    box-shadow: 0 20px 60px rgb(0 0 0 / .12);
+    background-color: hsl(var(--card)) !important;
+    color: hsl(var(--foreground)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 20px 60px rgb(0 0 0 / .12) !important;
 }
-.modal-header { border-bottom: 1px solid hsl(var(--border)) !important; padding: 1.5rem; }
-.modal-body   { padding: 1.5rem; }
-.modal-footer { border-top: 1px solid hsl(var(--border)) !important; background: hsl(var(--muted)) !important; padding: 1.5rem; }
-.modal-title  { font-size: 1.25rem; font-weight: 600; }
+.modal-header {
+    background-color: hsl(var(--card)) !important;
+    border-bottom: 1px solid hsl(var(--border)) !important;
+    padding: 1.5rem !important;
+}
+.modal-body {
+    background-color: hsl(var(--card)) !important;
+    color: hsl(var(--foreground)) !important;
+    padding: 1.5rem !important;
+}
+.modal-footer {
+    background-color: hsl(var(--muted)) !important;
+    border-top: 1px solid hsl(var(--border)) !important;
+    padding: 1.5rem !important;
+}
+.modal-title  { font-size: 1.25rem; font-weight: 600; color: hsl(var(--foreground)) !important; }
+/* Backdrop — poloprůhledný tmavý overlay je OK, ale obsah musí být světlý */
+.modal-backdrop { background-color: #000 !important; }
+.modal-backdrop.show { opacity: .5 !important; }
 
 /* ── Dropdown ────────────────────────────────────────────── */
 .dropdown-menu {

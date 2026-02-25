@@ -76,6 +76,8 @@ return [
 
     // Uživatelé
     ['GET',  '/admin/users',              'Admin\UserController@index',    ['auth', 'approved', 'superadmin']],
+    ['GET',  '/admin/users/create',       'Admin\UserController@create',   ['auth', 'approved', 'superadmin']],
+    ['POST', '/admin/users/create',       'Admin\UserController@store',    ['auth', 'approved', 'superadmin']],
     ['GET',  '/admin/users/{id}',         'Admin\UserController@detail',   ['auth', 'approved', 'superadmin']],
     ['GET',  '/admin/users/{id}/edit',    'Admin\UserController@edit',     ['auth', 'approved', 'superadmin']],
     ['POST', '/admin/users/{id}/edit',    'Admin\UserController@update',   ['auth', 'approved', 'superadmin']],

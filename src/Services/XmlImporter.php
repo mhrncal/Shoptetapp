@@ -71,7 +71,7 @@ class XmlImporter
             array_push($values,
                 $this->userId,
                 $p['shoptet_id'],
-                $p['sku']         ?? null,   // CODE z XML
+                $p['code']        ?? null,   // CODE z XML
                 $p['name']        ?? '',
                 $p['description'] ?? null,
                 $p['price']       ?? null,
@@ -87,11 +87,11 @@ class XmlImporter
 
         $this->db->prepare("
             INSERT INTO products
-                (user_id, shoptet_id, sku, name, description, price, currency,
+                (user_id, shoptet_id, code, name, description, price, currency,
                  category, brand, availability, images, parameters, xml_data)
             VALUES {$ph}
             ON DUPLICATE KEY UPDATE
-                sku=VALUES(sku), name=VALUES(name), description=VALUES(description),
+                code=VALUES(code), name=VALUES(name), description=VALUES(description),
                 price=VALUES(price), currency=VALUES(currency),
                 category=VALUES(category), brand=VALUES(brand),
                 availability=VALUES(availability), images=VALUES(images),
@@ -132,7 +132,7 @@ class XmlImporter
                     $this->userId,
                     $v['product_id'],
                     $v['shoptet_variant_id'],
-                    $v['sku']        ?? null,  // CODE varianty z XML
+                    $v['code']       ?? null,  // CODE varianty z XML
                     $v['name']       ?? null,
                     $v['price']      ?? null,
                     $v['stock']      ?? 0,
@@ -141,10 +141,10 @@ class XmlImporter
             }
             $this->db->prepare("
                 INSERT INTO product_variants
-                    (user_id, product_id, shoptet_variant_id, sku, name, price, stock, parameters)
+                    (user_id, product_id, shoptet_variant_id, code, name, price, stock, parameters)
                 VALUES {$ph}
                 ON DUPLICATE KEY UPDATE
-                    sku=VALUES(sku), name=VALUES(name), price=VALUES(price),
+                    code=VALUES(code), name=VALUES(name), price=VALUES(price),
                     stock=VALUES(stock), parameters=VALUES(parameters), updated_at=NOW()
             ")->execute($values);
         }

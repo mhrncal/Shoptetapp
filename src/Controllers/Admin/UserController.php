@@ -163,6 +163,51 @@ class UserController extends BaseController
         $this->redirect('/admin/users');
     }
 
+    public function create(): void
+    {
+        $this->view('admin/users/create', [], 'admin');
+    }
+
+    public function store(): void
+    {
+        $this->validateCsrf();
+
+        $firstName = trim($this->request->post('first_name', ''));
+        $lastName  = trim($this->request->post('last_name', ''));
+        $email     = trim($this->request->post('email', ''));
+        $shopName  = trim($this->request->post('shop_name', ''));
+        $password  = $this->request->post('password', '');
+        $role      = $this->request->post('role', 'user') === 'superadmin' ? 'superadmin' : 'user';
+        $status    = in_array($this->request->post('status'), ['approved','pending','rejected'])
+                     ? $this->request->post('status') : 'approved';
+
+        // Validace
+        $errors = [];
+        if (!$firstName) $errors[] = 'Jméno je povinné.';
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Zadejte platný e-mail.';
+        if (strlen($password) < 8) $errors[] = 'Heslo musí mít alespoň 8 znaků.';
+        if (User::findByEmail($email)) $errors[] = 'Uživatel s tímto e-mailem již existuje.';
+
+        if ($errors) {
+            Session::flash('error', implode(' ', $errors));
+            $this->redirect('/admin/users/create');
+        }
+
+        $userId = User::create([
+            'first_name' => $firstName,
+            'last_name'  => $lastName,
+            'email'      => $email,
+            'shop_name'  => $shopName ?: null,
+            'password'   => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
+            'role'       => $role,
+            'status'     => $status,
+        ]);
+
+        AuditLog::log('user_created', 'user', (string)$userId);
+        Session::flash('success', "Uživatel {$email} byl vytvořen.");
+        $this->redirect('/admin/users/' . $userId);
+    }
+
     private function getUserOr404(): array
     {
         $id   = (int)$this->request->param('id');

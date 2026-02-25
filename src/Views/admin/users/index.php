@@ -3,6 +3,9 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0"><i class="bi bi-people me-2"></i>Správa uživatelů</h4>
+    <a href="<?= APP_URL ?>/admin/users/create" class="btn btn-primary btn-sm">
+        <i class="bi bi-person-plus me-1"></i>Přidat uživatele
+    </a>
 </div>
 
 <!-- Filtry -->

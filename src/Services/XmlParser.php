@@ -134,7 +134,7 @@ class XmlParser
             'currency'     => self::text($node->CURRENCY) ?: 'CZK',
 
             // SKU / kód
-            'sku'          => self::text($node->CODE),
+            'code'         => self::text($node->CODE),
 
             // URL produktu
             'url'          => self::text($node->ORIG_URL),
@@ -294,7 +294,7 @@ class XmlParser
             $variants[] = [
                 'shoptet_variant_id' => $variantId,
                 'name'               => self::text($varNode->n ?? null),
-                'sku'                => self::text($varNode->CODE ?? null),
+                'code'               => self::text($varNode->CODE ?? null),
                 'price'              => self::decimal((string)($varNode->PRICE_VAT ?? '')),
                 'stock'              => isset($varNode->STOCK->AMOUNT)
                                         ? (int)(string)$varNode->STOCK->AMOUNT
