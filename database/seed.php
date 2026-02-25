@@ -43,7 +43,7 @@ try {
     echo "✅ Moduly vloženy\n";
 
     // Superadmin
-    $password = SUPERADMIN_PASS ?? 'Shopcode2024!';
+    $password = SUPERADMIN_PASS ?? 'Shopcode2024??';
     $hash     = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
 
     $stmt = $pdo->prepare("
