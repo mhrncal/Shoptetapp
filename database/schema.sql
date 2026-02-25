@@ -231,6 +231,8 @@ CREATE TABLE IF NOT EXISTS `xml_processing_queue` (
     `id`                   INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`              INT UNSIGNED NOT NULL,
     `xml_feed_url`         TEXT NOT NULL,
+    `feed_format`          ENUM('xml','csv') NOT NULL DEFAULT 'xml',
+    `field_map`            JSON DEFAULT NULL,
     `status`               ENUM('pending','processing','completed','failed') NOT NULL DEFAULT 'pending',
     `priority`             TINYINT UNSIGNED NOT NULL DEFAULT 5,
     `progress_percentage`  TINYINT UNSIGNED NOT NULL DEFAULT 0,

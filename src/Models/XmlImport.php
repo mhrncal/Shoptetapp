@@ -6,15 +6,26 @@ use ShopCode\Core\Database;
 
 class XmlImport
 {
-    public static function addToQueue(int $userId, string $feedUrl, int $priority = 5): int
-    {
+    public static function addToQueue(
+        int    $userId,
+        string $feedUrl,
+        int    $priority  = 5,
+        string $format    = 'xml',
+        array  $fieldMap  = []
+    ): int {
         $db   = Database::getInstance();
         $stmt = $db->prepare('
             INSERT INTO xml_processing_queue
-                (user_id, xml_feed_url, status, priority, max_retries)
-            VALUES (?, ?, "pending", ?, 3)
+                (user_id, xml_feed_url, feed_format, field_map, status, priority, max_retries)
+            VALUES (?, ?, ?, ?, "pending", ?, 3)
         ');
-        $stmt->execute([$userId, $feedUrl, $priority]);
+        $stmt->execute([
+            $userId,
+            $feedUrl,
+            $format,
+            !empty($fieldMap) ? json_encode($fieldMap, JSON_UNESCAPED_UNICODE) : null,
+            $priority,
+        ]);
         return (int)$db->lastInsertId();
     }
 

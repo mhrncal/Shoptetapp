@@ -3,22 +3,29 @@
 namespace ShopCode\Services;
 
 /**
- * Parser Shoptet CSV produktového exportu.
+ * Parser Shoptet CSV produktového exportu s konfigurovatelným mapováním sloupců.
  *
- * Struktura CSV (solution.shopcode.cz):
+ * Základní struktura CSV (solution.shopcode.cz):
  *   code;pairCode;name;defaultCategory;
  *
- * Logika grupování:
- * - Prázdný pairCode → jednoduchý produkt
- * - Vyplněný pairCode → varianta; stejný pairCode = jedna skupina
- *   → produkt = name + category z prvního řádku skupiny
+ * Přes $fieldMap lze namapovat libovolné sloupce CSV na interní názvy polí:
+ *   [
+ *     'code'      => 'code',           // CSV sloupec 'code' → interní 'code'
+ *     'pairCode'  => 'pairCode',       // CSV sloupec 'pairCode' → grupování
+ *     'name'      => 'name',
+ *     'category'  => 'defaultCategory',
+ *     'price'     => 'cena',           // CSV sloupec 'cena' → interní 'price'
+ *     'brand'     => 'znacka',
+ *     ...
+ *   ]
+ *
+ * Logika grupování variant:
+ * - Prázdný pairCode sloupec (nebo není definován) → jednoduchý produkt
+ * - Vyplněný pairCode → varianta; stejná hodnota pairCode = jedna skupina
+ *   → produkt = name/category/... z prvního řádku skupiny
  *   → variantCodes = pole kódů všech řádků skupiny
  *
- * Kódování (detekce automatická):
- * - UTF-8 s BOM (EF BB BF)
- * - UTF-8 bez BOM
- * - Windows-1250 / CP1250 (přes iconv)
- * - ISO-8859-2 (přes iconv)
+ * Kódování (automatická detekce): BOM UTF-8, BOM UTF-16, UTF-8, CP1250, ISO-8859-2
  */
 class CsvParser
 {
@@ -27,13 +34,18 @@ class CsvParser
     /**
      * @param string        $filePath
      * @param callable      $callback  function(array $product, array $variantCodes): void
+     *                                 $product klíče: code, name, category, price, brand,
+     *                                          description, availability, pair_code + libovolné extra
+     * @param array         $fieldMap  ['interní_pole' => 'název_sloupce_v_CSV']
+     *                                 Výchozí hodnoty viz DEFAULT_MAP
      * @param callable|null $progress  function(int $processed): void
      * @return array{processed: int, errors: int, error_log: string[]}
      */
     public static function stream(
         string    $filePath,
         callable  $callback,
-        ?callable $progress = null
+        array     $fieldMap  = [],
+        ?callable $progress  = null
     ): array {
         $processed = 0;
         $errors    = 0;
@@ -55,32 +67,25 @@ class CsvParser
             throw new \RuntimeException("CSV nemá hlavičku.");
         }
 
-        // Namapuj sloupce (case-insensitive, ignoruj trailing whitespace)
-        $colMap = [];
-        foreach ($header as $i => $col) {
-            $colMap[strtolower(trim($col))] = $i;
+        // Vyřešíme mapování: fieldMap['price'] = 'cena' → colIdx['price'] = 3
+        $colIdx = self::resolveColumns($header, $fieldMap);
+
+        if (!isset($colIdx['code'])) {
+            throw new \RuntimeException(
+                "CSV nemá sloupec pro 'code'. Nalezené sloupce: " .
+                implode(', ', array_map('trim', $header))
+            );
         }
 
-        $codeCol     = $colMap['code']           ?? null;
-        $pairCol     = $colMap['paircode']        ?? null;
-        $nameCol     = $colMap['name']            ?? null;
-        $categoryCol = $colMap['defaultcategory'] ?? null;
-
-        if ($codeCol === null) {
-            throw new \RuntimeException("CSV nemá sloupec 'code'. Nalezené sloupce: " . implode(', ', array_keys($colMap)));
-        }
-
-        // Seskup řádky
-        $grouped = [];   // pairCode (string) → array of rows
-        $singles = [];   // jednoduché produkty
+        // Seskup řádky podle pairCode
+        $grouped = [];
+        $singles = [];
 
         foreach ($lines as $lineNum => $row) {
             if (empty(array_filter($row, fn($c) => trim($c) !== ''))) continue;
 
-            $code     = trim($row[$codeCol] ?? '');
-            $pairCode = $pairCol !== null ? trim($row[$pairCol] ?? '') : '';
-            $name     = $nameCol !== null ? trim($row[$nameCol] ?? '') : '';
-            $category = $categoryCol !== null ? trim($row[$categoryCol] ?? '') : '';
+            $code     = trim($row[$colIdx['code']] ?? '');
+            $pairCode = isset($colIdx['pairCode']) ? trim($row[$colIdx['pairCode']] ?? '') : '';
 
             if ($code === '') {
                 $errors++;
@@ -88,22 +93,20 @@ class CsvParser
                 continue;
             }
 
+            // Extrahuj všechna mapovaná pole z tohoto řádku
+            $extracted = self::extractRow($row, $colIdx);
+
             if ($pairCode !== '') {
-                $grouped[$pairCode][] = compact('code', 'name', 'category');
+                $grouped[$pairCode][] = $extracted;
             } else {
-                $singles[] = compact('code', 'name', 'category');
+                $singles[] = $extracted;
             }
         }
 
         // Zpracuj jednoduché produkty
         foreach ($singles as $row) {
             try {
-                $callback([
-                    'name'      => $row['name'] ?: null,
-                    'code'      => $row['code'],
-                    'pair_code' => null,
-                    'category'  => $row['category'] ?: null,
-                ], []);
+                $callback(array_merge($row, ['pair_code' => null]), []);
                 $processed++;
                 if ($progress && $processed % 100 === 0) $progress($processed);
             } catch (\Throwable $e) {
@@ -115,13 +118,14 @@ class CsvParser
         // Zpracuj skupiny variant
         foreach ($grouped as $pairCode => $rows) {
             try {
-                $first = $rows[0];
-                $callback([
-                    'name'      => $first['name'] ?: null,
-                    'code'      => null,          // variantní produkt nemá vlastní code
+                // Produkt = první řádek skupiny, code = null (nemá vlastní)
+                $product = array_merge($rows[0], [
+                    'code'      => null,
                     'pair_code' => $pairCode,
-                    'category'  => $first['category'] ?: null,
-                ], array_column($rows, 'code'));
+                ]);
+                $variantCodes = array_column($rows, 'code');
+
+                $callback($product, $variantCodes);
                 $processed++;
                 if ($progress && $processed % 100 === 0) $progress($processed);
             } catch (\Throwable $e) {
@@ -134,14 +138,89 @@ class CsvParser
     }
 
     /**
+     * Rozhodne který index v CSV řádku odpovídá kterému internímu poli.
+     * Priorita: fieldMap → automatická detekce podle standardních názvů
+     *
+     * @return array<string, int>  ['code' => 0, 'name' => 2, ...]
+     */
+    public static function resolveColumns(array $header, array $fieldMap = []): array
+    {
+        // Normalizovaná hlavička pro vyhledávání
+        $normalHeader = [];
+        foreach ($header as $i => $col) {
+            $normalHeader[strtolower(trim($col))] = $i;
+        }
+
+        // Výchozí mapování (interní_pole => výchozí_název_sloupce_v_CSV)
+        $defaults = [
+            'code'         => 'code',
+            'pairCode'     => 'paircode',
+            'name'         => 'name',
+            'category'     => 'defaultcategory',
+            'price'        => 'price',
+            'brand'        => 'brand',
+            'description'  => 'description',
+            'availability' => 'availability',
+            'images'       => 'image',
+        ];
+
+        $result = [];
+        foreach ($defaults as $internal => $defaultCsvCol) {
+            // Preferuj fieldMap pokud zadáno
+            $csvCol = strtolower(trim($fieldMap[$internal] ?? $defaultCsvCol));
+            if (isset($normalHeader[$csvCol])) {
+                $result[$internal] = $normalHeader[$csvCol];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Extrahuje hodnoty z jednoho CSV řádku podle resolved colIdx
+     */
+    private static function extractRow(array $row, array $colIdx): array
+    {
+        $data = [];
+        foreach ($colIdx as $internal => $idx) {
+            if ($internal === 'pairCode') continue; // zpracováváme zvlášť
+            $val = trim($row[$idx] ?? '');
+            $data[$internal] = $val !== '' ? $val : null;
+        }
+        return $data;
+    }
+
+    /**
+     * Načte první řádky CSV feedu a vrátí seznam sloupců + ukázkový řádek.
+     * Použitelné pro preview před importem.
+     */
+    public static function preview(string $filePath): array
+    {
+        $raw  = file_get_contents($filePath);
+        $text = self::decode($raw ?? '');
+        if (!$text) return ['columns' => [], 'sample' => []];
+
+        $lines = self::parseCsv($text);
+        $header = $lines[0] ?? [];
+        $sample = $lines[1] ?? [];
+
+        return [
+            'columns' => array_map('trim', $header),
+            'sample'  => array_map('trim', $sample),
+        ];
+    }
+
+    /**
      * Detekuje kódování a vrátí UTF-8 string.
-     * Pořadí detekce: BOM UTF-8 → BOM UTF-16 → platné UTF-8 → CP1250 (iconv) → ISO-8859-2
+     * BOM UTF-8 → BOM UTF-16 → platné UTF-8 → CP1250 (iconv) → ISO-8859-2
      */
     public static function decode(string $raw): ?string
     {
+        if ($raw === '') return '';
+
         // BOM UTF-8 (EF BB BF)
         if (str_starts_with($raw, "\xEF\xBB\xBF")) {
-            return substr($raw, 3);  // už je UTF-8, jen odstranit BOM
+            return substr($raw, 3);
         }
 
         // BOM UTF-16 LE (FF FE)
@@ -159,9 +238,10 @@ class CsvParser
             return $raw;
         }
 
-        // CP1250 / Windows-1250 přes iconv
+        // CP1250 / Windows-1250
         $decoded = @iconv('CP1250', 'UTF-8//TRANSLIT//IGNORE', $raw);
-        if ($decoded !== false && mb_check_encoding($decoded, 'UTF-8') && self::looksCzech($decoded)) {
+        if ($decoded !== false && mb_check_encoding($decoded, 'UTF-8')
+            && self::looksCzech($decoded)) {
             return $decoded;
         }
 
@@ -171,22 +251,16 @@ class CsvParser
             return $decoded;
         }
 
-        // Poslední záchrana — CP1250 bez kontroly češtiny
+        // Fallback CP1250
         $decoded = @iconv('CP1250', 'UTF-8//IGNORE', $raw);
         return $decoded !== false ? $decoded : null;
     }
 
-    /**
-     * Obsahuje text česká písmena (validní UTF-8)?
-     */
     private static function looksCzech(string $text): bool
     {
         return (bool)preg_match('/[áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/u', $text);
     }
 
-    /**
-     * Parsuje CSV text do pole řádků.
-     */
     private static function parseCsv(string $text): array
     {
         $text   = str_replace(["\r\n", "\r"], "\n", $text);

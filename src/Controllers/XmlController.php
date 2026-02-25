@@ -8,6 +8,42 @@ use ShopCode\Services\XmlDownloader;
 
 class XmlController extends BaseController
 {
+    // Výchozí mapování pro CSV
+    private const CSV_DEFAULT_MAP = [
+        'code'     => 'code',
+        'pairCode' => 'pairCode',
+        'name'     => 'name',
+        'category' => 'defaultCategory',
+    ];
+
+    // Dostupná CSV pole (sloupce které může CSV mít)
+    private const CSV_AVAILABLE_FIELDS = [
+        'code'             => 'Kód produktu (code) *',
+        'pairCode'         => 'Grupování variant (pairCode)',
+        'name'             => 'Název produktu (name)',
+        'category'         => 'Kategorie (defaultCategory)',
+        'price'            => 'Cena (price)',
+        'originalPrice'    => 'Původní cena (originalPrice)',
+        'vat'              => 'DPH % (vat)',
+        'stock'            => 'Sklad (stock)',
+        'brand'            => 'Značka (brand)',
+        'ean'              => 'EAN (ean)',
+        'weight'           => 'Hmotnost (weight)',
+        'description'      => 'Popis (description)',
+        'url'              => 'URL (url)',
+        'image'            => 'Obrázek (image)',
+        'availability'     => 'Dostupnost (availability)',
+    ];
+
+    // Výchozí mapování pro XML (tag → interní název)
+    private const XML_DEFAULT_MAP = [
+        'code'         => 'CODE',
+        'name'         => 'n',
+        'category'     => 'defaultCategory',
+        'price'        => 'PRICE_VAT',
+        'availability' => 'AVAILABILITY_OUT_OF_STOCK',
+    ];
+
     public function index(): void
     {
         $userId  = $this->user['id'];
@@ -17,11 +53,14 @@ class XmlController extends BaseController
         $queue   = XmlImport::getQueueForUser($userId, 10);
 
         $this->view('xml/index', [
-            'pageTitle'  => 'XML Import',
-            'user'       => $user,
-            'activeItem' => $active,
-            'history'    => $history,
-            'queue'      => $queue,
+            'pageTitle'       => 'Import produktů',
+            'user'            => $user,
+            'activeItem'      => $active,
+            'history'         => $history,
+            'queue'           => $queue,
+            'csvFields'       => self::CSV_AVAILABLE_FIELDS,
+            'csvDefaultMap'   => self::CSV_DEFAULT_MAP,
+            'xmlDefaultMap'   => self::XML_DEFAULT_MAP,
         ]);
     }
 
@@ -29,18 +68,44 @@ class XmlController extends BaseController
     {
         $this->validateCsrf();
 
-        $userId  = $this->user['id'];
-        $user    = User::findById($userId);
-        $feedUrl = trim($this->request->post('xml_feed_url', $user['xml_feed_url'] ?? ''));
+        $userId   = $this->user['id'];
+        $user     = User::findById($userId);
+        $feedUrl  = trim($this->request->post('feed_url', $user['xml_feed_url'] ?? ''));
+        $format   = $this->request->post('feed_format', 'xml') === 'csv' ? 'csv' : 'xml';
+        $priority = max(1, min(10, (int)$this->request->post('priority', 5)));
 
         if (empty($feedUrl) || !filter_var($feedUrl, FILTER_VALIDATE_URL)) {
-            Session::flash('error', 'Zadejte platnou URL XML feedu.');
+            Session::flash('error', 'Zadejte platnou URL feedu.');
             $this->redirect('/xml');
         }
 
-        if (XmlImport::hasActiveImport($userId)) {
-            Session::flash('warning', 'Import již probíhá. Počkejte na jeho dokončení.');
-            $this->redirect('/xml');
+        // Sestav field_map z POST
+        $fieldMap = [];
+        $rawMap   = $this->request->post('field_map', []);
+        if ($format === 'csv') {
+            foreach (self::CSV_AVAILABLE_FIELDS as $internal => $label) {
+                $col = trim($rawMap[$internal] ?? '');
+                if ($col !== '') {
+                    $fieldMap[$internal] = $col;
+                }
+            }
+            // code je povinný
+            if (empty($fieldMap['code'])) {
+                $fieldMap['code'] = 'code';
+            }
+        } else {
+            // XML mapování
+            foreach (self::XML_DEFAULT_MAP as $internal => $tag) {
+                $col = trim($rawMap[$internal] ?? $tag);
+                if ($col !== '') {
+                    $fieldMap[$internal] = $col;
+                }
+            }
+        }
+
+        // Ulož URL pokud se změnila
+        if ($feedUrl !== ($user['xml_feed_url'] ?? '')) {
+            User::update($userId, ['xml_feed_url' => $feedUrl]);
         }
 
         $probe = XmlDownloader::probe($feedUrl);
@@ -49,14 +114,9 @@ class XmlController extends BaseController
             $this->redirect('/xml');
         }
 
-        if ($feedUrl !== ($user['xml_feed_url'] ?? '')) {
-            User::update($userId, ['xml_feed_url' => $feedUrl]);
-        }
+        XmlImport::addToQueue($userId, $feedUrl, $priority, $format, $fieldMap);
 
-        $priority = max(1, min(10, (int)$this->request->post('priority', 5)));
-        XmlImport::addToQueue($userId, $feedUrl, $priority);
-
-        Session::flash('success', 'Import byl přidán do fronty a bude zpracován automaticky.');
+        Session::flash('success', 'Import byl přidán do fronty (' . strtoupper($format) . ').');
         $this->redirect('/xml');
     }
 

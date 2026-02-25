@@ -1,18 +1,18 @@
-<?php $pageTitle = 'XML Import'; ?>
+<?php $pageTitle = 'Import produktů'; ?>
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_HTML5, 'UTF-8'); ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0"><i class="bi bi-file-earmark-arrow-down me-2"></i>XML Import</h4>
+    <h4 class="fw-bold mb-0"><i class="bi bi-file-earmark-arrow-down me-2"></i>Import produktů</h4>
 </div>
 
 <div class="row g-4">
 
-    <!-- Levý sloupec: formulář + aktivní import -->
+    <!-- Levý sloupec: formulář -->
     <div class="col-12 col-lg-5">
 
-        <!-- Aktivní / čekající import -->
+        <!-- Aktivní import -->
         <?php if ($activeItem): ?>
-        <div class="card border-0 border-<?= $activeItem['status'] === 'processing' ? 'info' : 'warning' ?> border-opacity-50 mb-4" id="activeImportCard">
+        <div class="card mb-4 border-<?= $activeItem['status'] === 'processing' ? 'info' : 'warning' ?> border-opacity-50" id="activeImportCard">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-semibold">
                     <?php if ($activeItem['status'] === 'processing'): ?>
@@ -22,35 +22,26 @@
                     <?php endif; ?>
                 </h6>
                 <span class="badge bg-<?= $activeItem['status'] === 'processing' ? 'info' : 'warning text-dark' ?>">
-                    <?= $e($activeItem['status']) ?>
+                    <?= strtoupper($activeItem['feed_format'] ?? 'XML') ?> · <?= $e($activeItem['status']) ?>
                 </span>
             </div>
             <div class="card-body">
                 <div class="text-muted small text-truncate mb-3" title="<?= $e($activeItem['xml_feed_url']) ?>">
                     <i class="bi bi-link-45deg me-1"></i><?= $e($activeItem['xml_feed_url']) ?>
                 </div>
-
                 <?php if ($activeItem['status'] === 'processing'): ?>
                 <div class="mb-2">
                     <div class="d-flex justify-content-between small mb-1">
-                        <span>Zpracováno produktů</span>
+                        <span>Zpracováno</span>
                         <strong id="progressCount"><?= number_format($activeItem['products_processed']) ?></strong>
                     </div>
                     <div class="progress mb-1" style="height:8px;">
                         <div class="progress-bar progress-bar-striped progress-bar-animated bg-info"
-                             id="progressBar"
-                             style="width:<?= $activeItem['progress_percentage'] ?>%"></div>
+                             id="progressBar" style="width:<?= $activeItem['progress_percentage'] ?>%"></div>
                     </div>
                     <div class="text-end text-muted small" id="progressPct"><?= $activeItem['progress_percentage'] ?>%</div>
                 </div>
                 <?php endif; ?>
-
-                <?php if ($activeItem['retry_count'] > 0): ?>
-                <div class="alert alert-warning py-1 px-2 small mb-2">
-                    <i class="bi bi-arrow-repeat me-1"></i>Pokus <?= $activeItem['retry_count'] ?>/<?= $activeItem['max_retries'] ?>
-                </div>
-                <?php endif; ?>
-
                 <?php if ($activeItem['status'] === 'pending'): ?>
                 <form method="POST" action="<?= APP_URL ?>/xml/cancel">
                     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
@@ -65,65 +56,165 @@
         <?php endif; ?>
 
         <!-- Formulář nového importu -->
-        <div class="card border-0">
+        <div class="card">
             <div class="card-header">
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-plus-circle me-2 text-muted"></i>Nový import</h6>
             </div>
             <div class="card-body">
-                <?php if ($activeItem): ?>
-                <div class="alert alert-info py-2 small">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Nový import lze přidat i při probíhajícím — zařadí se do fronty.
-                </div>
-                <?php endif; ?>
-
-                <form method="POST" action="<?= APP_URL ?>/xml/start">
+                <form method="POST" action="<?= APP_URL ?>/xml/start" id="importForm">
                     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
 
+                    <!-- Formát -->
                     <div class="mb-3">
-                        <label class="form-label">URL XML feedu <span class="text-danger">*</span></label>
-                        <input type="url" name="xml_feed_url" class="form-control"
-                               placeholder="https://mujshop.cz/export/feed.xml"
-                               value="<?= $e($user['xml_feed_url'] ?? '') ?>" required>
-                        <div class="form-text">Odkaz na váš Shoptet XML produktový feed</div>
+                        <label class="form-label fw-medium">Formát feedu</label>
+                        <div class="d-flex gap-2">
+                            <input type="radio" class="btn-check" name="feed_format" id="fmt_xml" value="xml" checked>
+                            <label class="btn btn-outline-secondary btn-sm flex-fill" for="fmt_xml">
+                                <i class="bi bi-filetype-xml me-1"></i>XML
+                            </label>
+                            <input type="radio" class="btn-check" name="feed_format" id="fmt_csv" value="csv">
+                            <label class="btn btn-outline-secondary btn-sm flex-fill" for="fmt_csv">
+                                <i class="bi bi-filetype-csv me-1"></i>CSV
+                            </label>
+                        </div>
                     </div>
 
-                    <div class="mb-4">
+                    <!-- URL feedu -->
+                    <div class="mb-3">
+                        <label class="form-label">URL feedu <span class="text-danger">*</span></label>
+                        <input type="url" name="feed_url" class="form-control"
+                               placeholder="https://mujshop.cz/export/feed.xml"
+                               value="<?= $e($user['xml_feed_url'] ?? '') ?>" required>
+                    </div>
+
+                    <!-- Priorita -->
+                    <div class="mb-3">
                         <label class="form-label">Priorita</label>
                         <select name="priority" class="form-select">
                             <option value="1">🔴 Vysoká (1)</option>
                             <option value="5" selected>🟡 Normální (5)</option>
                             <option value="10">🟢 Nízká (10)</option>
                         </select>
-                        <div class="form-text">Nižší číslo = vyšší priorita ve frontě</div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-play-fill me-2"></i>Spustit import
-                    </button>
+                    <!-- CSV Mapování sloupců (zobrazí se jen pro CSV) -->
+                    <div id="csvMapping" style="display:none;">
+                        <hr class="my-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-medium mb-0">Mapování sloupců CSV</label>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="resetMapping">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>Výchozí
+                            </button>
+                        </div>
+                        <div class="text-muted small mb-3">
+                            Zadej <strong>přesný název sloupce</strong> v CSV pro každé pole.
+                            Prázdné pole = bude ignorováno.
+                        </div>
+
+                        <?php
+                        // Povinná pole
+                        $required = ['code' => 'Kód (code) *', 'pairCode' => 'Grupování variant (pairCode)'];
+                        // Volitelná pole
+                        $optional = [
+                            'name'         => 'Název produktu',
+                            'category'     => 'Kategorie',
+                            'price'        => 'Cena',
+                            'brand'        => 'Značka',
+                            'description'  => 'Popis',
+                            'availability' => 'Dostupnost',
+                            'images'       => 'Obrázek (URL)',
+                        ];
+                        ?>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0" style="font-size:.8rem;">
+                                <thead>
+                                    <tr>
+                                        <th style="width:45%">Pole v aplikaci</th>
+                                        <th>Sloupec v CSV</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach (array_merge($required, $optional) as $internal => $label):
+                                    $default = $csvDefaultMap[$internal] ?? $internal;
+                                ?>
+                                <tr>
+                                    <td class="align-middle">
+                                        <?= $e($label) ?>
+                                    </td>
+                                    <td>
+                                        <input type="text"
+                                               name="field_map[<?= $e($internal) ?>]"
+                                               class="form-control form-control-sm csv-map-input"
+                                               data-default="<?= $e($default) ?>"
+                                               value="<?= $e($default) ?>"
+                                               placeholder="název sloupce">
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="alert alert-secondary py-2 px-3 mt-2 small">
+                            <i class="bi bi-lightbulb me-1"></i>
+                            <strong>Tip:</strong> Shoptet výchozí CSV má sloupce:
+                            <code>code;pairCode;name;defaultCategory</code>
+                        </div>
+                    </div>
+
+                    <!-- XML Mapování (volitelné, skryté v accordionu) -->
+                    <div id="xmlMapping">
+                        <div class="accordion accordion-flush mt-3" id="xmlAccordion">
+                            <div class="accordion-item border rounded">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed py-2 px-3 small" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#xmlMapBody">
+                                        <i class="bi bi-sliders me-2 text-muted"></i>Pokročilé: vlastní mapování XML tagů
+                                    </button>
+                                </h2>
+                                <div id="xmlMapBody" class="accordion-collapse collapse">
+                                    <div class="accordion-body py-2">
+                                        <div class="text-muted small mb-2">
+                                            XPath tagy pro Shoptet XML (výchozí fungují pro standardní feed).
+                                        </div>
+                                        <table class="table table-sm mb-0" style="font-size:.8rem;">
+                                            <thead><tr><th>Pole</th><th>XML tag</th></tr></thead>
+                                            <tbody>
+                                            <?php foreach ($xmlDefaultMap as $internal => $tag): ?>
+                                            <tr>
+                                                <td class="align-middle text-muted"><?= $e($internal) ?></td>
+                                                <td>
+                                                    <input type="text"
+                                                           name="field_map[<?= $e($internal) ?>]"
+                                                           class="form-control form-control-sm"
+                                                           value="<?= $e($tag) ?>">
+                                                </td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-play-fill me-2"></i>Spustit import
+                        </button>
+                    </div>
                 </form>
-
-                <hr class="border-secondary my-4">
-
-                <div class="small text-muted">
-                    <p class="fw-semibold text-body mb-2"><i class="bi bi-info-circle me-1"></i>Jak to funguje?</p>
-                    <ol class="ps-3 mb-0">
-                        <li>Feed se zařadí do fronty ke zpracování</li>
-                        <li>Cron job automaticky stáhne XML (i 500MB+)</li>
-                        <li>Produkty se importují po dávkách 500 ks</li>
-                        <li>Při chybě proběhnou až 3 automatické pokusy</li>
-                    </ol>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- Pravý sloupec: historie a fronta -->
+    <!-- Pravý sloupec: fronta + historie -->
     <div class="col-12 col-lg-7">
 
-        <!-- Fronta -->
         <?php if (!empty($queue)): ?>
-        <div class="card border-0 mb-4">
+        <div class="card mb-4">
             <div class="card-header">
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-list-task me-2 text-muted"></i>Fronta zpracování</h6>
             </div>
@@ -131,7 +222,7 @@
                 <div class="table-responsive">
                     <table class="table table-hover mb-0" style="font-size:.85rem;">
                         <thead><tr>
-                            <th>#</th><th>Stav</th><th>Pokrok</th><th>Pokusů</th><th>Přidáno</th>
+                            <th>#</th><th>Formát</th><th>Stav</th><th>Pokrok</th><th>Pokusů</th><th>Přidáno</th>
                         </tr></thead>
                         <tbody>
                         <?php foreach ($queue as $q):
@@ -139,19 +230,16 @@
                         ?>
                         <tr>
                             <td class="text-muted"><?= $q['id'] ?></td>
+                            <td><span class="badge bg-secondary"><?= strtoupper($q['feed_format'] ?? 'XML') ?></span></td>
                             <td><span class="badge bg-<?= $colors[$q['status']] ?? 'secondary' ?>"><?= $e($q['status']) ?></span></td>
                             <td>
                                 <?php if ($q['status'] === 'processing'): ?>
                                 <div class="progress" style="height:5px;width:80px;">
                                     <div class="progress-bar bg-info" style="width:<?= $q['progress_percentage'] ?>%"></div>
                                 </div>
-                                <span class="text-muted" style="font-size:.7rem;"><?= $q['progress_percentage'] ?>% · <?= number_format($q['products_processed']) ?> ks</span>
+                                <span class="text-muted" style="font-size:.7rem;"><?= $q['progress_percentage'] ?>%</span>
                                 <?php elseif ($q['status'] === 'completed'): ?>
                                 <span class="text-success small"><?= number_format($q['products_processed']) ?> ks</span>
-                                <?php elseif ($q['error_message']): ?>
-                                <span class="text-danger small" title="<?= $e($q['error_message']) ?>">
-                                    <i class="bi bi-exclamation-triangle"></i> Chyba
-                                </span>
                                 <?php else: ?>
                                 <span class="text-muted">—</span>
                                 <?php endif; ?>
@@ -167,22 +255,21 @@
         </div>
         <?php endif; ?>
 
-        <!-- Historie importů -->
-        <div class="card border-0">
+        <!-- Historie -->
+        <div class="card">
             <div class="card-header">
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2 text-muted"></i>Historie importů</h6>
             </div>
             <div class="card-body p-0">
                 <?php if (empty($history)): ?>
                 <div class="text-center py-5 text-muted">
-                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                    Zatím žádné importy
+                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>Zatím žádné importy
                 </div>
                 <?php else: ?>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0" style="font-size:.85rem;">
                         <thead><tr>
-                            <th>Stav</th><th>Nové</th><th>Aktualizováno</th><th>Čas</th><th>Trvání</th>
+                            <th>Formát</th><th>Stav</th><th>Nové</th><th>Akt.</th><th>Čas</th><th>Trvání</th>
                         </tr></thead>
                         <tbody>
                         <?php foreach ($history as $h):
@@ -193,14 +280,14 @@
                                 : '—';
                         ?>
                         <tr>
+                            <td><span class="badge bg-secondary"><?= strtoupper($h['feed_format'] ?? 'XML') ?></span></td>
                             <td>
                                 <span class="badge bg-<?= $colors[$h['status']] ?? 'secondary' ?>">
                                     <?= $labels[$h['status']] ?? $e($h['status']) ?>
                                 </span>
                                 <?php if ($h['error_message']): ?>
                                 <i class="bi bi-info-circle text-danger ms-1"
-                                   title="<?= $e($h['error_message']) ?>"
-                                   data-bs-toggle="tooltip"></i>
+                                   title="<?= $e($h['error_message']) ?>" data-bs-toggle="tooltip"></i>
                                 <?php endif; ?>
                             </td>
                             <td><?= number_format($h['products_imported']) ?></td>
@@ -218,29 +305,50 @@
     </div>
 </div>
 
-<?php if ($activeItem && in_array($activeItem['status'], ['pending', 'processing'])): ?>
 <script>
-// Polling pro live progress
 (function() {
+    var fmtXml = document.getElementById('fmt_xml');
+    var fmtCsv = document.getElementById('fmt_csv');
+    var csvDiv  = document.getElementById('csvMapping');
+    var xmlDiv  = document.getElementById('xmlMapping');
+
+    function toggleFormat() {
+        var isCsv = fmtCsv.checked;
+        csvDiv.style.display = isCsv ? '' : 'none';
+        xmlDiv.style.display = isCsv ? 'none' : '';
+    }
+
+    fmtXml.addEventListener('change', toggleFormat);
+    fmtCsv.addEventListener('change', toggleFormat);
+    toggleFormat();
+
+    // Reset mapování na výchozí
+    document.getElementById('resetMapping').addEventListener('click', function() {
+        document.querySelectorAll('.csv-map-input').forEach(function(el) {
+            el.value = el.dataset.default;
+        });
+    });
+
+    <?php if ($activeItem && in_array($activeItem['status'], ['pending', 'processing'])): ?>
+    // Polling pro live progress
     var itemId   = <?= (int)$activeItem['id'] ?>;
     var interval = setInterval(function() {
-        $.getJSON('<?= APP_URL ?>/xml/status?id=' + itemId, function(data) {
-            if (!data.item) { clearInterval(interval); return; }
-            var item = data.item;
-
-            if (item.status === 'processing') {
-                $('#progressBar').css('width', item.progress_percentage + '%');
-                $('#progressPct').text(item.progress_percentage + '%');
-                $('#progressCount').text(parseInt(item.products_processed).toLocaleString('cs'));
-            }
-
-            if (!data.active) {
-                clearInterval(interval);
-                // Reload stránky po dokončení
-                setTimeout(function() { window.location.reload(); }, 1500);
-            }
-        });
-    }, 3000); // Každé 3 sekundy
+        fetch('<?= APP_URL ?>/xml/status?id=' + itemId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.item) { clearInterval(interval); return; }
+                var item = data.item;
+                if (item.status === 'processing') {
+                    document.getElementById('progressBar').style.width = item.progress_percentage + '%';
+                    document.getElementById('progressPct').textContent  = item.progress_percentage + '%';
+                    document.getElementById('progressCount').textContent = parseInt(item.products_processed).toLocaleString('cs');
+                }
+                if (!data.active) {
+                    clearInterval(interval);
+                    setTimeout(function() { window.location.reload(); }, 1500);
+                }
+            });
+    }, 3000);
+    <?php endif; ?>
 })();
 </script>
-<?php endif; ?>
