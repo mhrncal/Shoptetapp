@@ -1,6 +1,24 @@
 <?php $pageTitle = 'Produkty'; ?>
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_HTML5, 'UTF-8'); ?>
 
+<?php
+// Načti kódy variant pro zobrazené produkty (GROUP_CONCAT)
+$db = \ShopCode\Core\Database::getInstance();
+$productIds = array_column($products, 'id');
+$variantCodes = [];
+if (!empty($productIds)) {
+    $ph   = implode(',', array_fill(0, count($productIds), '?'));
+    $stmt = $db->prepare("
+        SELECT product_id, GROUP_CONCAT(sku ORDER BY sku SEPARATOR ', ') AS codes
+        FROM product_variants
+        WHERE product_id IN ({$ph}) AND sku IS NOT NULL AND sku != ''
+        GROUP BY product_id
+    ");
+    $stmt->execute($productIds);
+    $variantCodes = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+}
+?>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="fw-bold mb-0"><i class="bi bi-box me-2"></i>Produkty</h4>
@@ -12,19 +30,19 @@
 </div>
 
 <!-- Filtry -->
-<div class="card border-0 mb-4">
+<div class="card mb-4">
     <div class="card-body py-3">
         <form method="GET" class="row g-2 align-items-end">
-            <div class="col-12 col-md-4">
-                <div class="input-group input-group-sm">
+            <div class="col-12 col-md-5">
+                <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
                     <input type="text" name="search" class="form-control"
-                           placeholder="Název, ID, značka..."
+                           placeholder="Název, kód, SKU..."
                            value="<?= $e($filters['search'] ?? '') ?>">
                 </div>
             </div>
-            <div class="col-6 col-md-2">
-                <select name="category" class="form-select form-select-sm">
+            <div class="col-6 col-md-3">
+                <select name="category" class="form-select">
                     <option value="">Kategorie (vše)</option>
                     <?php foreach ($categories as $cat): ?>
                     <option value="<?= $e($cat) ?>" <?= ($filters['category'] ?? '') === $cat ? 'selected' : '' ?>>
@@ -33,41 +51,23 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-6 col-md-2">
-                <select name="brand" class="form-select form-select-sm">
-                    <option value="">Značka (vše)</option>
-                    <?php foreach ($brands as $brand): ?>
-                    <option value="<?= $e($brand) ?>" <?= ($filters['brand'] ?? '') === $brand ? 'selected' : '' ?>>
-                        <?= $e($brand) ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
+            <div class="col-3 col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtr</button>
             </div>
-            <div class="col-6 col-md-2">
-                <select name="sort" class="form-select form-select-sm">
-                    <option value="">Řadit: Nejnovější</option>
-                    <option value="name_asc"   <?= ($filters['sort'] ?? '') === 'name_asc'   ? 'selected' : '' ?>>Název A–Z</option>
-                    <option value="price_asc"  <?= ($filters['sort'] ?? '') === 'price_asc'  ? 'selected' : '' ?>>Cena ↑</option>
-                    <option value="price_desc" <?= ($filters['sort'] ?? '') === 'price_desc' ? 'selected' : '' ?>>Cena ↓</option>
-                </select>
-            </div>
-            <div class="col-3 col-md-1">
-                <button type="submit" class="btn btn-primary btn-sm w-100">Filtr</button>
-            </div>
-            <div class="col-3 col-md-1">
-                <a href="<?= APP_URL ?>/products" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
+            <div class="col-3 col-md-2">
+                <a href="<?= APP_URL ?>/products" class="btn btn-outline-secondary w-100">Reset</a>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Tabulka produktů -->
-<div class="card border-0">
+<div class="card">
     <div class="card-body p-0">
         <?php if (empty($products)): ?>
         <div class="text-center py-5 text-muted">
             <i class="bi bi-box fs-1 d-block mb-3"></i>
-            <?php if (!empty($filters)): ?>
+            <?php if (!empty(array_filter($filters))): ?>
                 <p>Žádné produkty neodpovídají filtru.</p>
                 <a href="<?= APP_URL ?>/products" class="btn btn-outline-secondary btn-sm">Zobrazit vše</a>
             <?php else: ?>
@@ -79,62 +79,56 @@
         </div>
         <?php else: ?>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" style="font-size:.875rem;">
+            <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th style="width:60px;">Foto</th>
                         <th>Název produktu</th>
-                        <th>Shoptet ID</th>
+                        <th>Kód</th>
                         <th>Kategorie</th>
-                        <th>Značka</th>
-                        <th class="text-end">Cena</th>
-                        <th>Dostupnost</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($products as $p):
-                        $images = $p['images'] ? json_decode($p['images'], true) : [];
-                        $thumb  = $images[0] ?? null;
+                        // Kód: varianta má skupinové kódy, produkt má svůj sku
+                        $hasVariants  = isset($variantCodes[$p['id']]);
+                        $displayCode  = $hasVariants
+                            ? $variantCodes[$p['id']]   // "KOD1, KOD2, KOD3"
+                            : ($p['sku'] ?? null);       // vlastní SKU produktu
                     ?>
                     <tr>
                         <td>
-                            <?php if ($thumb): ?>
-                            <img src="<?= $e($thumb) ?>" alt=""
-                                 style="width:44px;height:44px;object-fit:cover;border-radius:6px;"
-                                 loading="lazy" onerror="this.style.display='none'">
-                            <?php else: ?>
-                            <div style="width:44px;height:44px;background:rgba(255,255,255,.05);border-radius:6px;"
-                                 class="d-flex align-items-center justify-content-center text-muted">
-                                <i class="bi bi-image"></i>
-                            </div>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <a href="<?= APP_URL ?>/products/<?= $p['id'] ?>" class="text-decoration-none fw-semibold">
+                            <a href="<?= APP_URL ?>/products/<?= $p['id'] ?>"
+                               class="text-decoration-none fw-medium">
                                 <?= $e($p['name']) ?>
                             </a>
                         </td>
-                        <td class="text-muted font-monospace small"><?= $e($p['shoptet_id']) ?></td>
-                        <td class="text-muted small"><?= $e($p['category'] ?? '—') ?></td>
-                        <td class="text-muted small"><?= $e($p['brand'] ?? '—') ?></td>
-                        <td class="text-end fw-semibold">
-                            <?php if ($p['price'] !== null): ?>
-                            <?= number_format((float)$p['price'], 2, ',', ' ') ?>
-                            <span class="text-muted small"><?= $e($p['currency']) ?></span>
-                            <?php else: ?>
-                            <span class="text-muted">—</span>
-                            <?php endif; ?>
-                        </td>
                         <td>
-                            <?php if ($p['availability']): ?>
-                            <span class="badge bg-success bg-opacity-20 text-success small">
-                                <?= $e($p['availability']) ?>
-                            </span>
+                            <?php if ($displayCode): ?>
+                                <?php if ($hasVariants): ?>
+                                    <?php
+                                    $codes = explode(', ', $displayCode);
+                                    $shown = array_slice($codes, 0, 3);
+                                    $more  = count($codes) - 3;
+                                    ?>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <?php foreach ($shown as $code): ?>
+                                        <span class="badge bg-secondary font-monospace" style="font-size:.75rem;">
+                                            <?= $e(trim($code)) ?>
+                                        </span>
+                                        <?php endforeach; ?>
+                                        <?php if ($more > 0): ?>
+                                        <span class="text-muted small align-self-center">+<?= $more ?> další</span>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <span class="font-monospace text-muted small"><?= $e($displayCode) ?></span>
+                                <?php endif; ?>
                             <?php else: ?>
-                            <span class="text-muted small">—</span>
+                                <span class="text-muted">—</span>
                             <?php endif; ?>
                         </td>
+                        <td class="text-muted small"><?= $e($p['category'] ?? '—') ?></td>
                         <td>
                             <a href="<?= APP_URL ?>/products/<?= $p['id'] ?>"
                                class="btn btn-sm btn-outline-secondary">
@@ -158,10 +152,10 @@
         <nav>
             <ul class="pagination pagination-sm mb-0">
                 <?php
-                $pages    = (int)ceil($total / $perPage);
-                $start    = max(1, $page - 2);
-                $end      = min($pages, $page + 2);
-                $qs       = http_build_query(array_merge($filters, ['page' => 0]));
+                $pages = (int)ceil($total / $perPage);
+                $start = max(1, $page - 2);
+                $end   = min($pages, $page + 2);
+                $qs    = http_build_query(array_merge($filters, ['page' => 0]));
                 ?>
                 <?php if ($page > 1): ?>
                 <li class="page-item">

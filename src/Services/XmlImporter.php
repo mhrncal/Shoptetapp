@@ -63,48 +63,50 @@ class XmlImporter
     private function upsertProducts(): void
     {
         $batch  = $this->productBatch;
-        $ph     = implode(', ', array_fill(0, count($batch), '(?,?,?,?,?,?,?,?,?,?,?,?)'));
+        // 13 hodnot na řádek (přidáno sku)
+        $ph     = implode(', ', array_fill(0, count($batch), '(?,?,?,?,?,?,?,?,?,?,?,?,?)'));
         $values = [];
 
         foreach ($batch as [$p, $variants]) {
             array_push($values,
                 $this->userId,
                 $p['shoptet_id'],
-                $p['name'] ?? '',
-                $p['description'],
-                $p['price'],
-                $p['currency'] ?? 'CZK',
-                $p['category'],
-                $p['brand'],
-                $p['availability'],
-                $p['images'],
-                $p['parameters'],
-                $p['xml_data']
+                $p['sku']         ?? null,   // CODE z XML
+                $p['name']        ?? '',
+                $p['description'] ?? null,
+                $p['price']       ?? null,
+                $p['currency']    ?? 'CZK',
+                $p['category']    ?? null,
+                $p['brand']       ?? null,
+                $p['availability']?? null,
+                $p['images']      ?? null,
+                $p['parameters']  ?? null,
+                $p['xml_data']    ?? null
             );
         }
 
-        $stmt = $this->db->prepare("
+        $this->db->prepare("
             INSERT INTO products
-                (user_id, shoptet_id, name, description, price, currency,
+                (user_id, shoptet_id, sku, name, description, price, currency,
                  category, brand, availability, images, parameters, xml_data)
             VALUES {$ph}
             ON DUPLICATE KEY UPDATE
-                name=VALUES(name), description=VALUES(description),
+                sku=VALUES(sku), name=VALUES(name), description=VALUES(description),
                 price=VALUES(price), currency=VALUES(currency),
                 category=VALUES(category), brand=VALUES(brand),
                 availability=VALUES(availability), images=VALUES(images),
                 parameters=VALUES(parameters), xml_data=VALUES(xml_data),
                 updated_at=NOW()
-        ");
-        $stmt->execute($values);
-        $affected        = $stmt->rowCount();
+        ")->execute($values);
+
+        $affected        = $this->db->query('SELECT ROW_COUNT()')->fetchColumn();
         $this->updated  += (int)($affected / 2);
         $this->inserted += $affected - (int)($affected / 2);
 
         // Načteme DB id pro varianty
         $shoptetIds = array_column(array_column($batch, 0), 'shoptet_id');
         $inPh       = implode(',', array_fill(0, count($shoptetIds), '?'));
-        $stmt2      = $this->db->prepare("SELECT shoptet_id, id FROM products WHERE user_id=? AND shoptet_id IN ({$inPh})");
+        $stmt2 = $this->db->prepare("SELECT shoptet_id, id FROM products WHERE user_id=? AND shoptet_id IN ({$inPh})");
         $stmt2->execute(array_merge([$this->userId], $shoptetIds));
         $idMap = $stmt2->fetchAll(PDO::FETCH_KEY_PAIR);
 
@@ -122,19 +124,28 @@ class XmlImporter
     {
         if (empty($this->variantBatch)) return;
         foreach (array_chunk($this->variantBatch, self::BATCH_SIZE) as $chunk) {
-            $ph     = implode(', ', array_fill(0, count($chunk), '(?,?,?,?,?,?,?)'));
+            // 8 hodnot na řádek (přidáno sku)
+            $ph     = implode(', ', array_fill(0, count($chunk), '(?,?,?,?,?,?,?,?)'));
             $values = [];
             foreach ($chunk as $v) {
-                array_push($values, $this->userId, $v['product_id'], $v['shoptet_variant_id'],
-                    $v['name'], $v['price'], $v['stock'] ?? 0, $v['parameters']);
+                array_push($values,
+                    $this->userId,
+                    $v['product_id'],
+                    $v['shoptet_variant_id'],
+                    $v['sku']        ?? null,  // CODE varianty z XML
+                    $v['name']       ?? null,
+                    $v['price']      ?? null,
+                    $v['stock']      ?? 0,
+                    $v['parameters'] ?? null
+                );
             }
             $this->db->prepare("
                 INSERT INTO product_variants
-                    (user_id, product_id, shoptet_variant_id, name, price, stock, parameters)
+                    (user_id, product_id, shoptet_variant_id, sku, name, price, stock, parameters)
                 VALUES {$ph}
                 ON DUPLICATE KEY UPDATE
-                    name=VALUES(name), price=VALUES(price), stock=VALUES(stock),
-                    parameters=VALUES(parameters), updated_at=NOW()
+                    sku=VALUES(sku), name=VALUES(name), price=VALUES(price),
+                    stock=VALUES(stock), parameters=VALUES(parameters), updated_at=NOW()
             ")->execute($values);
         }
     }
