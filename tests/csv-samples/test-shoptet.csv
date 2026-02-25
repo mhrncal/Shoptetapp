@@ -1,0 +1,11 @@
+code;pairCode;name;defaultCategory;price
+SKU-001;;Jednoduchý produkt A;Kategorie 1;299.50
+SKU-002;;Jednoduchý produkt B;Kategorie 2;499
+SKU-003;PAIR-100;Tričko;Oblečení;399
+SKU-004;PAIR-100;Tričko M;Oblečení;399
+SKU-005;PAIR-100;Tričko L;Oblečení;399
+SKU-006;;Produkt s českou diakřitikou ěščřžýá;Kategorie 3;199.99
+SKU-007;PAIR-200;Kalhoty;Oblečení;799
+SKU-008;PAIR-200;Kalhoty 32;Oblečení;799
+SKU-009;PAIR-200;Kalhoty 34;Oblečení;799
+SKU-010;PAIR-200;Kalhoty 36;Oblečení;799
