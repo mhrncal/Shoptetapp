@@ -13,20 +13,24 @@
 <div class="auth-bg">
     <div class="auth-card animate-fade-in">
 
-        <!-- Logo -->
-        <div class="auth-logo">
-            <img src="<?= APP_URL ?>/assets/shopcode-logo.png" alt="ShopCode">
+        <!-- CardHeader — logo, title, description -->
+        <div class="auth-card-header">
+            <div class="auth-logo">
+                <img src="<?= APP_URL ?>/assets/shopcode-logo.png" alt="ShopCode">
+            </div>
         </div>
 
-        <!-- Flash -->
-        <?php foreach ($flash as $f): ?>
-        <div class="alert alert-<?= $f['type'] === 'error' ? 'danger' : $f['type'] ?> alert-dismissible fade show mb-4" role="alert">
-            <?= $f['message'] ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        <?php endforeach; ?>
+        <!-- CardContent -->
+        <div class="auth-card-body">
+            <?php foreach ($flash as $f): ?>
+            <div class="alert alert-<?= $f['type'] === 'error' ? 'danger' : $f['type'] ?> alert-dismissible fade show mb-4" role="alert">
+                <?= $f['message'] ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <?php endforeach; ?>
 
-        <?= $content ?>
+            <?= $content ?>
+        </div>
     </div>
 </div>
 
