@@ -6,7 +6,7 @@
     <title><?= \ShopCode\Core\View::e($pageTitle ?? 'ShopCode') ?> — ShopCode</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/app.css">
+    <link rel="stylesheet" href="<?= ASSETS_URL ?>/assets/css/app.css">
 </head>
 <body>
 
@@ -16,7 +16,7 @@
         <!-- CardHeader — logo, title, description -->
         <div class="auth-card-header">
             <div class="auth-logo">
-                <img src="<?= APP_URL ?>/assets/shopcode-logo.png" alt="ShopCode">
+                <img src="<?= ASSETS_URL ?>/assets/shopcode-logo.png" alt="ShopCode">
             </div>
         </div>
 

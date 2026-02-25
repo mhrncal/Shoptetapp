@@ -14,6 +14,7 @@ if (!defined('ROOT')) {
 // ---- Aplikace -----------------------------------------------
 define('APP_NAME',    'ShopCode');
 define('APP_URL',     'http://localhost');   // bez trailing slash
+define('ASSETS_URL',  APP_URL . '/public');  // cesta ke statickým souborům
 define('APP_ENV',     'development');        // development | production
 define('APP_DEBUG',   true);                 // false v produkci!
 
