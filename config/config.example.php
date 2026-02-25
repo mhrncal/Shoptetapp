@@ -3,6 +3,12 @@
 // ShopCode — Konfigurace
 // Zkopíruj jako config/config.php a uprav hodnoty
 // config/config.php je v .gitignore — nikdy se necommituje!
+
+// ROOT může být definováno z index.php nebo cron skriptů.
+// Pokud není (přímé volání seed.php, schema.sql, apod.), definujeme zde.
+if (!defined('ROOT')) {
+    define('ROOT', dirname(__DIR__));
+}
 // ============================================================
 
 // ---- Aplikace -----------------------------------------------
