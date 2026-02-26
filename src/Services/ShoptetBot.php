@@ -28,9 +28,21 @@ class ShoptetBot
 
     private RemoteWebDriver $driver;
     private array $log = [];
+    private string $shoptetUrl;
+    private string $shoptetEmail;
+    private string $shoptetPassword;
 
-    public function __construct()
+    /**
+     * @param string $shoptetUrl Shoptet admin URL (např. https://admin.shoptet.cz)
+     * @param string $shoptetEmail Shoptet přihlašovací email
+     * @param string $shoptetPassword Shoptet heslo
+     */
+    public function __construct(string $shoptetUrl, string $shoptetEmail, string $shoptetPassword)
     {
+        $this->shoptetUrl = $shoptetUrl;
+        $this->shoptetEmail = $shoptetEmail;
+        $this->shoptetPassword = $shoptetPassword;
+        
         $options = new ChromeOptions();
         $options->addArguments([
             '--headless',
@@ -99,8 +111,7 @@ class ShoptetBot
 
     private function login(): void
     {
-        $shoptetUrl = defined('SHOPTET_URL') ? SHOPTET_URL : 'https://admin.shoptet.cz';
-        $this->driver->get($shoptetUrl . '/admin/login/');
+        $this->driver->get($this->shoptetUrl . '/admin/login/');
 
         $wait = new WebDriverWait($this->driver, self::WAIT_TIMEOUT);
 
@@ -110,11 +121,11 @@ class ShoptetBot
                 WebDriverBy::name('username')
             )
         );
-        $emailField->clear()->sendKeys(defined('SHOPTET_EMAIL') ? SHOPTET_EMAIL : '');
+        $emailField->clear()->sendKeys($this->shoptetEmail);
 
         $this->driver->findElement(WebDriverBy::name('password'))
                      ->clear()
-                     ->sendKeys(defined('SHOPTET_PASSWORD') ? SHOPTET_PASSWORD : '');
+                     ->sendKeys($this->shoptetPassword);
 
         $this->driver->findElement(WebDriverBy::cssSelector('button[type=submit], input[type=submit]'))
                      ->click();
@@ -133,8 +144,7 @@ class ShoptetBot
     private function navigateToImport(): void
     {
         // Shoptet import fotek: Katalog → Import a export → Import fotek
-        $shoptetUrl = defined('SHOPTET_URL') ? SHOPTET_URL : 'https://admin.shoptet.cz';
-        $this->driver->get($shoptetUrl . '/admin/products/import-photos/');
+        $this->driver->get($this->shoptetUrl . '/admin/products/import-photos/');
 
         $wait = new WebDriverWait($this->driver, self::WAIT_TIMEOUT);
         $wait->until(

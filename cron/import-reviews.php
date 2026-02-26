@@ -11,8 +11,8 @@ require ROOT . '/config/config.php';
 require ROOT . '/vendor/autoload.php'; // pro facebook/webdriver
 
 use ShopCode\Core\Database;
-use ShopCode\Models\Review;
-use ShopCode\Services\{CsvGenerator, ShoptetBot, AdminNotifier};
+use ShopCode\Models\{Review, User};
+use ShopCode\Services\{CsvGenerator, ShoptetBot, AdminNotifier, Encryption};
 
 // ── Mutex lock ─────────────────────────────────────────────
 $lockFile = ROOT . '/tmp/import-reviews.lock';
@@ -47,31 +47,47 @@ try {
     }
 
     // ── Načteme všechny uživatele se schválenými neimportovanými recenzemi ──
+    // POUZE uživatele s vyplněnými Shoptet credentials a povoleným auto-importem
     $stmt = $db->prepare("
-        SELECT DISTINCT user_id FROM reviews
-        WHERE status = 'approved' AND imported = 0
+        SELECT DISTINCT u.id, u.shoptet_url, u.shoptet_email, u.shoptet_password_encrypted
+        FROM reviews r
+        JOIN users u ON u.id = r.user_id
+        WHERE r.status = 'approved' 
+          AND r.imported = 0
+          AND u.shoptet_auto_import = 1
+          AND u.shoptet_email IS NOT NULL
+          AND u.shoptet_password_encrypted IS NOT NULL
     ");
     $stmt->execute();
-    $userIds = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    $users = $stmt->fetchAll();
 
-    if (empty($userIds)) {
-        $log("Žádné recenze ke zpracování.");
+    if (empty($users)) {
+        $log("Žádné recenze ke zpracování (nebo uživatelé nemají nastavené Shoptet credentials).");
         // Reset retry counter při úspěchu
         @unlink(RETRY_LOG_FILE);
         exit(0);
     }
 
-    $log("Nalezeno " . count($userIds) . " uživatelů se schválenými recenzemi.");
+    $log("Nalezeno " . count($users) . " uživatelů se schválenými recenzemi a Shoptet credentials.");
 
     $csvGen = new CsvGenerator();
-    $bot    = new ShoptetBot();
+    $encryption = new Encryption();
     $totalImported = 0;
 
-    foreach ($userIds as $userId) {
-        $reviews = Review::getPendingImport((int)$userId);
+    foreach ($users as $user) {
+        $userId = (int)$user['id'];
+        $reviews = Review::getPendingImport($userId);
         if (empty($reviews)) continue;
 
         $log("Uživatel #{$userId}: " . count($reviews) . " recenzí ke zpracování.");
+
+        // Dešifrování Shoptet hesla
+        try {
+            $shoptetPassword = $encryption->decrypt($user['shoptet_password_encrypted']);
+        } catch (\Throwable $e) {
+            $log("❌ Chyba při dešifrování hesla pro uživatele #{$userId}: " . $e->getMessage());
+            continue;
+        }
 
         try {
             // Generujeme CSV
@@ -80,7 +96,13 @@ try {
 
             $log("CSV vygenerován: " . basename($csvPath) . " (" . count($reviewIds) . " recenzí)");
 
-            // Spustíme Selenium import
+            // Spustíme Selenium import s uživatelovými credentials
+            $bot = new ShoptetBot(
+                $user['shoptet_url'] ?: 'https://admin.shoptet.cz',
+                $user['shoptet_email'],
+                $shoptetPassword
+            );
+            
             $result = $bot->importCsv($csvPath);
 
             // Logujeme výstup Selenia

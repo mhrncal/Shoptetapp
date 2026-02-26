@@ -224,4 +224,86 @@ class User
         }
         return $result;
     }
+
+    /**
+     * Uloží Shoptet přihlašovací údaje (heslo šifrovaně)
+     */
+    public static function updateShoptetCredentials(
+        int $userId,
+        string $shoptetEmail,
+        string $shoptetPassword,
+        ?string $shoptetUrl = null,
+        bool $autoImport = true
+    ): bool {
+        $db = Database::getInstance();
+        $encryption = new \ShopCode\Services\Encryption();
+        
+        $encryptedPassword = $encryption->encrypt($shoptetPassword);
+        
+        $stmt = $db->prepare('
+            UPDATE users 
+            SET shoptet_email = ?,
+                shoptet_password_encrypted = ?,
+                shoptet_url = ?,
+                shoptet_auto_import = ?
+            WHERE id = ?
+        ');
+        
+        return $stmt->execute([
+            $shoptetEmail,
+            $encryptedPassword,
+            $shoptetUrl ?: 'https://admin.shoptet.cz',
+            $autoImport ? 1 : 0,
+            $userId
+        ]);
+    }
+
+    /**
+     * Získá dešifrované Shoptet heslo
+     */
+    public static function getShoptetPassword(int $userId): ?string
+    {
+        $user = self::findById($userId);
+        
+        if (!$user || empty($user['shoptet_password_encrypted'])) {
+            return null;
+        }
+        
+        $encryption = new \ShopCode\Services\Encryption();
+        
+        try {
+            return $encryption->decrypt($user['shoptet_password_encrypted']);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Zkontroluje, jestli uživatel má nastavené Shoptet credentials
+     */
+    public static function hasShoptetCredentials(int $userId): bool
+    {
+        $user = self::findById($userId);
+        
+        return $user 
+            && !empty($user['shoptet_email']) 
+            && !empty($user['shoptet_password_encrypted']);
+    }
+
+    /**
+     * Smaže Shoptet credentials
+     */
+    public static function deleteShoptetCredentials(int $userId): bool
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare('
+            UPDATE users 
+            SET shoptet_email = NULL,
+                shoptet_password_encrypted = NULL,
+                shoptet_auto_import = 0
+            WHERE id = ?
+        ');
+        
+        return $stmt->execute([$userId]);
+    }
 }
