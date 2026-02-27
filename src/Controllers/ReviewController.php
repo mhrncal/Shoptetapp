@@ -19,6 +19,16 @@ class ReviewController extends BaseController
         $reviews = Review::allForUser($userId, $filters, $page, 25);
         $total   = Review::count($userId, $filters);
         $counts  = Review::countByStatus($userId);
+        
+        // URL k automaticky generovanému XML feedu
+        $appUrl = defined('APP_URL') ? APP_URL : '';
+        $xmlFeedUrl = $appUrl . '/feeds/user_' . $userId . '_reviews.xml';
+        
+        // Zkontroluj jestli feed existuje
+        $feedPath = ROOT . '/public/feeds/user_' . $userId . '_reviews.xml';
+        if (!file_exists($feedPath)) {
+            $xmlFeedUrl = null;
+        }
 
         $this->view('reviews/index', [
             'pageTitle' => 'Fotorecenze',
@@ -29,6 +39,7 @@ class ReviewController extends BaseController
             'counts'    => $counts,
             'status'    => $status,
             'search'    => $search,
+            'xmlFeedUrl' => $xmlFeedUrl,
         ]);
     }
 

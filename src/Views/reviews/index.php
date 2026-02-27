@@ -7,13 +7,44 @@
         <p class="text-muted small mb-0">Celkem: <strong><?= $total ?></strong></p>
     </div>
     <div class="d-flex gap-2">
-        <form method="POST" action="<?= APP_URL ?>/reviews/export-csv">
-            <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-            <button type="submit" class="btn btn-sm btn-outline-secondary"
-                    title="Stáhnout CSV pro ruční import do Shoptetu">
-                <i class="bi bi-download me-1"></i>Export CSV
+        <!-- Export CSV -->
+        <a href="<?= APP_URL ?>/reviews/export/csv" 
+           class="btn btn-sm btn-outline-primary"
+           title="Stáhnout CSV se schválenými recenzemi pro ruční import do Shoptetu">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Stáhnout CSV
+        </a>
+        
+        <!-- Export XML -->
+        <a href="<?= APP_URL ?>/reviews/export/xml" 
+           class="btn btn-sm btn-outline-success"
+           title="Stáhnout XML feed se schválenými recenzemi">
+            <i class="bi bi-file-earmark-code me-1"></i>Stáhnout XML
+        </a>
+        
+        <!-- Info o automatickém XML feedu -->
+        <?php if (!empty($xmlFeedUrl)): ?>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" 
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-info-circle me-1"></i>XML Feed
             </button>
-        </form>
+            <ul class="dropdown-menu dropdown-menu-end" style="min-width: 350px;">
+                <li class="px-3 py-2">
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-clock me-1"></i>Automaticky generováno denně v 18:00
+                    </small>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control font-monospace small" 
+                               value="<?= $e($xmlFeedUrl) ?>" readonly id="feedUrl">
+                        <button class="btn btn-outline-secondary" type="button"
+                                onclick="navigator.clipboard.writeText(document.getElementById('feedUrl').value); this.innerHTML='<i class=\'bi bi-check\'></i> Zkopírováno'">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 
