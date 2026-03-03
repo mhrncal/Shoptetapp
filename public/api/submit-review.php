@@ -103,7 +103,7 @@ if (!empty($_POST['user_id'])) {
     // Ověř že uživatel existuje a je schválený
     $stmt = $db->prepare("
         SELECT id FROM users 
-        WHERE id = ? AND role = 'user' AND status = 'approved' 
+        WHERE id = ? AND role IN ('user', 'superadmin') AND status = 'approved' 
         LIMIT 1
     ");
     $stmt->execute([$requestedUserId]);
@@ -129,7 +129,7 @@ if (!$userId && ($shoptetId || $sku)) {
 
 // PRIORITA 3: Fallback - první schválený uživatel (single-tenant)
 if (!$userId) {
-    $stmt = $db->prepare("SELECT id FROM users WHERE role = 'user' AND status = 'approved' LIMIT 1");
+    $stmt = $db->prepare("SELECT id FROM users WHERE role IN ('user', 'superadmin') AND status = 'approved' LIMIT 1");
     $stmt->execute();
     $userId = $stmt->fetchColumn() ?: null;
 }
