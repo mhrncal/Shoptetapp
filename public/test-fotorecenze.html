@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Fotorecenze - ShopCode</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 10px; 
+            font-size: 28px; 
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        h1 img { height: 40px; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; text-align: center; }
+        
+        .info-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #2196f3;
+        }
+        .info-box h3 { color: #1976d2; font-size: 14px; margin-bottom: 8px; }
+        .info-box p { font-size: 12px; color: #666; margin: 4px 0; }
+        .info-box code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+        
+        .form-group { margin-bottom: 20px; }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        label .required { color: #e74c3c; margin-left: 3px; }
+        label .optional { color: #999; font-weight: normal; font-size: 12px; margin-left: 5px; }
+        
+        input[type="text"], 
+        input[type="email"], 
+        input[type="number"], 
+        textarea, 
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        textarea { resize: vertical; min-height: 100px; }
+        
+        .file-upload {
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file-upload:hover { border-color: #667eea; background: #f0f2ff; }
+        .file-upload.drag-over { 
+            border-color: #667eea; 
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+        .file-upload input[type="file"] { display: none; }
+        .file-icon { font-size: 48px; margin-bottom: 10px; }
+        
+        .photo-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .photo-preview-item {
+            position: relative;
+        }
+        .photo-preview img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+        .photo-remove {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e74c3c;
+            color: white;
+            border: 2px solid white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            line-height: 1;
+        }
+        .photo-remove:hover {
+            background: #c0392b;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 20px;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .submit-btn:disabled { 
+            background: #ccc; 
+            cursor: not-allowed; 
+            transform: none; 
+        }
+        
+        .alert { 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            display: none;
+            animation: slideIn 0.3s;
+        }
+        .alert.show { display: block; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        .small-text { font-size: 12px; color: #999; margin-top: 5px; }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .highlight { 
+            background: #fff3cd; 
+            padding: 10px; 
+            border-radius: 6px; 
+            border-left: 3px solid #ffc107; 
+        }
+        
+        .stars {
+            display: flex;
+            gap: 5px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .star {
+            color: #ddd;
+            transition: color 0.2s;
+        }
+        .star.active,
+        .star:hover {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <img src="/assets/shopcode-logo.png" alt="ShopCode">
+            Test Fotorecenze
+        </h1>
+        <p class="subtitle">Testovací formulář pro nahrání recenze s fotkami</p>
+        
+        <div class="info-box">
+            <h3>📌 API Endpoint</h3>
+            <p><strong>URL:</strong> <code>POST /api/submit-review</code></p>
+            <p><strong>Přiřazení:</strong> Recenze se přiřadí k uživateli s <code>user_id=1</code></p>
+            <p><strong>Po odeslání:</strong> Recenze čeká na schválení adminem</p>
+        </div>
+        
+        <div id="alert" class="alert"></div>
+        
+        <form id="review-form" enctype="multipart/form-data">
+            
+            <!-- USER ID - SKRYTÉ -->
+            <input type="hidden" name="user_id" value="1">
+            
+            <!-- Jméno -->
+            <div class="form-group">
+                <label for="name">
+                    Vaše jméno <span class="required">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    required 
+                    maxlength="100"
+                    placeholder="Jan Novák"
+                    value="Test User">
+            </div>
+            
+            <!-- Email -->
+            <div class="form-group">
+                <label for="email">
+                    Váš email <span class="required">*</span>
+                </label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required
+                    placeholder="jan@example.com"
+                    value="test@shopcode.cz">
+            </div>
+            
+            <!-- SKU produktu -->
+            <div class="form-group">
+                <label for="sku">
+                    SKU produktu <span class="optional">(volitelné)</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="sku" 
+                    name="sku"
+                    placeholder="ABC-123"
+                    value="">
+                <div class="small-text">Pokud znáte kód produktu</div>
+            </div>
+            
+            <!-- Hodnocení -->
+            <div class="form-group">
+                <label>
+                    Hodnocení <span class="optional">(volitelné)</span>
+                </label>
+                <div class="stars" id="rating-stars">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                </div>
+                <input type="hidden" name="rating" id="rating" value="">
+                <div class="small-text" id="rating-text">Klikněte na hvězdičky</div>
+            </div>
+            
+            <!-- Komentář -->
+            <div class="form-group">
+                <label for="comment">
+                    Váš komentář <span class="optional">(volitelné)</span>
+                </label>
+                <textarea 
+                    id="comment" 
+                    name="comment" 
+                    maxlength="500"
+                    placeholder="Napište svůj názor na produkt...">Skvělý produkt, velmi spokojen!</textarea>
+                <div class="small-text">
+                    <span id="char-count">0</span>/500 znaků
+                </div>
+            </div>
+            
+            <!-- Fotky -->
+            <div class="form-group">
+                <label>
+                    Fotky produktu <span class="required">*</span>
+                </label>
+                <label for="photos" class="file-upload" id="file-upload-area">
+                    <div class="file-icon">📷</div>
+                    <div><strong>Klikněte nebo přetáhněte fotky</strong></div>
+                    <div class="small-text">Min 1, max 5 fotek (JPG, PNG, WEBP)</div>
+                    <input 
+                        type="file" 
+                        id="photos" 
+                        name="photos[]" 
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple 
+                        required>
+                </label>
+                <div id="photo-preview" class="photo-preview"></div>
+            </div>
+            
+            <!-- Honeypot (anti-spam) -->
+            <input type="text" name="website" style="display:none;" tabindex="-1" autocomplete="off">
+            
+            <button type="submit" class="submit-btn" id="submit-btn">
+                📤 Odeslat recenzi
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const API_URL = '/api/submit-review';
+        const form = document.getElementById('review-form');
+        const photosInput = document.getElementById('photos');
+        const photoPreview = document.getElementById('photo-preview');
+        const submitBtn = document.getElementById('submit-btn');
+        const alert = document.getElementById('alert');
+        const commentArea = document.getElementById('comment');
+        const charCount = document.getElementById('char-count');
+        const fileUploadArea = document.getElementById('file-upload-area');
+        
+        let selectedFiles = [];
+        
+        // Character counter
+        commentArea.addEventListener('input', () => {
+            charCount.textContent = commentArea.value.length;
+        });
+        charCount.textContent = commentArea.value.length;
+        
+        // Star rating
+        const stars = document.querySelectorAll('.star');
+        const ratingInput = document.getElementById('rating');
+        const ratingText = document.getElementById('rating-text');
+        
+        stars.forEach(star => {
+            star.addEventListener('click', () => {
+                const value = star.dataset.value;
+                ratingInput.value = value;
+                updateStars(value);
+                ratingText.textContent = value + ' z 5 hvězdiček';
+            });
+            
+            star.addEventListener('mouseenter', () => {
+                updateStars(star.dataset.value);
+            });
+        });
+        
+        document.getElementById('rating-stars').addEventListener('mouseleave', () => {
+            updateStars(ratingInput.value);
+        });
+        
+        function updateStars(value) {
+            stars.forEach((star, index) => {
+                if (index < value) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+        
+        // Photo handling
+        photosInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+        
+        // Drag & Drop
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.add('drag-over');
+        });
+        
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.classList.remove('drag-over');
+        });
+        
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+        
+        function handleFiles(files) {
+            const filesArray = Array.from(files);
+            
+            if (selectedFiles.length + filesArray.length > 5) {
+                showAlert('Maximum 5 fotek!', 'error');
+                return;
+            }
+            
+            filesArray.forEach(file => {
+                if (!file.type.match('image.*')) {
+                    showAlert('Pouze obrázky jsou povoleny!', 'error');
+                    return;
+                }
+                
+                selectedFiles.push(file);
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = 'photo-preview-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <span class="photo-remove" onclick="removePhoto(${selectedFiles.length - 1})">×</span>
+                    `;
+                    photoPreview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function removePhoto(index) {
+            selectedFiles.splice(index, 1);
+            renderPhotos();
+        }
+        
+        function renderPhotos() {
+            photoPreview.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = 'photo-preview-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <span class="photo-remove" onclick="removePhoto(${index})">×</span>
+                    `;
+                    photoPreview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (selectedFiles.length === 0) {
+                showAlert('Nahrajte alespoň 1 fotku!', 'error');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Odesílám...';
+            
+            const formData = new FormData();
+            formData.append('user_id', '1');
+            formData.append('name', document.getElementById('name').value);
+            formData.append('email', document.getElementById('email').value);
+            formData.append('sku', document.getElementById('sku').value);
+            formData.append('rating', document.getElementById('rating').value);
+            formData.append('comment', document.getElementById('comment').value);
+            
+            selectedFiles.forEach(file => {
+                formData.append('photos[]', file);
+            });
+            
+            console.log('📤 Odesílám na:', API_URL);
+            console.log('📝 user_id:', formData.get('user_id'));
+            console.log('📝 name:', formData.get('name'));
+            console.log('📝 email:', formData.get('email'));
+            console.log('📝 photos:', selectedFiles.length);
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('📥 Status:', response.status);
+                const data = await response.json();
+                console.log('📥 Data:', data);
+                
+                if (data.success) {
+                    showAlert('✅ ' + data.message + ' Děkujeme!', 'success');
+                    setTimeout(() => {
+                        form.reset();
+                        photoPreview.innerHTML = '';
+                        selectedFiles = [];
+                        updateStars(0);
+                        ratingText.textContent = 'Klikněte na hvězdičky';
+                        charCount.textContent = '0';
+                    }, 2000);
+                } else {
+                    showAlert('❌ ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showAlert('❌ Chyba při odesílání: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '📤 Odeslat recenzi';
+            }
+        });
+        
+        function showAlert(message, type) {
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => alert.classList.remove('show'), 8000);
+        }
+    </script>
+</body>
+</html>
