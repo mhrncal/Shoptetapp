@@ -121,6 +121,7 @@ return [
     ['GET',    '/reviews',                    'ReviewController@index',      ['auth','approved','module:reviews']],
     ['GET',    '/watermark/settings',         'WatermarkController@settings', ['auth','approved']],
     ['POST',   '/watermark/update',           'WatermarkController@update',   ['auth','approved']],
+    ['POST',   '/watermark/regenerate',       'WatermarkController@regenerate', ['auth','approved']],
     ['POST',   '/reviews/bulk',               'ReviewController@bulkAction', ['auth','approved','module:reviews']],
     ['POST',   '/reviews/export-csv',         'ReviewController@exportCsv',  ['auth','approved','module:reviews']],
     ['GET',    '/reviews/{id}',               'ReviewController@detail',     ['auth','approved','module:reviews']],

@@ -168,7 +168,7 @@ class ImageHandler
     /**
      * Vytvoř čtvercový thumbnail
      */
-    private function createThumbnail(\GdImage $img): \GdImage
+    public function createThumbnail(\GdImage $img): \GdImage
     {
         $srcW = imagesx($img);
         $srcH = imagesy($img);
@@ -193,7 +193,7 @@ class ImageHandler
     /**
      * Aplikuj watermark podle user nastavení
      */
-    private function applyWatermark(\GdImage $img, int $userId): \GdImage
+    public function applyWatermark(\GdImage $img, int $userId): \GdImage
     {
         $settings = WatermarkSettings::getForUser($userId);
         

@@ -121,10 +121,27 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-check-lg"></i> Uložit nastavení
-                        </button>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> Uložit nastavení
+                            </button>
+                        </div>
                     </form>
+                    
+                    <!-- Přegenerování watermarku -->
+                    <div class="mt-3 border-top pt-3">
+                        <h6 class="text-muted mb-2">Přegenerovat watermark</h6>
+                        <p class="small text-muted mb-3">
+                            Aplikuj nové nastavení watermarku na všechny existující fotky.
+                            Originální fotky zůstanou zachovány.
+                        </p>
+                        <form method="POST" action="<?= APP_URL ?>/watermark/regenerate" 
+                              onsubmit="return confirm('Opravdu chcete přegenerovat watermark na všech fotkách? Může to chvíli trvat.')">
+                            <button type="submit" class="btn btn-outline-warning w-100">
+                                <i class="bi bi-arrow-repeat"></i> Přegenerovat všechny fotky
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
