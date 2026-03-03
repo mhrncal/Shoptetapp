@@ -55,31 +55,53 @@ class WatermarkSettings
     public static function update(int $userId, array $data): bool
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare('
-            UPDATE watermark_settings
-            SET text = ?,
-                font = ?,
-                position = ?,
-                color = ?,
-                size = ?,
-                opacity = ?,
-                padding = ?,
-                shadow_enabled = ?,
-                enabled = ?
-            WHERE user_id = ?
-        ');
         
-        return $stmt->execute([
-            $data['text'] ?? 'Zákaznická fotka',
-            $data['font'] ?? 'Arial',
-            $data['position'] ?? 'BR',
-            $data['color'] ?? '#FFFFFF',
-            $data['size'] ?? 'medium',
-            (int)($data['opacity'] ?? 80),
-            (int)($data['padding'] ?? 20),
-            isset($data['shadow_enabled']) ? 1 : 0,
-            isset($data['enabled']) ? 1 : 0,
-            $userId
-        ]);
+        // Zkontroluj jestli shadow_enabled sloupec existuje
+        $hasColumn = false;
+        try {
+            $stmt = $db->query("SHOW COLUMNS FROM watermark_settings LIKE 'shadow_enabled'");
+            $hasColumn = $stmt->rowCount() > 0;
+        } catch (\Exception $e) {
+            // Ignoruj chybu
+        }
+        
+        if ($hasColumn) {
+            // S shadow_enabled
+            $stmt = $db->prepare('
+                UPDATE watermark_settings
+                SET text = ?, font = ?, position = ?, color = ?, size = ?, opacity = ?, padding = ?, shadow_enabled = ?, enabled = ?
+                WHERE user_id = ?
+            ');
+            return $stmt->execute([
+                $data['text'] ?? 'Zákaznická fotka',
+                $data['font'] ?? 'Arial',
+                $data['position'] ?? 'BR',
+                $data['color'] ?? '#FFFFFF',
+                $data['size'] ?? 'medium',
+                (int)($data['opacity'] ?? 80),
+                (int)($data['padding'] ?? 20),
+                isset($data['shadow_enabled']) ? 1 : 0,
+                isset($data['enabled']) ? 1 : 0,
+                $userId
+            ]);
+        } else {
+            // Bez shadow_enabled (fallback)
+            $stmt = $db->prepare('
+                UPDATE watermark_settings
+                SET text = ?, font = ?, position = ?, color = ?, size = ?, opacity = ?, padding = ?, enabled = ?
+                WHERE user_id = ?
+            ');
+            return $stmt->execute([
+                $data['text'] ?? 'Zákaznická fotka',
+                $data['font'] ?? 'Arial',
+                $data['position'] ?? 'BR',
+                $data['color'] ?? '#FFFFFF',
+                $data['size'] ?? 'medium',
+                (int)($data['opacity'] ?? 80),
+                (int)($data['padding'] ?? 20),
+                isset($data['enabled']) ? 1 : 0,
+                $userId
+            ]);
+        }
     }
 }
