@@ -92,6 +92,11 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
                     <i class="bi bi-star"></i> Fotorecenze
                 </a>
             </li>
+            <li>
+                <a href="<?= APP_URL ?>/watermark/settings" class="nav-link <?= $active('/watermark') ?>">
+                    <i class="bi bi-droplet"></i> Watermark
+                </a>
+            </li>
             <?php endif; ?>
 
             <?php if ($hasModule('branches')): ?>

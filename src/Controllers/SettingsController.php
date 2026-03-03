@@ -16,7 +16,9 @@ class SettingsController extends BaseController
         // Indexujeme userModules podle module_id
         $activeMap = [];
         foreach ($userModules as $um) {
-            $activeMap[$um['module_id']] = $um['status'] === 'active';
+            if (isset($um['module_id'])) {
+                $activeMap[$um['module_id']] = $um['status'] === 'active';
+            }
         }
 
         $this->view('settings/index', [

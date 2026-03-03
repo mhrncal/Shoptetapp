@@ -139,14 +139,18 @@ if (!$userId) {
 }
 
 // ── Zpracování fotek ──────────────────────────────────────
-$uuid    = bin2hex(random_bytes(8));
-$handler = new ImageHandler();
+$uploadDir = ROOT . '/public/uploads';
+$handler = new ImageHandler($uploadDir);
 $photos  = [];
 
 foreach (normalizeFilesArray($_FILES['photos']) as $file) {
     try {
-        $result   = $handler->process($file, $userId, $uuid);
-        $photos[] = ['path' => $result['path'], 'thumb' => $result['thumb']];
+        $result   = $handler->process($file, $userId);
+        $photos[] = [
+            'path' => $result['path'], 
+            'thumb' => $result['thumb'],
+            'mime_type' => $result['mime']
+        ];
     } catch (\RuntimeException $e) {
         // Smažeme již zpracované fotky a vrátíme chybu
         $handler->deleteFolder($userId, $uuid);

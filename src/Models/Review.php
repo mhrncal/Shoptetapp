@@ -78,15 +78,19 @@ class Review
     {
         $db   = Database::getInstance();
         $stmt = $db->prepare('
-            SELECT r.*, p.name AS product_name
+            SELECT r.*
             FROM reviews r
-            LEFT JOIN products p ON p.id = r.product_id
             WHERE r.id = ? AND r.user_id = ? LIMIT 1
         ');
         $stmt->execute([$id, $userId]);
         $row = $stmt->fetch();
         if (!$row) return null;
-        $row['photos'] = $row['photos'] ? json_decode($row['photos'], true) : [];
+        
+        // Načti fotky z review_photos tabulky
+        $stmt = $db->prepare('SELECT * FROM review_photos WHERE review_id = ? ORDER BY id');
+        $stmt->execute([$id]);
+        $row['photos'] = $stmt->fetchAll();
+        
         return $row;
     }
 
@@ -96,24 +100,41 @@ class Review
     public static function create(int $userId, array $data): int
     {
         $db   = Database::getInstance();
+        
+        // Vytvoř recenzi
         $stmt = $db->prepare('
             INSERT INTO reviews
-                (user_id, product_id, shoptet_id, sku, author_name, author_email,
-                 rating, comment, photos, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, \'pending\', NOW())
+                (user_id, customer_name, customer_email, product_sku, rating, comment, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, \'pending\', NOW())
         ');
         $stmt->execute([
             $userId,
-            $data['product_id'] ?? null,
-            $data['shoptet_id'] ?? null,
+            $data['author_name'] ?? $data['customer_name'],
+            $data['author_email'] ?? $data['customer_email'],
             $data['sku']        ?? null,
-            $data['author_name'],
-            $data['author_email'],
             $data['rating']     ?? null,
             $data['comment']    ?? null,
-            json_encode($data['photos'] ?? []),
         ]);
-        return (int)$db->lastInsertId();
+        
+        $reviewId = (int)$db->lastInsertId();
+        
+        // Ulož fotky do review_photos tabulky
+        if (!empty($data['photos'])) {
+            $stmt = $db->prepare('
+                INSERT INTO review_photos (review_id, path, thumb, mime_type)
+                VALUES (?, ?, ?, ?)
+            ');
+            foreach ($data['photos'] as $photo) {
+                $stmt->execute([
+                    $reviewId,
+                    $photo['path'],
+                    $photo['thumb'],
+                    $photo['mime_type'] ?? 'image/jpeg'
+                ]);
+            }
+        }
+        
+        return $reviewId;
     }
 
     public static function setStatus(int $id, int $userId, string $status, ?string $note = null): bool
