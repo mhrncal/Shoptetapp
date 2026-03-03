@@ -181,7 +181,6 @@ class ReviewController extends BaseController
             $this->redirect('/reviews');
         }
     }
-}
 
     /**
      * Změna stavu recenze (approve/reject jsou obousměrné)
