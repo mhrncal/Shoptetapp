@@ -8,7 +8,11 @@ class WatermarkController extends BaseController
 {
     public function settings(): void
     {
-        $userId = $_SESSION['user_id'];
+        $userId = $this->user['id'] ?? $_SESSION['user_id'] ?? null;
+        if (!$userId) {
+            header('Location: ' . APP_URL . '/login');
+            exit;
+        }
         
         $settings = WatermarkSettings::getForUser($userId);
         if (!$settings) {
@@ -26,7 +30,11 @@ class WatermarkController extends BaseController
     
     public function update(): void
     {
-        $userId = $_SESSION['user_id'];
+        $userId = $this->user['id'] ?? $_SESSION['user_id'] ?? null;
+        if (!$userId) {
+            header('Location: ' . APP_URL . '/login');
+            exit;
+        }
         
         $data = [
             'text' => $_POST['text'] ?? 'Zákaznická fotka',
