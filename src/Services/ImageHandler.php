@@ -123,12 +123,17 @@ class ImageHandler
         $newH   = (int)round($srcH * $ratio);
         $canvas = imagecreatetruecolor($newW, $newH);
 
-        // Průhlednost pro PNG
+        // Zachování průhlednosti pro PNG
         imagealphablending($canvas, false);
         imagesavealpha($canvas, true);
-        $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
-        imagefilledrectangle($canvas, 0, 0, $newW, $newH, $transparent);
-
+        
+        // Bílé pozadí místo černého
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        imagefilledrectangle($canvas, 0, 0, $newW, $newH, $white);
+        
+        // Nyní zapneme alpha blending pro správné překrytí
+        imagealphablending($canvas, true);
+        
         imagecopyresampled($canvas, $img, 0, 0, 0, 0, $newW, $newH, $srcW, $srcH);
         imagedestroy($img);
         return $canvas;
@@ -143,6 +148,18 @@ class ImageHandler
         $y    = (int)(($srcH - $min) / 2);
 
         $canvas = imagecreatetruecolor($size, $size);
+        
+        // Zachování průhlednosti pro PNG thumbnaily
+        imagealphablending($canvas, false);
+        imagesavealpha($canvas, true);
+        
+        // Bílé pozadí
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        imagefilledrectangle($canvas, 0, 0, $size, $size, $white);
+        
+        // Alpha blending pro správné překrytí
+        imagealphablending($canvas, true);
+        
         imagecopyresampled($canvas, $img, 0, 0, $x, $y, $size, $size, $min, $min);
         imagedestroy($img);
         return $canvas;
