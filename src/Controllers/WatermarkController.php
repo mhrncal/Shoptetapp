@@ -57,7 +57,6 @@ class WatermarkController extends BaseController
         header('Location: ' . APP_URL . '/watermark/settings');
         exit;
     }
-}
 
     /**
      * Přegeneruj watermark na všech fotkách
@@ -157,3 +156,4 @@ class WatermarkController extends BaseController
         header('Location: ' . APP_URL . '/watermark/settings');
         exit;
     }
+}
