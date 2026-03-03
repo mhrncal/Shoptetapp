@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fotorecenze Widget</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .photoRecensionModal {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        
+        .photoRecensionGrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .photoUploadBox {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 3rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            display: block;
+            transition: all 0.3s;
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #f8f9fa;
+        }
+        
+        .photoUploadBox:hover {
+            border-color: #007bff;
+            background: #e7f3ff;
+        }
+        
+        .photoUploadBox input[type="file"] {
+            display: none;
+        }
+        
+        .photoUploadBox .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%236c757d" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>') no-repeat center;
+            background-size: contain;
+        }
+        
+        .photoUploadBox.has-file {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .photoUploadBox.has-file .icon {
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%2328a745" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>') no-repeat center;
+            background-size: contain;
+        }
+        
+        .photoUploadBox span {
+            color: #6c757d;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .photoRecensionConsent {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 1rem;
+            font-size: 0.85rem;
+            color: #856404;
+            margin-bottom: 1rem;
+        }
+        
+        .photoRecensionConsent p {
+            margin-bottom: 0.5rem;
+        }
+        
+        .photoRecensionConsent p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .photoRecensionSubmit {
+            width: 100%;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .photoRecensionSubmit:hover {
+            background: #218838;
+        }
+        
+        .photoRecensionSubmit:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .formRow {
+            margin-bottom: 1rem;
+        }
+        
+        .formRow input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        
+        .formRow input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+        
+        .alert {
+            margin-top: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .photoRecensionGrid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Tlačítko pro otevření modalu -->
+<div class="container mt-5">
+    <button type="button" class="btn btn-primary photoRecensionTrigger" data-sku="TEST-123">
+        📸 Podělte se s námi o váš pěstitelský úspěch
+    </button>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="photoRecensionModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Podělte se s námi o váš pěstitelský úspěch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-4">
+                    Pěstujete tuto rostlinu na své zahradě? Nahrajte vlastní fotografii do galerie tohoto produktu a podělte se 
+                    s ostatními, jak Vám rostlina kvete nebo plodí.
+                </p>
+
+                <form id="photoRecensionForm" enctype="multipart/form-data">
+                    <div class="photoRecensionGrid">
+                        <!-- Levá strana - Upload -->
+                        <div class="photoRecensionLeft">
+                            <label class="photoUploadBox" id="uploadBox">
+                                <input type="file" name="photo" id="photoInput" accept="image/*" required>
+                                <div class="icon"></div>
+                                <span id="uploadText">
+                                    Klikněte sem nebo sem přetáhněte svou fotografii.<br><br>
+                                    <small>
+                                        Minimální rozměry jsou 1024 x 768 px, s ideálním poměrem stran 4:3.<br>
+                                        Maximální velikost souboru je 10 MB.<br>
+                                        Fotografie nesmí obsahovat nevhodný, nelegální nebo jinak závadný obsah.
+                                    </small>
+                                </span>
+                            </label>
+                        </div>
+
+                        <!-- Pravá strana - Formulář -->
+                        <div class="photoRecensionRight">
+                            <div class="formRow">
+                                <input type="text" name="name" placeholder="Vaše jméno *" required>
+                            </div>
+
+                            <div class="formRow">
+                                <input type="email" name="email" placeholder="Váš e-mail *" required>
+                            </div>
+
+                            <div class="photoRecensionConsent">
+                                <p>
+                                    <strong>Odesláním fotografie potvrzujete</strong>, že jste autorem fotografie, máte práva k jejímu použití 
+                                    a zároveň neporušuje práva třetích osob.
+                                </p>
+                                <p>
+                                    Současně udělujete provozovateli e-shopu bezplatnou, nevýhradní, časově i územně neomezenou licenci 
+                                    k použití fotografie za účelem prezentace produktu a marketingových aktivit. 
+                                    Provozovatel e-shopu má právo fotografii kdykoliv odstranit bez udání důvodu.
+                                </p>
+                            </div>
+
+                            <button type="submit" class="photoRecensionSubmit" id="submitBtn">
+                                Odeslat fotografii
+                            </button>
+
+                            <div id="responseMessage"></div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="sku" id="skuInput">
+                    <input type="hidden" name="user_id" value="1">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Inicializace modalu
+const modal = new bootstrap.Modal(document.getElementById('photoRecensionModal'));
+const form = document.getElementById('photoRecensionForm');
+const photoInput = document.getElementById('photoInput');
+const uploadBox = document.getElementById('uploadBox');
+const uploadText = document.getElementById('uploadText');
+const submitBtn = document.getElementById('submitBtn');
+const responseMessage = document.getElementById('responseMessage');
+const skuInput = document.getElementById('skuInput');
+
+// Otevření modalu
+document.querySelectorAll('.photoRecensionTrigger').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const sku = this.getAttribute('data-sku');
+        skuInput.value = sku;
+        modal.show();
+    });
+});
+
+// File upload - kliknutí
+photoInput.addEventListener('change', function(e) {
+    if (this.files && this.files[0]) {
+        const file = this.files[0];
+        const fileName = file.name;
+        const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+        
+        uploadBox.classList.add('has-file');
+        uploadText.innerHTML = `
+            <strong>✓ Soubor vybrán</strong><br>
+            ${fileName}<br>
+            <small>${fileSize} MB</small>
+        `;
+    }
+});
+
+// Drag & Drop
+uploadBox.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.style.borderColor = '#007bff';
+    this.style.background = '#e7f3ff';
+});
+
+uploadBox.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    if (!uploadBox.classList.contains('has-file')) {
+        this.style.borderColor = '#ccc';
+        this.style.background = '#f8f9fa';
+    }
+});
+
+uploadBox.addEventListener('drop', function(e) {
+    e.preventDefault();
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        photoInput.files = files;
+        
+        const file = files[0];
+        const fileName = file.name;
+        const fileSize = (file.size / 1024 / 1024).toFixed(2);
+        
+        uploadBox.classList.add('has-file');
+        uploadText.innerHTML = `
+            <strong>✓ Soubor vybrán</strong><br>
+            ${fileName}<br>
+            <small>${fileSize} MB</small>
+        `;
+    }
+});
+
+// Odeslání formuláře
+form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Odesílám...';
+    responseMessage.innerHTML = '';
+    
+    const formData = new FormData(this);
+    
+    try {
+        const response = await fetch('https://aplikace.shopcode.cz/public/api/submit-review.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            responseMessage.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>✓ Úspěch!</strong><br>
+                    ${data.message || 'Fotografie byla odeslána ke schválení. Děkujeme!'}
+                </div>
+            `;
+            
+            // Reset formuláře
+            form.reset();
+            uploadBox.classList.remove('has-file');
+            uploadText.innerHTML = `
+                Klikněte sem nebo sem přetáhněte svou fotografii.<br><br>
+                <small>
+                    Minimální rozměry jsou 1024 x 768 px, s ideálním poměrem stran 4:3.<br>
+                    Maximální velikost souboru je 10 MB.<br>
+                    Fotografie nesmí obsahovat nevhodný, nelegální nebo jinak závadný obsah.
+                </small>
+            `;
+            
+            // Zavři modal po 3 sekundách
+            setTimeout(() => {
+                modal.hide();
+                responseMessage.innerHTML = '';
+            }, 3000);
+            
+        } else {
+            responseMessage.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>× Chyba!</strong><br>
+                    ${data.error || 'Nepodařilo se odeslat fotografii.'}
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        responseMessage.innerHTML = `
+            <div class="alert alert-danger">
+                <strong>× Chyba!</strong><br>
+                Nepodařilo se navázat spojení se serverem.
+            </div>
+        `;
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Odeslat fotografii';
+    }
+});
+
+// Reset při zavření modalu
+document.getElementById('photoRecensionModal').addEventListener('hidden.bs.modal', function() {
+    form.reset();
+    uploadBox.classList.remove('has-file');
+    uploadText.innerHTML = `
+        Klikněte sem nebo sem přetáhněte svou fotografii.<br><br>
+        <small>
+            Minimální rozměry jsou 1024 x 768 px, s ideálním poměrem stran 4:3.<br>
+            Maximální velikost souboru je 10 MB.<br>
+            Fotografie nesmí obsahovat nevhodný, nelegální nebo jinak závadný obsah.
+        </small>
+    `;
+    responseMessage.innerHTML = '';
+});
+</script>
+
+</body>
+</html>
