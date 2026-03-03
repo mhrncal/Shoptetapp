@@ -97,13 +97,32 @@ if ($errors) {
     jsonError(implode(' ', $errors), 422);
 }
 
-// ── Najdeme uživatele podle shoptet_id/sku ────────────────
-// Předpokládáme, že každý shopcode uživatel má propojení přes shoptet_id produktu
+// ── Najdeme uživatele ──────────────────────────────────────
 $db        = Database::getInstance();
 $userId    = null;
 $productId = null;
 
-if ($shoptetId || $sku) {
+// PRIORITA 1: Explicitně zadané user_id v POST
+// Toto umožňuje přímé přiřazení k uživateli (multi-tenant)
+if (!empty($_POST['user_id'])) {
+    $requestedUserId = (int)$_POST['user_id'];
+    
+    // Ověř že uživatel existuje a je schválený
+    $stmt = $db->prepare("
+        SELECT id FROM users 
+        WHERE id = ? AND role = 'user' AND status = 'approved' 
+        LIMIT 1
+    ");
+    $stmt->execute([$requestedUserId]);
+    $userId = $stmt->fetchColumn() ?: null;
+    
+    if (!$userId) {
+        jsonError('Uživatel s ID ' . $requestedUserId . ' neexistuje nebo není schválený.', 400);
+    }
+}
+
+// PRIORITA 2: Podle shoptet_id/sku produktu (původní logika)
+if (!$userId && ($shoptetId || $sku)) {
     $col  = $shoptetId ? 'shoptet_id' : 'sku';
     $val  = $shoptetId ?: $sku;
     $stmt = $db->prepare("SELECT id, user_id FROM products WHERE {$col} = ? LIMIT 1");
@@ -115,15 +134,15 @@ if ($shoptetId || $sku) {
     }
 }
 
+// PRIORITA 3: Fallback - první schválený uživatel (single-tenant)
 if (!$userId) {
-    // Fallback — pokud je jen jeden uživatel (single-tenant provoz)
     $stmt = $db->prepare("SELECT id FROM users WHERE role = 'user' AND status = 'approved' LIMIT 1");
     $stmt->execute();
     $userId = $stmt->fetchColumn() ?: null;
 }
 
 if (!$userId) {
-    jsonError('Nelze přiřadit recenzi k e-shopu.', 500);
+    jsonError('Nelze přiřadit recenzi k e-shopu. Zkontrolujte user_id nebo product_id/sku.', 500);
 }
 
 // ── Zpracování fotek ──────────────────────────────────────
