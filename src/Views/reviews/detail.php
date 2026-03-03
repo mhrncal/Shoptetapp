@@ -40,22 +40,30 @@
                             </div>
                         </a>
                         <div class="mt-2 d-flex gap-1">
-                            <a href="<?= APP_URL ?>/photo/download?id=<?= $photo['id'] ?>" 
-                               class="btn btn-sm btn-outline-primary flex-fill" title="Stáhnout originál">
-                                <i class="bi bi-download"></i>
-                            </a>
-                            <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" 
-                                    onclick="openReuploadModal(<?= $photo['id'] ?>)" title="Nahradit fotku">
-                                <i class="bi bi-upload"></i>
-                            </button>
-                            <form method="POST" action="<?= APP_URL ?>/photo/delete" 
-                                  onsubmit="return confirm('Opravdu smazat tuto fotku?')" 
-                                  class="flex-fill">
-                                <input type="hidden" name="id" value="<?= $photo['id'] ?>">
-                                <button type="submit" class="btn btn-sm btn-outline-danger w-100" title="Smazat">
-                                    <i class="bi bi-trash"></i>
+                            <?php $isLegacy = is_string($photo['id']) && str_starts_with($photo['id'], 'legacy_'); ?>
+                            
+                            <?php if ($isLegacy): ?>
+                                <small class="text-muted flex-fill text-center">
+                                    <i class="bi bi-info-circle"></i> Stará fotka - použijte CSV/XML export
+                                </small>
+                            <?php else: ?>
+                                <a href="<?= APP_URL ?>/photo/download?id=<?= $photo['id'] ?>" 
+                                   class="btn btn-sm btn-outline-primary flex-fill" title="Stáhnout originál">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" 
+                                        onclick="openReuploadModal(<?= $photo['id'] ?>)" title="Nahradit fotku">
+                                    <i class="bi bi-upload"></i>
                                 </button>
-                            </form>
+                                <form method="POST" action="<?= APP_URL ?>/photo/delete" 
+                                      onsubmit="return confirm('Opravdu smazat tuto fotku?')" 
+                                      class="flex-fill">
+                                    <input type="hidden" name="id" value="<?= $photo['id'] ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100" title="Smazat">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -131,36 +139,48 @@
         </div>
 
         <!-- Akce: Schválit / Zamítnout -->
-        <?php if ($review['status'] === 'pending'): ?>
         <div class="card border-0 mb-4">
             <div class="card-header"><h6 class="mb-0 fw-semibold">Moderace</h6></div>
             <div class="card-body">
+                <?php if ($review['admin_note']): ?>
+                <div class="alert alert-secondary small mb-3">
+                    <strong>Interní poznámka:</strong><br>
+                    <?= nl2br($e($review['admin_note'])) ?>
+                </div>
+                <?php endif; ?>
+                
                 <div class="mb-3">
                     <label class="form-label small text-muted">Interní poznámka (nepovinná)</label>
                     <textarea id="adminNote" class="form-control form-control-sm" rows="2"
                               placeholder="Důvod zamítnutí, poznámka..."></textarea>
                 </div>
                 <div class="d-flex gap-2">
-                    <form method="POST" action="<?= APP_URL ?>/reviews/<?= $review['id'] ?>/approve">
-                        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-                        <input type="hidden" name="admin_note" id="noteApprove">
-                        <button type="submit" class="btn btn-success btn-sm"
-                                onclick="document.getElementById('noteApprove').value=document.getElementById('adminNote').value">
+                    <?php if ($review['status'] !== 'approved'): ?>
+                    <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="flex-fill">
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                        <input type="hidden" name="id" value="<?= $review['id'] ?>">
+                        <input type="hidden" name="status" value="approved">
+                        <button type="submit" class="btn btn-success w-100">
                             <i class="bi bi-check-circle me-1"></i>Schválit
                         </button>
                     </form>
-                    <form method="POST" action="<?= APP_URL ?>/reviews/<?= $review['id'] ?>/reject">
-                        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-                        <input type="hidden" name="admin_note" id="noteReject">
-                        <button type="submit" class="btn btn-danger btn-sm"
-                                onclick="document.getElementById('noteReject').value=document.getElementById('adminNote').value">
+                    <?php endif; ?>
+                    
+                    <?php if ($review['status'] !== 'rejected'): ?>
+                    <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="flex-fill">
+                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                        <input type="hidden" name="id" value="<?= $review['id'] ?>">
+                        <input type="hidden" name="status" value="rejected">
+                        <button type="submit" class="btn btn-danger w-100">
                             <i class="bi bi-x-circle me-1"></i>Zamítnout
                         </button>
                     </form>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-        <?php elseif ($review['admin_note']): ?>
+        
+        <?php if (false && $review['admin_note']): ?>
         <div class="card border-0 border-secondary border-opacity-25 mb-4">
             <div class="card-body">
                 <div class="text-muted small mb-1">Interní poznámka:</div>
