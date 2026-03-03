@@ -34,7 +34,18 @@
             </div>
             <div class="card-body">
                 <table class="table table-sm table-borderless mb-0">
-                    <tr><td class="text-muted w-40">ID</td><td><?= $e($targetUser['id']) ?></td></tr>
+                    <tr>
+                        <td class="text-muted w-40">User ID</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary font-monospace fs-6 px-3 py-2" id="userId"><?= $targetUser['id'] ?></span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="copyUserId()" title="Kopírovat ID pro API">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">Pro API formulář: <code>user_id=<?= $targetUser['id'] ?></code></small>
+                        </td>
+                    </tr>
                     <tr><td class="text-muted">E-mail</td><td><?= $e($targetUser['email']) ?></td></tr>
                     <tr><td class="text-muted">Jméno</td><td><?= $e($targetUser['first_name'] . ' ' . $targetUser['last_name']) ?></td></tr>
                     <tr><td class="text-muted">Shop</td><td><?= $e($targetUser['shop_name'] ?? '—') ?></td></tr>

@@ -49,6 +49,7 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
+                        <th style="width: 60px;">ID</th>
                         <th>Uživatel</th>
                         <th>Shop</th>
                         <th>Role</th>
@@ -61,6 +62,9 @@
                 <tbody>
                     <?php foreach ($users as $u): ?>
                     <tr>
+                        <td>
+                            <span class="badge bg-primary bg-opacity-10 text-primary font-monospace"><?= $u['id'] ?></span>
+                        </td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <div class="avatar-circle avatar-sm">
