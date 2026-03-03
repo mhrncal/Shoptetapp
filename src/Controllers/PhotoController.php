@@ -75,60 +75,99 @@ class PhotoController extends BaseController
         }
         
         try {
-            // Smaž staré soubory (ale NE složku!)
-            $oldDir = ROOT . '/public/uploads/' . dirname($oldPhoto['path']);
+            // Parsuj starou cestu: user_id/uuid/filename.ext
+            $pathParts = explode('/', $oldPhoto['path']);
+            $userId = (int)$pathParts[0];
+            $uuid = $pathParts[1];
+            $extension = pathinfo($oldPhoto['path'], PATHINFO_EXTENSION);
             
-            // Smaž jednotlivé soubory
-            $oldFiles = [
-                ROOT . '/public/uploads/' . $oldPhoto['path'],
-                ROOT . '/public/uploads/' . $oldPhoto['thumb'],
-                ROOT . '/public/uploads/' . str_replace(['.jpg', '.png', '.webp'], ['_original.jpg', '_original.png', '_original.webp'], $oldPhoto['path'])
-            ];
+            // Složka pro fotky
+            $photoDir = ROOT . '/public/uploads/' . $userId . '/' . $uuid;
             
-            foreach ($oldFiles as $file) {
-                if (file_exists($file)) {
+            // Smaž všechny staré soubory
+            if (is_dir($photoDir)) {
+                $files = glob($photoDir . '/*');
+                foreach ($files as $file) {
                     unlink($file);
                 }
+            } else {
+                mkdir($photoDir, 0755, true);
             }
             
-            // Nahraj novou fotku DO STEJNÉ složky
+            // Zpracuj novou fotku
             $uploadDir = ROOT . '/public/uploads';
             $handler = new ImageHandler($uploadDir);
             
-            // Použij STEJNÝ basename jako měla stará fotka
-            $oldBasename = basename($oldPhoto['path'], '.jpg');
-            $oldBasename = basename($oldBasename, '.png');
-            $oldBasename = basename($oldBasename, '.webp');
+            // Načti obrázek
+            $tmpFile = $_FILES['photo']['tmp_name'];
+            $mimeType = mime_content_type($tmpFile);
             
-            // Zpracuj novou fotku
-            $result = $handler->process($_FILES['photo'], $oldPhoto['user_id']);
+            $img = match($mimeType) {
+                'image/jpeg' => @imagecreatefromjpeg($tmpFile),
+                'image/png'  => @imagecreatefrompng($tmpFile),
+                'image/webp' => @imagecreatefromwebp($tmpFile),
+                default => throw new \RuntimeException('Nepodporovaný formát obrázku')
+            };
             
-            // Přesuň nové soubory na místo starých
-            $newDir = ROOT . '/public/uploads/' . dirname($result['path']);
-            $targetDir = $oldDir;
-            
-            // Pokud jsou v jiné složce, přesuň
-            if ($newDir !== $targetDir) {
-                $files = glob("{$newDir}/*");
-                foreach ($files as $file) {
-                    $target = $targetDir . '/' . basename($file);
-                    rename($file, $target);
-                }
-                rmdir($newDir);
-                
-                // Update paths v result
-                $result['path'] = str_replace(dirname($result['path']), dirname($oldPhoto['path']), $result['path']);
-                $result['thumb'] = str_replace(dirname($result['thumb']), dirname($oldPhoto['thumb']), $result['thumb']);
+            if (!$img) {
+                throw new \RuntimeException('Nelze načíst obrázek');
             }
             
-            // Updatuj DB s původními cestami (jen refresh)
+            // Ořízni EXIF
+            $img = $handler->removeExif($img);
+            
+            // Smart resize
+            $img = $handler->smartResize($img);
+            
+            // Vytvoř verze
+            $original = $handler->cloneImage($img);
+            $display = $handler->applyWatermark($img, $userId);
+            $thumb = $handler->createThumbnail($display);
+            
+            // Ulož soubory
+            $ext = match($mimeType) {
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/webp' => 'webp',
+                default => 'jpg'
+            };
+            
+            $basename = $uuid;
+            $originalPath = $photoDir . '/' . $basename . '_original.' . $ext;
+            $displayPath = $photoDir . '/' . $basename . '.' . $ext;
+            $thumbPath = $photoDir . '/thumb_' . $basename . '.' . $ext;
+            
+            match($ext) {
+                'jpg' => [
+                    imagejpeg($original, $originalPath, 90),
+                    imagejpeg($display, $displayPath, 90),
+                    imagejpeg($thumb, $thumbPath, 90)
+                ],
+                'png' => [
+                    imagepng($original, $originalPath, 6),
+                    imagepng($display, $displayPath, 6),
+                    imagepng($thumb, $thumbPath, 6)
+                ],
+                'webp' => [
+                    imagewebp($original, $originalPath, 90),
+                    imagewebp($display, $displayPath, 90),
+                    imagewebp($thumb, $thumbPath, 90)
+                ]
+            };
+            
+            imagedestroy($img);
+            imagedestroy($original);
+            imagedestroy($display);
+            imagedestroy($thumb);
+            
+            // Updatuj DB (cesty zůstávají stejné, jen mime_type)
             $stmt = $db->prepare('
                 UPDATE review_photos 
                 SET mime_type = ?
                 WHERE id = ?
             ');
             $stmt->execute([
-                $result['mime'],
+                $mimeType,
                 $id
             ]);
             
