@@ -223,19 +223,39 @@ class ImageHandler
         // Vypočítej pozici
         $text = $settings['text'];
         $padding = $settings['padding'];
-        // GD font 5: každý znak je ~9px široký, 15px vysoký
-        $textW = strlen($text) * 9;
-        $textH = 15;
+        
+        // Použij imagettftext pro lepší kvalitu
+        $fontFile = __DIR__ . '/../../lib/fonts/Arial.ttf';
+        if (!file_exists($fontFile)) {
+            // Fallback na system font
+            $fontFile = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+        }
+        
+        // Vypočítej velikost textu
+        if (file_exists($fontFile)) {
+            $bbox = imagettfbbox($fontSize, 0, $fontFile, $text);
+            $textW = abs($bbox[4] - $bbox[0]);
+            $textH = abs($bbox[5] - $bbox[1]);
+        } else {
+            // Fallback
+            $textW = strlen($text) * ($fontSize * 0.6);
+            $textH = $fontSize;
+        }
         
         $coords = $this->calculatePosition($settings['position'], $w, $h, $textW, $textH, $padding);
         
         // Vykreslí stín
-        if ($settings['shadow_enabled']) {
-            imagestring($canvas, 5, $coords['x'] + 2, $coords['y'] - 10 + 2, $text, $shadow);
+        if ($settings['shadow_enabled'] && file_exists($fontFile)) {
+            imagettftext($canvas, $fontSize, 0, $coords['x'] + 2, $coords['y'] + 2, $shadow, $fontFile, $text);
         }
         
-        // Vykresli text (GD font 5 = largest built-in)
-        imagestring($canvas, 5, $coords['x'], $coords['y'] - 10, $text, $color);
+        // Vykresli text
+        if (file_exists($fontFile)) {
+            imagettftext($canvas, $fontSize, 0, $coords['x'], $coords['y'], $color, $fontFile, $text);
+        } else {
+            // Fallback na imagestring
+            imagestring($canvas, 5, $coords['x'], $coords['y'] - 10, $text, $color);
+        }
         
         return $canvas;
     }

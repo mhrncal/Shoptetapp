@@ -2,7 +2,7 @@
 
 namespace ShopCode\Controllers;
 
-use ShopCode\Core\{Session, Response};
+use ShopCode\Core\{Database, Session, Response};
 use ShopCode\Models\{Review, Product};
 use ShopCode\Services\{ImageHandler, CsvGenerator};
 

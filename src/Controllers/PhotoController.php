@@ -75,27 +75,59 @@ class PhotoController extends BaseController
         }
         
         try {
-            // Smaž staré soubory
-            $basePath = ROOT . '/public/uploads/' . dirname($oldPhoto['path']);
-            if (is_dir($basePath)) {
-                array_map('unlink', glob("{$basePath}/*"));
-                rmdir($basePath);
+            // Smaž staré soubory (ale NE složku!)
+            $oldDir = ROOT . '/public/uploads/' . dirname($oldPhoto['path']);
+            
+            // Smaž jednotlivé soubory
+            $oldFiles = [
+                ROOT . '/public/uploads/' . $oldPhoto['path'],
+                ROOT . '/public/uploads/' . $oldPhoto['thumb'],
+                ROOT . '/public/uploads/' . str_replace(['.jpg', '.png', '.webp'], ['_original.jpg', '_original.png', '_original.webp'], $oldPhoto['path'])
+            ];
+            
+            foreach ($oldFiles as $file) {
+                if (file_exists($file)) {
+                    unlink($file);
+                }
             }
             
-            // Nahraj novou fotku
+            // Nahraj novou fotku DO STEJNÉ složky
             $uploadDir = ROOT . '/public/uploads';
             $handler = new ImageHandler($uploadDir);
+            
+            // Použij STEJNÝ basename jako měla stará fotka
+            $oldBasename = basename($oldPhoto['path'], '.jpg');
+            $oldBasename = basename($oldBasename, '.png');
+            $oldBasename = basename($oldBasename, '.webp');
+            
+            // Zpracuj novou fotku
             $result = $handler->process($_FILES['photo'], $oldPhoto['user_id']);
             
-            // Updatuj DB
+            // Přesuň nové soubory na místo starých
+            $newDir = ROOT . '/public/uploads/' . dirname($result['path']);
+            $targetDir = $oldDir;
+            
+            // Pokud jsou v jiné složce, přesuň
+            if ($newDir !== $targetDir) {
+                $files = glob("{$newDir}/*");
+                foreach ($files as $file) {
+                    $target = $targetDir . '/' . basename($file);
+                    rename($file, $target);
+                }
+                rmdir($newDir);
+                
+                // Update paths v result
+                $result['path'] = str_replace(dirname($result['path']), dirname($oldPhoto['path']), $result['path']);
+                $result['thumb'] = str_replace(dirname($result['thumb']), dirname($oldPhoto['thumb']), $result['thumb']);
+            }
+            
+            // Updatuj DB s původními cestami (jen refresh)
             $stmt = $db->prepare('
                 UPDATE review_photos 
-                SET path = ?, thumb = ?, mime_type = ?
+                SET mime_type = ?
                 WHERE id = ?
             ');
             $stmt->execute([
-                $result['path'],
-                $result['thumb'],
                 $result['mime'],
                 $id
             ]);
