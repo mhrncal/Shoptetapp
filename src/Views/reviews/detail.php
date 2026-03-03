@@ -28,19 +28,19 @@
                 <div class="row g-3">
                     <?php foreach ($review['photos'] as $i => $photo): ?>
                     <div class="col-6 col-md-4">
-                        <a href="<?= $e(APP_URL . '/uploads/' . $photo['path']) ?>"
+                        <a href="<?= $e(APP_URL . '/public/uploads/' . $photo['path']) ?>"
                            target="_blank" class="d-block position-relative">
-                            <img src="<?= $e(APP_URL . '/uploads/' . ($photo['thumb'] ?? $photo['path'])) ?>"
+                            <img src="<?= $e(APP_URL . '/public/uploads/' . ($photo['thumb'] ?? $photo['path'])) ?>"
                                  class="img-fluid rounded"
                                  style="aspect-ratio:1;object-fit:cover;width:100%;"
                                  alt="Foto <?= $i+1 ?>"
-                                 onerror="this.src='<?= APP_URL ?>/uploads/<?= $e($photo['path']) ?>'">
+                                 onerror="this.src='<?= APP_URL ?>/public/uploads/<?= $e($photo['path']) ?>'">
                             <div class="position-absolute top-0 end-0 m-1">
                                 <span class="badge bg-dark bg-opacity-75"><?= $i+1 ?></span>
                             </div>
                         </a>
                         <div class="mt-1">
-                            <a href="<?= $e(APP_URL . '/uploads/' . $photo['path']) ?>"
+                            <a href="<?= $e(APP_URL . '/public/uploads/' . $photo['path']) ?>"
                                target="_blank" class="text-muted small">
                                 <i class="bi bi-box-arrow-up-right me-1"></i>Plná velikost
                             </a>

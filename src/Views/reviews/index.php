@@ -158,7 +158,7 @@
                         <!-- Thumbnaily fotek -->
                         <div class="d-flex gap-1 justify-content-center flex-wrap">
                             <?php foreach (array_slice($r['photos'], 0, 3) as $photo): ?>
-                            <img src="<?= $e(APP_URL . '/uploads/' . $photo['thumb']) ?>"
+                            <img src="<?= $e(APP_URL . '/public/uploads/' . $photo['thumb']) ?>"
                                  style="width:36px;height:36px;object-fit:cover;border-radius:4px;"
                                  alt="" onerror="this.style.display='none'">
                             <?php endforeach; ?>
