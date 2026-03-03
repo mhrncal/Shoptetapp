@@ -115,14 +115,14 @@ class Review
         // Vytvoř recenzi
         $stmt = $db->prepare('
             INSERT INTO reviews
-                (user_id, customer_name, customer_email, product_sku, rating, comment, status, created_at)
+                (user_id, author_name, author_email, sku, rating, comment, status, created_at)
             VALUES (?, ?, ?, ?, ?, ?, \'pending\', NOW())
         ');
         $stmt->execute([
             $userId,
-            $data['author_name'] ?? $data['customer_name'],
-            $data['author_email'] ?? $data['customer_email'],
-            $data['sku']        ?? null,
+            $data['author_name'] ?? $data['customer_name'] ?? 'Anonym',
+            $data['author_email'] ?? $data['customer_email'] ?? 'anonym@example.com',
+            $data['sku'] ?? null,
             $data['rating']     ?? null,
             $data['comment']    ?? null,
         ]);
