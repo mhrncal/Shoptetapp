@@ -127,7 +127,7 @@
                     <tr>
                         <th style="width:40px;"></th>
                         <th>Autor</th>
-                        <th>Produkt / SKU</th>
+                        <th>Kód produktu</th>
                         <th class="text-center">Fotek</th>
                         <th>Datum</th>
                         <th>Stav</th>
@@ -148,16 +148,16 @@
                         <div class="fw-semibold"><?= $e($r['author_name']) ?></div>
                         <div class="text-muted small"><?= $e($r['author_email']) ?></div>
                     </td>
-                    <td class="small text-muted">
-                        <?php if ($r['product_name']): ?>
-                            <span class="text-body"><?= $e($r['product_name']) ?></span><br>
+                    <td class="text-center">
+                        <?php if ($r['sku']): ?>
+                            <code class="text-primary"><?= $e($r['sku']) ?></code>
+                        <?php else: ?>
+                            <span class="text-muted">—</span>
                         <?php endif; ?>
-                        <?php if ($r['sku']): ?><code><?= $e($r['sku']) ?></code><?php endif; ?>
-                        <?php if (!$r['product_name'] && !$r['sku'] && !$r['shoptet_id']): ?>—<?php endif; ?>
                     </td>
                     <td class="text-center">
-                        <?php if (!empty($r['photos'])): ?>
-                            <span class="badge bg-primary"><?= count($r['photos']) ?></span>
+                        <?php if (!empty($r['photo_count'])): ?>
+                            <span class="badge bg-primary"><?= $r['photo_count'] ?></span>
                         <?php else: ?>
                             <span class="text-muted">0</span>
                         <?php endif; ?>

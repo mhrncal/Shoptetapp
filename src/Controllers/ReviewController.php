@@ -197,9 +197,19 @@ class ReviewController extends BaseController
         }
         
         $db = Database::getInstance();
-        $stmt = $db->prepare('UPDATE reviews SET status = ? WHERE id = ?');
         
-        if ($stmt->execute([$newStatus, $id])) {
+        // Admin note (pokud je zadaná)
+        $adminNote = $_POST['admin_note'] ?? null;
+        
+        if ($adminNote) {
+            $stmt = $db->prepare('UPDATE reviews SET status = ?, admin_note = ? WHERE id = ?');
+            $result = $stmt->execute([$newStatus, $adminNote, $id]);
+        } else {
+            $stmt = $db->prepare('UPDATE reviews SET status = ? WHERE id = ?');
+            $result = $stmt->execute([$newStatus, $id]);
+        }
+        
+        if ($result) {
             $label = $newStatus === 'approved' ? 'schválena' : 'zamítnuta';
             $_SESSION['flash'] = ['success' => "Recenze byla {$label}"];
         } else {

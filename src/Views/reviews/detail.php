@@ -152,7 +152,7 @@
                 <div class="mb-3">
                     <label class="form-label small text-muted">Interní poznámka (nepovinná)</label>
                     <textarea id="adminNote" class="form-control form-control-sm" rows="2"
-                              placeholder="Důvod zamítnutí, poznámka..."></textarea>
+                              placeholder="Důvod zamítnutí, poznámka..."><?= $e($review['admin_note'] ?? '') ?></textarea>
                 </div>
                 <div class="d-flex gap-2">
                     <?php if ($review['status'] !== 'approved'): ?>
@@ -160,7 +160,8 @@
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                         <input type="hidden" name="id" value="<?= $review['id'] ?>">
                         <input type="hidden" name="status" value="approved">
-                        <button type="submit" class="btn btn-success w-100">
+                        <input type="hidden" name="admin_note" class="note-input">
+                        <button type="submit" class="btn btn-success w-100" onclick="this.form.querySelector('.note-input').value = document.getElementById('adminNote').value">
                             <i class="bi bi-check-circle me-1"></i>Schválit
                         </button>
                     </form>
@@ -171,7 +172,8 @@
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                         <input type="hidden" name="id" value="<?= $review['id'] ?>">
                         <input type="hidden" name="status" value="rejected">
-                        <button type="submit" class="btn btn-danger w-100">
+                        <input type="hidden" name="admin_note" class="note-input">
+                        <button type="submit" class="btn btn-danger w-100" onclick="this.form.querySelector('.note-input').value = document.getElementById('adminNote').value">
                             <i class="bi bi-x-circle me-1"></i>Zamítnout
                         </button>
                     </form>
