@@ -29,7 +29,7 @@
                     <?php foreach ($review['photos'] as $i => $photo): ?>
                     <div class="col-6 col-md-4">
                         <a href="<?= $e(APP_URL . '/public/uploads/' . $photo['path']) ?>"
-                           target="_blank" class="d-block position-relative">
+                           class="photo-lightbox d-block position-relative" data-lightbox="review-photos">
                             <img src="<?= $e(APP_URL . '/public/uploads/' . ($photo['thumb'] ?? $photo['path'])) ?>"
                                  class="img-fluid rounded"
                                  style="aspect-ratio:1;object-fit:cover;width:100%;"
@@ -223,4 +223,75 @@ function openReuploadModal(photoId) {
     document.getElementById('reupload-photo-id').value = photoId;
     new bootstrap.Modal(document.getElementById('reuploadModal')).show();
 }
+</script>
+
+<!-- Lightbox pro fotky -->
+<div id="photoLightbox" class="modal fade" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white" id="lightboxTitle">Fotka 1</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-0">
+                <img id="lightboxImg" src="" class="img-fluid" style="max-height:80vh;">
+            </div>
+            <div class="modal-footer border-0 justify-content-between">
+                <button type="button" class="btn btn-outline-light" id="prevPhoto">
+                    <i class="bi bi-chevron-left"></i> Předchozí
+                </button>
+                <button type="button" class="btn btn-outline-light" id="nextPhoto">
+                    Další <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const photos = document.querySelectorAll('.photo-lightbox');
+    const lightbox = new bootstrap.Modal(document.getElementById('photoLightbox'));
+    const lightboxImg = document.getElementById('lightboxImg');
+    const lightboxTitle = document.getElementById('lightboxTitle');
+    const prevBtn = document.getElementById('prevPhoto');
+    const nextBtn = document.getElementById('nextPhoto');
+    
+    let currentIndex = 0;
+    const photoUrls = Array.from(photos).map(a => a.href);
+    
+    function showPhoto(index) {
+        currentIndex = index;
+        lightboxImg.src = photoUrls[index];
+        lightboxTitle.textContent = `Fotka ${index + 1} z ${photoUrls.length}`;
+        
+        prevBtn.disabled = index === 0;
+        nextBtn.disabled = index === photoUrls.length - 1;
+    }
+    
+    photos.forEach((photo, index) => {
+        photo.addEventListener('click', (e) => {
+            e.preventDefault();
+            showPhoto(index);
+            lightbox.show();
+        });
+    });
+    
+    prevBtn.addEventListener('click', () => {
+        if (currentIndex > 0) showPhoto(currentIndex - 1);
+    });
+    
+    nextBtn.addEventListener('click', () => {
+        if (currentIndex < photoUrls.length - 1) showPhoto(currentIndex + 1);
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (!document.getElementById('photoLightbox').classList.contains('show')) return;
+        
+        if (e.key === 'ArrowLeft') prevBtn.click();
+        if (e.key === 'ArrowRight') nextBtn.click();
+        if (e.key === 'Escape') lightbox.hide();
+    });
+});
 </script>
