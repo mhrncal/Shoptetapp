@@ -66,14 +66,6 @@ define('SHOPTET_DOMAINS', [
     'https://vaseshop.cz',
 ]);
 
-// Shoptet přihlašovací údaje pro Selenium import robot
-define('SHOPTET_URL',      'https://admin.shoptet.cz');
-define('SHOPTET_EMAIL',    'admin@vaseshop.cz');
-define('SHOPTET_PASSWORD', 'shoptet_password');
-
-// ChromeDriver URL (na serveru: chromedriver --port=9515 &)
-define('CHROMEDRIVER_URL', 'http://localhost:9515');
-
 // ============================================================
 // FOTORECENZE — Shoptet integrace
 // ============================================================
