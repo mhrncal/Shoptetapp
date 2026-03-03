@@ -49,12 +49,12 @@ define('UPLOAD_MAX_SIZE', 10 * 1024 * 1024); // 10 MB
 // ============================================================
 // EMAIL / SMTP (PHPMailer)
 // ============================================================
-define('MAIL_HOST',       'smtp.example.com');
+define('MAIL_HOST',       'smtp.rosti.cz');
 define('MAIL_PORT',       587);
-define('MAIL_USERNAME',   'notifications@example.com');
-define('MAIL_PASSWORD',   'your-smtp-password');
-define('MAIL_ENCRYPTION', 'tls');              // tls | ssl | ''
-define('MAIL_FROM',       'notifications@example.com');
+define('MAIL_USERNAME',   '8787@rostiapp.cz');
+define('MAIL_PASSWORD',   '5fbf97d622ed43c5a4578fe5d4fc86c0');
+define('MAIL_ENCRYPTION', 'tls');
+define('MAIL_FROM',       '8787@rostiapp.cz');
 define('MAIL_FROM_NAME',  APP_NAME);
 
 // ============================================================
