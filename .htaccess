@@ -1,6 +1,31 @@
 Options -Indexes
 RewriteEngine On
 
-# Přesměruj vše do /public složky (DocumentRoot = kořen projektu)
-RewriteCond %{REQUEST_URI} !^/public/
-RewriteRule ^(.*)$ /public/$1 [L]
+# Statické soubory z public/
+RewriteCond %{REQUEST_URI} ^/(assets|uploads|feeds)/
+RewriteRule ^(.*)$ public/$1 [L]
+
+# API endpoint
+RewriteCond %{REQUEST_URI} ^/api/
+RewriteRule ^api/(.*)$ public/api/$1 [L,QSA]
+
+# Front controller - všechno ostatní přes index.php v rootu
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Bezpečnost - blokuj přístup k citlivým složkám
+RedirectMatch 403 ^/(config|src|database|cron|tmp|scripts|tests|lib)/
+
+# Skryj hidden files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Bezpečnostní hlavičky
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
