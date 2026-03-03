@@ -209,7 +209,6 @@ class ReviewController extends BaseController
         header('Location: ' . APP_URL . '/reviews');
         exit;
     }
-}
 
     /**
      * Hromadné stažení fotek jako ZIP
