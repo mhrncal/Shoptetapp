@@ -58,14 +58,4 @@ define('MAIL_FROM',       'notifications@example.com');
 define('MAIL_FROM_NAME',  APP_NAME);
 
 // ============================================================
-// FOTORECENZE — Shoptet integrace
-// ============================================================
-// Povolené originy pro CORS (vaše Shoptet domény)
-define('SHOPTET_DOMAINS', [
-    'https://www.vaseshop.cz',
-    'https://vaseshop.cz',
-]);
-
-// ============================================================
-// FOTORECENZE — Shoptet integrace
 // ============================================================

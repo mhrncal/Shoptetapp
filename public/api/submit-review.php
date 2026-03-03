@@ -15,15 +15,8 @@ use ShopCode\Services\{ImageHandler, AdminNotifier};
 header('Content-Type: application/json; charset=UTF-8');
 
 // ── CORS ──────────────────────────────────────────────────
-$origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
-$allowed = defined('SHOPTET_DOMAINS') ? SHOPTET_DOMAINS : [];
-
-if (in_array($origin, $allowed, true)) {
-    header("Access-Control-Allow-Origin: {$origin}");
-} elseif (empty($allowed)) {
-    // Dev mode — povolíme vše
-    header('Access-Control-Allow-Origin: *');
-}
+// Povolíme všechny originy (veřejný API endpoint)
+header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
