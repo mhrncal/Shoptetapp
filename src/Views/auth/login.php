@@ -29,11 +29,4 @@
         Přihlásit se
     </button>
 
-    <p class="text-center mt-4 mb-0" style="font-size:.875rem; color:hsl(var(--muted-foreground));">
-        Nemáte účet?
-        <a href="<?= APP_URL ?>/register"
-           style="color:hsl(var(--primary)); text-decoration:none; font-weight:500;">
-            Registrovat se
-        </a>
-    </p>
 </form>

@@ -9,8 +9,8 @@ return [
     ['GET',  '/login',    'AuthController@loginForm',  []],
     ['POST', '/login',    'AuthController@login',       []],
     ['GET',  '/logout',               'AuthController@logout',                    ['auth']],
-    ['GET',  '/register',             'AuthController@registerForm',              []],
-    ['POST', '/register',             'AuthController@register',                  []],
+//     ['GET',  '/register',             'AuthController@registerForm',              []],
+//     ['POST', '/register',             'AuthController@register',                  []],
     ['GET',  '/pending',  'AuthController@pending',     ['auth']],
 
     // ---- Dashboard ------------------------------------------
