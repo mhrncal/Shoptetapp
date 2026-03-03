@@ -225,6 +225,4 @@ class User
         return $result;
     }
 
-    /**
-     * Uloží Shoptet přihlašovací údaje (heslo šifrovaně)
-     */
+}
