@@ -115,7 +115,16 @@ class PhotoController extends BaseController
      */
     public function download(): void
     {
-        $id = (int)($_GET['id'] ?? 0);
+        $id = $_GET['id'] ?? '';
+        
+        // Legacy ID check (pro staré JSON fotky)
+        if (str_starts_with($id, 'legacy_')) {
+            http_response_code(404);
+            echo "Legacy fotky nelze stahovat samostatně. Použijte CSV/XML export.";
+            exit;
+        }
+        
+        $id = (int)$id;
         
         $db = Database::getInstance();
         $stmt = $db->prepare('SELECT * FROM review_photos WHERE id = ?');

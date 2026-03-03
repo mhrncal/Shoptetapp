@@ -78,7 +78,7 @@ body {
     border-bottom: 1px solid hsl(var(--border) / .5);
 }
 .sidebar-brand a { text-decoration: none; display: flex; align-items: center; gap: .75rem; }
-.sidebar-brand img { height: 2.5rem; width: auto; }
+.sidebar-brand img { width: 2.5rem; height: auto; }
 .sidebar-brand-text h2 {
     font-size: 1.125rem; /* text-lg */
     font-weight: 700;

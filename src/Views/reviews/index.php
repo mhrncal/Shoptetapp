@@ -156,17 +156,11 @@
                         <?php if (!$r['product_name'] && !$r['sku'] && !$r['shoptet_id']): ?>—<?php endif; ?>
                     </td>
                     <td class="text-center">
-                        <!-- Thumbnaily fotek -->
-                        <div class="d-flex gap-1 justify-content-center flex-wrap">
-                            <?php foreach (array_slice($r['photos'], 0, 3) as $photo): ?>
-                            <img src="<?= $e(APP_URL . '/public/uploads/' . $photo['thumb']) ?>"
-                                 style="width:36px;height:36px;object-fit:cover;border-radius:4px;"
-                                 alt="" onerror="this.style.display='none'">
-                            <?php endforeach; ?>
-                            <?php if (count($r['photos']) > 3): ?>
-                            <span class="badge bg-secondary align-self-center">+<?= count($r['photos'])-3 ?></span>
-                            <?php endif; ?>
-                        </div>
+                        <?php if (!empty($r['photos'])): ?>
+                            <span class="badge bg-primary"><?= count($r['photos']) ?></span>
+                        <?php else: ?>
+                            <span class="text-muted">0</span>
+                        <?php endif; ?>
                     </td>
                     <td class="small text-muted"><?= date('d.m.Y H:i', strtotime($r['created_at'])) ?></td>
                     <td>
@@ -192,6 +186,7 @@
                             <!-- Rychlá změna stavu -->
                             <?php if ($r['status'] !== 'approved'): ?>
                             <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                 <input type="hidden" name="status" value="approved">
                                 <button type="submit" class="btn btn-outline-success" title="Schválit">
@@ -202,6 +197,7 @@
                             
                             <?php if ($r['status'] !== 'rejected'): ?>
                             <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                 <input type="hidden" name="status" value="rejected">
                                 <button type="submit" class="btn btn-outline-danger" title="Zamítnout">
