@@ -238,19 +238,26 @@ function updatePreview() {
     preview.style.opacity = opacity;
     preview.style.textShadow = shadow ? '2px 2px 4px rgba(0,0,0,0.8)' : 'none';
     
-    // Position
-    preview.style.top = preview.style.bottom = preview.style.left = preview.style.right = 'auto';
+    // Position - reset všechny pozice
+    preview.style.top = 'auto';
+    preview.style.bottom = 'auto';
+    preview.style.left = 'auto';
+    preview.style.right = 'auto';
+    preview.style.transform = 'none';
+    
     const positions = {
-        'TL': {top: padding, left: padding},
+        'TL': {top: padding, left: padding, transform: 'none'},
         'TC': {top: padding, left: '50%', transform: 'translateX(-50%)'},
-        'TR': {top: padding, right: padding},
+        'TR': {top: padding, right: padding, transform: 'none'},
         'ML': {top: '50%', left: padding, transform: 'translateY(-50%)'},
         'MC': {top: '50%', left: '50%', transform: 'translate(-50%, -50%)'},
         'MR': {top: '50%', right: padding, transform: 'translateY(-50%)'},
-        'BL': {bottom: padding, left: padding},
+        'BL': {bottom: padding, left: padding, transform: 'none'},
         'BC': {bottom: padding, left: '50%', transform: 'translateX(-50%)'},
-        'BR': {bottom: padding, right: padding}
+        'BR': {bottom: padding, right: padding, transform: 'none'}
     };
+    
+    // Aplikuj vybranou pozici
     Object.assign(preview.style, positions[position]);
 }
 
