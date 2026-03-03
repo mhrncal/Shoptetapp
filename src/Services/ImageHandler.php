@@ -2,104 +2,329 @@
 
 namespace ShopCode\Services;
 
+use ShopCode\Core\Database;
+use ShopCode\Models\WatermarkSettings;
+
 /**
- * Zpracování nahraných fotek recenzí.
- * Resize na max 2000×2000, thumbnail 300×300.
- * Ukládá do /public/uploads/{user_id}/{review_uuid}/
+ * Vylepšený ImageHandler s:
+ * - Resize logikou (1024-1600px)
+ * - Automatickým watermarkem
+ * - EXIF cleanup
  */
 class ImageHandler
 {
-    private const MAX_SIDE   = 2000;
+    private string $uploadDir;
+    private int $maxFileSize = 10485760; // 10MB
+    private array $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    
+    // Resize konstanty
+    private const MIN_SIZE = 1024;
+    private const MAX_SIZE = 1600;
     private const THUMB_SIZE = 300;
-    private const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
-    private const MAX_BYTES    = 10 * 1024 * 1024; // 10 MB
 
-    private string $baseDir;
-    private string $baseUrl;
-
-    public function __construct()
+    public function __construct(string $uploadDir)
     {
-        $this->baseDir = ROOT . '/public/uploads';
-        $this->baseUrl = (defined('APP_URL') ? APP_URL : '') . '/uploads';
+        $this->uploadDir = rtrim($uploadDir, '/');
     }
 
     /**
-     * Zpracuje jedno nahraté foto.
-     * @param  array  $file   $_FILES['photos'][n] struktura
-     * @param  int    $userId
-     * @param  string $uuid   UUID recenze
-     * @return array  ['path' => 'relativní cesta', 'thumb' => '...', 'url' => '...', 'thumb_url' => '...']
-     * @throws \RuntimeException
+     * Zpracuje upload fotky s resize a watermarkem
      */
-    public function process(array $file, int $userId, string $uuid): array
+    public function process(array $file, int $userId): array
     {
-        // ── Validace ──────────────────────────────────────────
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            throw new \RuntimeException('Chyba při nahrávání souboru: kód ' . $file['error']);
+        // Validace
+        $this->validate($file);
+        
+        // Načti obrázek
+        $img = $this->loadImage($file['tmp_name'], $file['type']);
+        
+        // EXIF cleanup (bezpečnost)
+        $img = $this->removeExif($img);
+        
+        // Resize podle pravidel
+        $img = $this->smartResize($img);
+        
+        // Generuj názvy
+        $uniqueId = bin2hex(random_bytes(8));
+        $ext = $this->getExtension($file['type']);
+        
+        $paths = [
+            'original' => "{$uniqueId}_original.{$ext}",
+            'display'  => "{$uniqueId}.{$ext}",
+            'thumb'    => "{$uniqueId}_thumb.{$ext}",
+        ];
+        
+        // Složka pro usera
+        $userDir = "{$this->uploadDir}/{$userId}/{$uniqueId}";
+        if (!is_dir($userDir)) {
+            mkdir($userDir, 0755, true);
         }
-        if ($file['size'] > self::MAX_BYTES) {
-            throw new \RuntimeException('Soubor je příliš velký (max 10 MB).');
-        }
-
-        // Validace skutečného MIME (ne jen přípona)
-        $mime = mime_content_type($file['tmp_name']);
-        if (!in_array($mime, self::ALLOWED_MIME, true)) {
-            throw new \RuntimeException("Nepodporovaný formát souboru: {$mime}");
-        }
-
-        // ── Příprava adresáře ─────────────────────────────────
-        $dir = "{$this->baseDir}/{$userId}/{$uuid}";
-        if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
-            throw new \RuntimeException('Nelze vytvořit adresář pro fotky.');
-        }
-
-        // Bezpečný náhodný název souboru
-        $ext      = match($mime) {
-            'image/jpeg' => 'jpg',
-            'image/png'  => 'png',
-            'image/webp' => 'webp',
-        };
-        $filename = bin2hex(random_bytes(8)) . '.' . $ext;
-        $thumbName = 'thumb_' . $filename;
-
-        $destPath  = "{$dir}/{$filename}";
-        $thumbPath = "{$dir}/{$thumbName}";
-
-        // ── Resize a uložení ──────────────────────────────────
-        $image = $this->loadImage($file['tmp_name'], $mime);
-        $image = $this->resize($image, self::MAX_SIDE, self::MAX_SIDE);
-        $this->save($image, $destPath, $mime);
-        imagedestroy($image);
-
-        // Thumbnail
-        $thumb = $this->loadImage($destPath, $mime);
-        $thumb = $this->cropSquare($thumb, self::THUMB_SIZE);
-        $this->save($thumb, $thumbPath, $mime);
+        
+        // Ulož originál (bez watermarku)
+        $this->save($img, "{$userDir}/{$paths['original']}", $file['type']);
+        
+        // Aplikuj watermark
+        $watermarked = $this->applyWatermark($img, $userId);
+        
+        // Ulož display verzi (s watermarkem)
+        $this->save($watermarked, "{$userDir}/{$paths['display']}", $file['type']);
+        
+        // Vytvoř thumbnail (z watermarked)
+        $thumb = $this->createThumbnail($watermarked);
+        $this->save($thumb, "{$userDir}/{$paths['thumb']}", $file['type']);
+        
+        // Cleanup
+        imagedestroy($img);
+        imagedestroy($watermarked);
         imagedestroy($thumb);
-
-        $relPath   = "{$userId}/{$uuid}/{$filename}";
-        $relThumb  = "{$userId}/{$uuid}/{$thumbName}";
-
+        
         return [
-            'path'      => $relPath,
-            'thumb'     => $relThumb,
-            'url'       => "{$this->baseUrl}/{$relPath}",
-            'thumb_url' => "{$this->baseUrl}/{$relThumb}",
+            'path'  => "{$userId}/{$uniqueId}/{$paths['display']}",
+            'thumb' => "{$userId}/{$uniqueId}/{$paths['thumb']}",
+            'mime'  => $file['type'],
         ];
     }
 
     /**
-     * Smaže celou složku recenze
+     * Smart resize podle pravidel:
+     * < 1024px → vycentrovat do 1024x1024
+     * 1024-1600px → ponechat
+     * > 1600px → zmenšit (delší strana = 1600px)
      */
-    public function deleteFolder(int $userId, string $uuid): void
+    private function smartResize(\GdImage $img): \GdImage
     {
-        $dir = "{$this->baseDir}/{$userId}/{$uuid}";
-        if (!is_dir($dir)) return;
-        array_map('unlink', glob("{$dir}/*"));
-        rmdir($dir);
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $max = max($w, $h);
+        
+        // Případ 1: Menší než 1024px → vycentrovat do 1024x1024
+        if ($max < self::MIN_SIZE) {
+            return $this->centerInCanvas($img, self::MIN_SIZE, self::MIN_SIZE);
+        }
+        
+        // Případ 2: Mezi 1024-1600px → ponechat
+        if ($max <= self::MAX_SIZE) {
+            return $img;
+        }
+        
+        // Případ 3: Větší než 1600px → zmenšit
+        $ratio = self::MAX_SIZE / $max;
+        $newW = (int)round($w * $ratio);
+        $newH = (int)round($h * $ratio);
+        
+        return $this->resize($img, $newW, $newH);
     }
 
-    // ── Private helpers ───────────────────────────────────────
+    /**
+     * Vycentruje obrázek do většího canvasu s bílým pozadím
+     */
+    private function centerInCanvas(\GdImage $img, int $canvasW, int $canvasH): \GdImage
+    {
+        $srcW = imagesx($img);
+        $srcH = imagesy($img);
+        
+        $canvas = imagecreatetruecolor($canvasW, $canvasH);
+        
+        // Bílé pozadí
+        imagealphablending($canvas, false);
+        imagesavealpha($canvas, true);
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        imagefilledrectangle($canvas, 0, 0, $canvasW, $canvasH, $white);
+        imagealphablending($canvas, true);
+        
+        // Vycentrovat
+        $x = (int)(($canvasW - $srcW) / 2);
+        $y = (int)(($canvasH - $srcH) / 2);
+        
+        imagecopy($canvas, $img, $x, $y, 0, 0, $srcW, $srcH);
+        imagedestroy($img);
+        
+        return $canvas;
+    }
+
+    /**
+     * Resize obrázku
+     */
+    private function resize(\GdImage $img, int $newW, int $newH): \GdImage
+    {
+        $srcW = imagesx($img);
+        $srcH = imagesy($img);
+        
+        $canvas = imagecreatetruecolor($newW, $newH);
+        
+        // Zachování průhlednosti
+        imagealphablending($canvas, false);
+        imagesavealpha($canvas, true);
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        imagefilledrectangle($canvas, 0, 0, $newW, $newH, $white);
+        imagealphablending($canvas, true);
+        
+        imagecopyresampled($canvas, $img, 0, 0, 0, 0, $newW, $newH, $srcW, $srcH);
+        imagedestroy($img);
+        
+        return $canvas;
+    }
+
+    /**
+     * Vytvoř čtvercový thumbnail
+     */
+    private function createThumbnail(\GdImage $img): \GdImage
+    {
+        $srcW = imagesx($img);
+        $srcH = imagesy($img);
+        $min = min($srcW, $srcH);
+        $x = (int)(($srcW - $min) / 2);
+        $y = (int)(($srcH - $min) / 2);
+
+        $canvas = imagecreatetruecolor(self::THUMB_SIZE, self::THUMB_SIZE);
+        
+        // Bílé pozadí
+        imagealphablending($canvas, false);
+        imagesavealpha($canvas, true);
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        imagefilledrectangle($canvas, 0, 0, self::THUMB_SIZE, self::THUMB_SIZE, $white);
+        imagealphablending($canvas, true);
+        
+        imagecopyresampled($canvas, $img, 0, 0, $x, $y, self::THUMB_SIZE, self::THUMB_SIZE, $min, $min);
+        
+        return $canvas;
+    }
+
+    /**
+     * Aplikuj watermark podle user nastavení
+     */
+    private function applyWatermark(\GdImage $img, int $userId): \GdImage
+    {
+        $settings = WatermarkSettings::getForUser($userId);
+        
+        // Pokud není enabled, vrať originál
+        if (!$settings || !$settings['enabled']) {
+            return $this->cloneImage($img);
+        }
+        
+        $canvas = $this->cloneImage($img);
+        $w = imagesx($canvas);
+        $h = imagesy($canvas);
+        
+        // Velikost fontu
+        $sizeMap = ['small' => 16, 'medium' => 24, 'large' => 36];
+        $fontSize = $sizeMap[$settings['size']] ?? 24;
+        
+        // Barva
+        list($r, $g, $b) = $this->hexToRgb($settings['color']);
+        $alpha = (int)((100 - $settings['opacity']) * 1.27);
+        $color = imagecolorallocatealpha($canvas, $r, $g, $b, $alpha);
+        
+        // Stín (pokud enabled)
+        if ($settings['shadow_enabled']) {
+            $shadow = imagecolorallocatealpha($canvas, 0, 0, 0, $alpha);
+        }
+        
+        // Vypočítej pozici
+        $text = $settings['text'];
+        $padding = $settings['padding'];
+        // GD font 5: každý znak je ~9px široký, 15px vysoký
+        $textW = strlen($text) * 9;
+        $textH = 15;
+        
+        $coords = $this->calculatePosition($settings['position'], $w, $h, $textW, $textH, $padding);
+        
+        // Vykreslí stín
+        if ($settings['shadow_enabled']) {
+            imagestring($canvas, 5, $coords['x'] + 2, $coords['y'] - 10 + 2, $text, $shadow);
+        }
+        
+        // Vykresli text (GD font 5 = largest built-in)
+        imagestring($canvas, 5, $coords['x'], $coords['y'] - 10, $text, $color);
+        
+        return $canvas;
+    }
+
+    /**
+     * Vypočítá XY souřadnice pro danou pozici
+     */
+    private function calculatePosition(string $pos, int $w, int $h, int $textW, int $textH, int $pad): array
+    {
+        $positions = [
+            'TL' => ['x' => $pad, 'y' => $pad + $textH],
+            'TC' => ['x' => ($w - $textW) / 2, 'y' => $pad + $textH],
+            'TR' => ['x' => $w - $textW - $pad, 'y' => $pad + $textH],
+            'ML' => ['x' => $pad, 'y' => ($h + $textH) / 2],
+            'MC' => ['x' => ($w - $textW) / 2, 'y' => ($h + $textH) / 2],
+            'MR' => ['x' => $w - $textW - $pad, 'y' => ($h + $textH) / 2],
+            'BL' => ['x' => $pad, 'y' => $h - $pad],
+            'BC' => ['x' => ($w - $textW) / 2, 'y' => $h - $pad],
+            'BR' => ['x' => $w - $textW - $pad, 'y' => $h - $pad],
+        ];
+        
+        return $positions[$pos] ?? $positions['BR'];
+    }
+
+    /**
+     * Klonuje GD obrázek
+     */
+    private function cloneImage(\GdImage $img): \GdImage
+    {
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $clone = imagecreatetruecolor($w, $h);
+        imagealphablending($clone, false);
+        imagesavealpha($clone, true);
+        imagecopy($clone, $img, 0, 0, 0, 0, $w, $h);
+        return $clone;
+    }
+
+    /**
+     * Odstraní EXIF data (GPS, atd.)
+     */
+    private function removeExif(\GdImage $img): \GdImage
+    {
+        // GD automaticky odstraní EXIF při rekreaci
+        return $this->cloneImage($img);
+    }
+
+    /**
+     * Hex to RGB
+     */
+    private function hexToRgb(string $hex): array
+    {
+        $hex = ltrim($hex, '#');
+        return [
+            hexdec(substr($hex, 0, 2)),
+            hexdec(substr($hex, 2, 2)),
+            hexdec(substr($hex, 4, 2)),
+        ];
+    }
+
+    /**
+     * Vrátí cestu k TTF fontu
+     */
+    private function getFont(string $fontName): string
+    {
+        // Fallback na system font (GD built-in)
+        // Pro produkci můžeš přidat TTF fonty do /lib/fonts/
+        $fontPath = ROOT . "/lib/fonts/{$fontName}.ttf";
+        if (file_exists($fontPath)) {
+            return $fontPath;
+        }
+        
+        // Fallback - použij GD vestavěný font (číslo 5)
+        // Pro TTF musíme mít cestu, takže použijeme Liberation Sans
+        return ROOT . '/lib/fonts/LiberationSans-Regular.ttf';
+    }
+
+    private function validate(array $file): void
+    {
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            throw new \Exception('Chyba při uploadu souboru');
+        }
+        if ($file['size'] > $this->maxFileSize) {
+            throw new \Exception('Soubor je příliš velký (max 10MB)');
+        }
+        if (!in_array($file['type'], $this->allowedTypes)) {
+            throw new \Exception('Nepodporovaný formát obrázku');
+        }
+    }
 
     private function loadImage(string $path, string $mime): \GdImage
     {
@@ -107,70 +332,26 @@ class ImageHandler
             'image/jpeg' => imagecreatefromjpeg($path),
             'image/png'  => imagecreatefrompng($path),
             'image/webp' => imagecreatefromwebp($path),
-            default      => throw new \RuntimeException("Nepodporovaný MIME: {$mime}"),
+            default => throw new \Exception('Nepodporovaný formát'),
         };
-    }
-
-    private function resize(\GdImage $img, int $maxW, int $maxH): \GdImage
-    {
-        $srcW = imagesx($img);
-        $srcH = imagesy($img);
-
-        if ($srcW <= $maxW && $srcH <= $maxH) return $img;
-
-        $ratio  = min($maxW / $srcW, $maxH / $srcH);
-        $newW   = (int)round($srcW * $ratio);
-        $newH   = (int)round($srcH * $ratio);
-        $canvas = imagecreatetruecolor($newW, $newH);
-
-        // Zachování průhlednosti pro PNG
-        imagealphablending($canvas, false);
-        imagesavealpha($canvas, true);
-        
-        // Bílé pozadí místo černého
-        $white = imagecolorallocate($canvas, 255, 255, 255);
-        imagefilledrectangle($canvas, 0, 0, $newW, $newH, $white);
-        
-        // Nyní zapneme alpha blending pro správné překrytí
-        imagealphablending($canvas, true);
-        
-        imagecopyresampled($canvas, $img, 0, 0, 0, 0, $newW, $newH, $srcW, $srcH);
-        imagedestroy($img);
-        return $canvas;
-    }
-
-    private function cropSquare(\GdImage $img, int $size): \GdImage
-    {
-        $srcW = imagesx($img);
-        $srcH = imagesy($img);
-        $min  = min($srcW, $srcH);
-        $x    = (int)(($srcW - $min) / 2);
-        $y    = (int)(($srcH - $min) / 2);
-
-        $canvas = imagecreatetruecolor($size, $size);
-        
-        // Zachování průhlednosti pro PNG thumbnaily
-        imagealphablending($canvas, false);
-        imagesavealpha($canvas, true);
-        
-        // Bílé pozadí
-        $white = imagecolorallocate($canvas, 255, 255, 255);
-        imagefilledrectangle($canvas, 0, 0, $size, $size, $white);
-        
-        // Alpha blending pro správné překrytí
-        imagealphablending($canvas, true);
-        
-        imagecopyresampled($canvas, $img, 0, 0, $x, $y, $size, $size, $min, $min);
-        imagedestroy($img);
-        return $canvas;
     }
 
     private function save(\GdImage $img, string $path, string $mime): void
     {
         match($mime) {
-            'image/jpeg' => imagejpeg($img, $path, 88),
+            'image/jpeg' => imagejpeg($img, $path, 90),
             'image/png'  => imagepng($img, $path, 6),
-            'image/webp' => imagewebp($img, $path, 85),
+            'image/webp' => imagewebp($img, $path, 90),
+        };
+    }
+
+    private function getExtension(string $mime): string
+    {
+        return match($mime) {
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp',
+            default => 'jpg',
         };
     }
 }
