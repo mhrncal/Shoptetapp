@@ -86,10 +86,21 @@ class Review
         $row = $stmt->fetch();
         if (!$row) return null;
         
-        // Načti fotky z review_photos tabulky
+        // Načti fotky z review_photos tabulky (nová struktura)
         $stmt = $db->prepare('SELECT * FROM review_photos WHERE review_id = ? ORDER BY id');
         $stmt->execute([$id]);
-        $row['photos'] = $stmt->fetchAll();
+        $photos = $stmt->fetchAll();
+        
+        // FALLBACK: Pokud nejsou fotky v tabulce, zkus JSON (stará struktura)
+        if (empty($photos) && !empty($row['photos'])) {
+            $photos = json_decode($row['photos'], true) ?: [];
+            // Přidej fake ID aby fungovaly odkazy
+            foreach ($photos as $i => &$photo) {
+                $photo['id'] = 'legacy_' . $i;
+            }
+        }
+        
+        $row['photos'] = $photos;
         
         return $row;
     }

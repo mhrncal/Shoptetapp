@@ -114,7 +114,7 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
                         <div class="mb-4">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="shadow_enabled" 
-                                       name="shadow_enabled" <?= $settings['shadow_enabled'] ? 'checked' : '' ?>>
+                                       name="shadow_enabled" <?= ($settings['shadow_enabled'] ?? true) ? 'checked' : '' ?>>
                                 <label class="form-check-label" for="shadow_enabled">
                                     Přidat černý stín (lepší čitelnost)
                                 </label>
@@ -139,7 +139,7 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
                 </div>
                 <div class="card-body">
                     <div class="preview-container">
-                        <img src="<?= APP_URL ?>/public/assets/preview-sample.jpg" 
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='450'%3E%3Crect fill='%23e5e7eb' width='800' height='450'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='24' fill='%239ca3af'%3ENáhled fotky%3C/text%3E%3C/svg%3E" 
                              alt="Preview" class="preview-image">
                         <div class="watermark-preview" id="watermark-preview">
                             <?= $e($settings['text']) ?>

@@ -92,12 +92,12 @@
                         </td>
                     </tr>
                     <?php endif; ?>
-                    <?php if ($review['product_name']): ?>
+                    <?php if (($review['product_name'] ?? null)): ?>
                     <tr>
                         <td class="text-muted ps-3">Produkt</td>
                         <td>
                             <a href="<?= APP_URL ?>/products/<?= $review['product_id'] ?>">
-                                <?= $e($review['product_name']) ?>
+                                <?= $e(($review['product_name'] ?? null)) ?>
                             </a>
                         </td>
                     </tr>
