@@ -1,6 +1,6 @@
 <?php $pageTitle = 'Recenze #' . $review['id']; ?>
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); ?>
-<?php $st = Review::STATUSES[$review['status']] ?? ['label'=>$review['status'],'color'=>'secondary']; ?>
+<?php $st = \ShopCode\Models\Review::STATUSES[$review['status']] ?? ['label'=>$review['status'],'color'=>'secondary']; ?>
 
 <div class="d-flex align-items-center mb-4 gap-3">
     <a href="<?= APP_URL ?>/reviews" class="btn btn-sm btn-outline-secondary">

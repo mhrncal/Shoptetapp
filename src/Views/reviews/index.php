@@ -136,7 +136,7 @@
                 </thead>
                 <tbody>
                 <?php foreach ($reviews as $r):
-                    $st = Review::STATUSES[$r['status']] ?? ['label'=>$r['status'],'color'=>'secondary'];
+                    $st = \ShopCode\Models\Review::STATUSES[$r['status']] ?? ['label'=>$r['status'],'color'=>'secondary'];
                 ?>
                 <tr>
                     <td>
