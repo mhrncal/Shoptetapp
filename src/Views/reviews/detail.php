@@ -39,11 +39,23 @@
                                 <span class="badge bg-dark bg-opacity-75"><?= $i+1 ?></span>
                             </div>
                         </a>
-                        <div class="mt-1">
-                            <a href="<?= $e(APP_URL . '/public/uploads/' . $photo['path']) ?>"
-                               target="_blank" class="text-muted small">
-                                <i class="bi bi-box-arrow-up-right me-1"></i>Plná velikost
+                        <div class="mt-2 d-flex gap-1">
+                            <a href="<?= APP_URL ?>/photo/download?id=<?= $photo['id'] ?>" 
+                               class="btn btn-sm btn-outline-primary flex-fill" title="Stáhnout originál">
+                                <i class="bi bi-download"></i>
                             </a>
+                            <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" 
+                                    onclick="openReuploadModal(<?= $photo['id'] ?>)" title="Nahradit fotku">
+                                <i class="bi bi-upload"></i>
+                            </button>
+                            <form method="POST" action="<?= APP_URL ?>/photo/delete" 
+                                  onsubmit="return confirm('Opravdu smazat tuto fotku?')" 
+                                  class="flex-fill">
+                                <input type="hidden" name="id" value="<?= $photo['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100" title="Smazat">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -173,3 +185,42 @@
 
     </div>
 </div>
+
+<!-- Re-upload Modal -->
+<div class="modal fade" id="reuploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="<?= APP_URL ?>/photo/reupload" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nahradit fotku</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="photo_id" id="reupload-photo-id">
+                    <div class="mb-3">
+                        <label class="form-label">Vyberte novou fotku</label>
+                        <input type="file" class="form-control" name="photo" 
+                               accept="image/jpeg,image/png,image/webp" required>
+                        <small class="text-muted">
+                            JPG, PNG nebo WEBP, max 10MB<br>
+                            Fotka bude zpracována s watermarkem podle vašeho nastavení
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Nahrát a nahradit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openReuploadModal(photoId) {
+    document.getElementById('reupload-photo-id').value = photoId;
+    new bootstrap.Modal(document.getElementById('reuploadModal')).show();
+}
+</script>

@@ -112,6 +112,7 @@
                     <option value="approve">✅ Schválit</option>
                     <option value="reject">❌ Zamítnout</option>
                     <option value="mark_imported">📦 Označit jako importováno</option>
+                    <option value="download_zip">📥 Stáhnout fotky (ZIP)</option>
                 </select>
                 <button type="submit" class="btn btn-sm btn-outline-secondary"
                         onclick="return document.querySelectorAll('.review-cb:checked').length > 0 || (alert('Nevybrali jste žádné recenze.'), false)">
@@ -181,9 +182,34 @@
                         <?php endif; ?>
                     </td>
                     <td class="text-end">
-                        <a href="<?= APP_URL ?>/reviews/<?= $r['id'] ?>" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-eye"></i>
-                        </a>
+                        <div class="btn-group btn-group-sm">
+                            <!-- Zobrazit detail -->
+                            <a href="<?= APP_URL ?>/reviews/<?= $r['id'] ?>" 
+                               class="btn btn-outline-secondary" title="Detail">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            
+                            <!-- Rychlá změna stavu -->
+                            <?php if ($r['status'] !== 'approved'): ?>
+                            <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="d-inline">
+                                <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                <input type="hidden" name="status" value="approved">
+                                <button type="submit" class="btn btn-outline-success" title="Schválit">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            </form>
+                            <?php endif; ?>
+                            
+                            <?php if ($r['status'] !== 'rejected'): ?>
+                            <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="d-inline">
+                                <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                <input type="hidden" name="status" value="rejected">
+                                <button type="submit" class="btn btn-outline-danger" title="Zamítnout">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </form>
+                            <?php endif; ?>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>

@@ -127,6 +127,11 @@ return [
     ['POST',   '/reviews/{id}/approve',       'ReviewController@approve',    ['auth','approved','module:reviews']],
     ['POST',   '/reviews/{id}/reject',        'ReviewController@reject',     ['auth','approved','module:reviews']],
     ['DELETE', '/reviews/{id}',               'ReviewController@delete',     ['auth','approved','module:reviews']],
+    ['POST',   '/reviews/change-status',      'ReviewController@changeStatus', ['auth','approved','module:reviews']],
+    ['POST',   '/reviews/download-zip',       'ReviewController@downloadZip',  ['auth','approved','module:reviews']],
+    ['POST',   '/photo/delete',                'PhotoController@delete',        ['auth','approved']],
+    ['POST',   '/photo/reupload',              'PhotoController@reupload',      ['auth','approved']],
+    ['GET',    '/photo/download',              'PhotoController@download',      ['auth','approved']],
 
     // Product Tabs & Videos
     // ============================================================

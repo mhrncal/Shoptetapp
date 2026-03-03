@@ -114,6 +114,12 @@ class ReviewController extends BaseController
                 Session::flash('success', "Označeno jako importováno: {$count} recenzí.");
                 break;
 
+            case 'download_zip':
+                // Redirect na downloadZip metodu
+                $_POST['ids'] = $ids;
+                $this->downloadZip();
+                return;
+
             default:
                 Session::flash('error', 'Neznámá akce.');
         }
@@ -176,3 +182,113 @@ class ReviewController extends BaseController
         }
     }
 }
+
+    /**
+     * Změna stavu recenze (approve/reject jsou obousměrné)
+     */
+    public function changeStatus(): void
+    {
+        $id = (int)($_POST['id'] ?? 0);
+        $newStatus = $_POST['status'] ?? '';
+        
+        if (!in_array($newStatus, ['approved', 'rejected'])) {
+            $_SESSION['flash'] = ['error' => 'Neplatný stav'];
+            header('Location: ' . APP_URL . '/reviews');
+            exit;
+        }
+        
+        $db = Database::getInstance();
+        $stmt = $db->prepare('UPDATE reviews SET status = ? WHERE id = ?');
+        
+        if ($stmt->execute([$newStatus, $id])) {
+            $label = $newStatus === 'approved' ? 'schválena' : 'zamítnuta';
+            $_SESSION['flash'] = ['success' => "Recenze byla {$label}"];
+        } else {
+            $_SESSION['flash'] = ['error' => 'Chyba při změně stavu'];
+        }
+        
+        header('Location: ' . APP_URL . '/reviews');
+        exit;
+    }
+}
+
+    /**
+     * Hromadné stažení fotek jako ZIP
+     */
+    public function downloadZip(): void
+    {
+        $ids = $_POST['ids'] ?? [];
+        
+        if (empty($ids)) {
+            $_SESSION['flash'] = ['error' => 'Nevybrali jste žádné recenze'];
+            header('Location: ' . APP_URL . '/reviews');
+            exit;
+        }
+        
+        $db = Database::getInstance();
+        
+        // Načti všechny fotky z vybraných recenzí
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $db->prepare("
+            SELECT rp.*, r.customer_name, r.product_sku
+            FROM review_photos rp
+            JOIN reviews r ON r.id = rp.review_id
+            WHERE r.id IN ({$placeholders})
+            ORDER BY r.id, rp.id
+        ");
+        $stmt->execute($ids);
+        $photos = $stmt->fetchAll();
+        
+        if (empty($photos)) {
+            $_SESSION['flash'] = ['error' => 'Žádné fotky k stažení'];
+            header('Location: ' . APP_URL . '/reviews');
+            exit;
+        }
+        
+        // Vytvoř ZIP
+        $zipFilename = 'fotorecenze_' . date('Y-m-d_His') . '.zip';
+        $zipPath = ROOT . '/tmp/' . $zipFilename;
+        
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            $_SESSION['flash'] = ['error' => 'Chyba při vytváření ZIP'];
+            header('Location: ' . APP_URL . '/reviews');
+            exit;
+        }
+        
+        $counter = 1;
+        foreach ($photos as $photo) {
+            // Preferuj originál (bez watermarku)
+            $originalPath = preg_replace('/\.(jpg|png|webp)$/', '_original.$1', $photo['path']);
+            $filepath = ROOT . '/public/uploads/' . $originalPath;
+            
+            if (!file_exists($filepath)) {
+                $filepath = ROOT . '/public/uploads/' . $photo['path'];
+            }
+            
+            if (file_exists($filepath)) {
+                $ext = pathinfo($filepath, PATHINFO_EXTENSION);
+                $name = $photo['customer_name'] ?? 'zakaznik';
+                $sku = $photo['product_sku'] ?? 'produkt';
+                
+                // Sanitize názvu
+                $name = preg_replace('/[^a-z0-9_-]/i', '_', $name);
+                $sku = preg_replace('/[^a-z0-9_-]/i', '_', $sku);
+                
+                $zipName = sprintf('%03d_%s_%s.%s', $counter++, $name, $sku, $ext);
+                $zip->addFile($filepath, $zipName);
+            }
+        }
+        
+        $zip->close();
+        
+        // Stáhni ZIP
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $zipFilename . '"');
+        header('Content-Length: ' . filesize($zipPath));
+        readfile($zipPath);
+        
+        // Smaž dočasný ZIP
+        unlink($zipPath);
+        exit;
+    }
