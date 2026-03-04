@@ -42,12 +42,32 @@ jobs:
         run: |
           rsync -aze "ssh -p $PORT" --delete-after --exclude=.git --exclude=.env ./ $USER@$HOST:/srv/app/
           
-      - name: Ensure assets are present
+      - name: Verify and fix assets
         run: |
           ssh -p $PORT $USER@$HOST << 'ENDSSH'
-            # Verify assets exist
-            ls -la /srv/app/public/assets/css/app.css || echo "WARNING: CSS missing!"
-            ls -la /srv/app/public/assets/js/app.js || echo "WARNING: JS missing!"
+            echo "=== Checking assets ==="
+            
+            # Verify directory structure
+            ls -la /srv/app/public/assets/ || mkdir -p /srv/app/public/assets/{css,js}
+            
+            # Check files
+            if [ ! -f /srv/app/public/assets/css/app.css ]; then
+              echo "ERROR: CSS missing!"
+              ls -R /srv/app/public/
+            else
+              echo "✓ CSS exists ($(wc -c < /srv/app/public/assets/css/app.css) bytes)"
+            fi
+            
+            if [ ! -f /srv/app/public/assets/js/app.js ]; then
+              echo "ERROR: JS missing!"
+            else
+              echo "✓ JS exists ($(wc -c < /srv/app/public/assets/js/app.js) bytes)"
+            fi
+            
+            # Set permissions
+            chmod -R 755 /srv/app/public/assets/
+            
+            echo "=== Asset check complete ==="
           ENDSSH
       
       - name: Create necessary directories
