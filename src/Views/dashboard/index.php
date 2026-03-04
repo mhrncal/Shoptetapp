@@ -2,7 +2,7 @@
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_HTML5, 'UTF-8'); ?>
 
 <div class="mb-4">
-    <h1 class="fw-bold gradient-text mb-1" style="font-size:1.75rem;">Vítejte zpět!</h1>
+    <h1 class="fw-bold gradient-text mb-1" style="font-size:clamp(1.375rem, 5vw, 1.75rem);">Vítejte zpět!</h1>
     <p style="color:var(--sc-muted-fg);font-size:.9rem;">
         Zde je přehled e-shopu <strong><?= $e($currentUser['shop_name'] ?? $currentUser['email']) ?></strong>
     </p>
@@ -88,7 +88,7 @@
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-file-earmark-arrow-down me-2 text-muted"></i>Poslední XML importy</h6>
                 <?php if (in_array('xml_import', $activeModules)): ?>
                 <a href="<?= APP_URL ?>/xml" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-plus me-1"></i>Nový import
+                    <i class="bi bi-plus me-1"></i><span class="d-none d-sm-inline">Nový </span>Import
                 </a>
                 <?php endif; ?>
             </div>
