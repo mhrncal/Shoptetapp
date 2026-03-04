@@ -103,7 +103,9 @@ class FeedParser
         
         // Konvertuj encoding hlavičky
         if ($encoding !== 'UTF-8') {
-            $header = array_map(fn($h) => mb_convert_encoding($h, 'UTF-8', $encoding === 'windows-1250' ? 'CP1250' : $encoding), $header);
+            $header = array_map(function($h) use ($encoding) {
+                return iconv($encoding, 'UTF-8//TRANSLIT', $h);
+            }, $header);
         }
         
         // Najdi indexy sloupců
@@ -135,7 +137,9 @@ class FeedParser
             
             // Konvertuj encoding
             if ($encoding !== 'UTF-8') {
-                $row = array_map(fn($r) => mb_convert_encoding($r, 'UTF-8', $encoding === 'windows-1250' ? 'CP1250' : $encoding), $row);
+                $row = array_map(function($r) use ($encoding) {
+                    return iconv($encoding, 'UTF-8//TRANSLIT', $r);
+                }, $row);
             }
             
             $code = $row[$codeIdx] ?? null;
