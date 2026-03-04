@@ -23,7 +23,7 @@
                         <?php endforeach; ?>
                     </tbody>
                 </table></div>
-</div>            </div>
+            </div>
         </div>
     </div>
 
@@ -112,7 +112,7 @@
                             <?php endforeach; ?>
                         </tbody>
                     </table>
-</div>                </div>
+                </div>
             </div>
         </div>
     </div>
