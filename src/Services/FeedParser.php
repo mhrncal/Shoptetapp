@@ -129,7 +129,7 @@ class FeedParser
         }
         
         // Batch insert pro rychlost
-        $batchSize = 500;
+        $batchSize = 100; // Menší batch = méně timeout riziko
         $batch = [];
         
         while (($row = fgetcsv($handle, 0, $delimiter, '"', '')) !== false) {
@@ -170,6 +170,7 @@ class FeedParser
             // Flush batch
             if (count($batch) >= $batchSize) {
                 $this->insertBatch($userId, $batch, $stats);
+                error_log("Processed {$stats['total']} rows...");
                 $batch = [];
             }
         }

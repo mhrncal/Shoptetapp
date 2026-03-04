@@ -71,7 +71,7 @@
                 </td>
                 <td>
                     <div class="d-flex gap-1">
-                        <form method="POST" action="/feeds/sync" class="sync-form">
+                        <form method="POST" action="/feeds/sync-background" class="sync-form">
                             <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
                             <input type="hidden" name="id" value="<?= $feed['id'] ?>">
                             <button type="submit" class="btn btn-sm btn-outline-primary" title="Synchronizovat teď">

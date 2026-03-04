@@ -68,6 +68,10 @@ class FeedController extends BaseController
      */
     public function sync(): void
     {
+        // Zvyš limity pro velké CSV
+        set_time_limit(600); // 10 minut
+        ini_set('memory_limit', '256M');
+        
         $this->validateCsrf();
         $id = (int)($_POST['id'] ?? 0);
         $userId = $this->user['id'];
@@ -119,3 +123,31 @@ class FeedController extends BaseController
         $this->redirect('/feeds');
     }
 }
+
+    /**
+     * Spusť sync na pozadí (aby nebylo 504)
+     */
+    public function syncBackground(): void
+    {
+        $this->validateCsrf();
+        $id = (int)($_POST['id'] ?? 0);
+        $userId = $this->user['id'];
+        
+        $feed = ProductFeed::findById($id, $userId);
+        if (!$feed) {
+            Session::flash('error', 'Feed nenalezen');
+            $this->redirect('/feeds');
+        }
+        
+        // Spusť na pozadí
+        $cmd = sprintf(
+            'php %s/cron/feed_sync_single.php %d > /dev/null 2>&1 &',
+            ROOT,
+            $id
+        );
+        
+        exec($cmd);
+        
+        Session::flash('info', 'Synchronizace byla spuštěna na pozadí. Obnovte stránku za chvíli.');
+        $this->redirect('/feeds');
+    }
