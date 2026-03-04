@@ -114,3 +114,134 @@ var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl)
 });
 </script>
+
+<!-- Časová osa synchronizací -->
+<?php if (!empty($timeline)): ?>
+<div class="mt-5">
+    <h5 class="mb-3">Časová osa synchronizací</h5>
+    
+    <div class="timeline">
+        <?php foreach ($timeline as $log): 
+            $isRunning = $log['status'] === 'running';
+            $isSuccess = $log['status'] === 'success';
+            $isError = $log['status'] === 'error';
+        ?>
+        <div class="timeline-item mb-3">
+            <div class="card <?= $isError ? 'border-danger' : ($isSuccess ? 'border-success' : 'border-warning') ?>">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <!-- Status badge -->
+                            <?php if ($isRunning): ?>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-hourglass-split"></i> Běží...
+                                </span>
+                            <?php elseif ($isSuccess): ?>
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Úspěch
+                                </span>
+                            <?php else: ?>
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle"></i> Chyba
+                                </span>
+                            <?php endif; ?>
+                            
+                            <!-- Feed název -->
+                            <strong class="ms-2"><?= $e($log['feed_name']) ?></strong>
+                            
+                            <!-- Čas -->
+                            <span class="text-muted ms-2">
+                                <?= date('d.m.Y H:i', strtotime($log['started_at'])) ?>
+                            </span>
+                            
+                            <!-- Trvání -->
+                            <?php if ($log['duration_seconds']): ?>
+                                <span class="badge bg-secondary ms-2">
+                                    <?= $log['duration_seconds'] ?>s
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistiky -->
+                    <?php if ($isSuccess): ?>
+                    <div class="mt-2 small">
+                        <span class="text-success me-3">
+                            <i class="bi bi-plus-circle"></i> <?= $log['products_inserted'] ?> nových
+                        </span>
+                        <span class="text-info me-3">
+                            <i class="bi bi-arrow-repeat"></i> <?= $log['products_updated'] ?> aktualizováno
+                        </span>
+                        <span class="text-primary me-3">
+                            <i class="bi bi-box"></i> <?= $log['products_total'] ?> celkem
+                        </span>
+                        <?php if ($log['reviews_matched'] > 0): ?>
+                        <span class="text-warning">
+                            <i class="bi bi-link-45deg"></i> <?= $log['reviews_matched'] ?>/<?= $log['reviews_total'] ?> recenzí spárováno
+                        </span>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <!-- Error message -->
+                    <?php if ($isError && $log['error_message']): ?>
+                    <div class="mt-2 small text-danger">
+                        <i class="bi bi-exclamation-triangle"></i> <?= $e($log['error_message']) ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<style>
+.timeline {
+    position: relative;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 15px;
+    bottom: -15px;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item:last-child::before {
+    display: none;
+}
+
+.timeline-item::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 15px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #6c757d;
+    border: 2px solid white;
+}
+
+.timeline-item .card.border-success + * .timeline-item::after {
+    background: #198754;
+}
+
+.timeline-item .card.border-danger + * .timeline-item::after {
+    background: #dc3545;
+}
+
+.timeline-item .card.border-warning + * .timeline-item::after {
+    background: #ffc107;
+}
+</style>

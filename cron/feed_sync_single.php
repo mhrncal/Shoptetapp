@@ -19,10 +19,20 @@ if (!$feedId) {
     exit(1);
 }
 
-echo "[" . date('Y-m-d H:i:s') . "] Syncing feed #{$feedId}\n";
+$startTime = microtime(true);
+$db = Database::getInstance();
+
+// Vytvoř záznam v logu
+$logStmt = $db->prepare('
+    INSERT INTO feed_sync_log (feed_id, started_at, status)
+    VALUES (?, NOW(), "running")
+');
+$logStmt->execute([$feedId]);
+$logId = (int)$db->lastInsertId();
+
+echo "[" . date('Y-m-d H:i:s') . "] Syncing feed #{$feedId} (log #{$logId})\n";
 
 try {
-    $db = Database::getInstance();
     $stmt = $db->prepare('SELECT * FROM product_feeds WHERE id = ?');
     $stmt->execute([$feedId]);
     $feed = $stmt->fetch();
@@ -73,10 +83,48 @@ try {
         echo "Exports generated!\n";
     }
     
-    echo "SUCCESS!\n";
+    // Aktualizuj log - SUCCESS
+    $duration = round(microtime(true) - $startTime);
+    $updateStmt = $db->prepare('
+        UPDATE feed_sync_log 
+        SET finished_at = NOW(),
+            status = "success",
+            products_inserted = ?,
+            products_updated = ?,
+            products_total = ?,
+            reviews_matched = ?,
+            reviews_total = ?,
+            duration_seconds = ?
+        WHERE id = ?
+    ');
+    
+    $updateStmt->execute([
+        $stats['inserted'] ?? 0,
+        $stats['updated'] ?? 0,
+        $stats['total'] ?? 0,
+        $matchStats['matched'] ?? 0,
+        $matchStats['total'] ?? 0,
+        $duration,
+        $logId
+    ]);
+    
+    echo "SUCCESS in {$duration}s!\n";
     
 } catch (\Exception $e) {
     echo "ERROR: " . $e->getMessage() . "\n";
+    
+    // Aktualizuj log - ERROR
+    $duration = round(microtime(true) - $startTime);
+    $updateStmt = $db->prepare('
+        UPDATE feed_sync_log 
+        SET finished_at = NOW(),
+            status = "error",
+            error_message = ?,
+            duration_seconds = ?
+        WHERE id = ?
+    ');
+    $updateStmt->execute([$e->getMessage(), $duration, $logId]);
+    
     ProductFeed::updateFetchStatus($feedId, false, $e->getMessage());
     exit(1);
 }

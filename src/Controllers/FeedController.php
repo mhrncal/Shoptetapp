@@ -13,9 +13,23 @@ class FeedController extends BaseController
         $userId = $this->user['id'];
         $feeds = ProductFeed::allForUser($userId);
         
+        // Načti timeline (posledních 20 synchronizací)
+        $db = Database::getInstance();
+        $stmt = $db->prepare('
+            SELECT l.*, f.name as feed_name
+            FROM feed_sync_log l
+            JOIN product_feeds f ON f.id = l.feed_id
+            WHERE f.user_id = ?
+            ORDER BY l.started_at DESC
+            LIMIT 20
+        ');
+        $stmt->execute([$userId]);
+        $timeline = $stmt->fetchAll();
+        
         $this->view('feeds/index', [
             'pageTitle' => 'Importy produktů',
-            'feeds' => $feeds
+            'feeds' => $feeds,
+            'timeline' => $timeline
         ]);
     }
     
