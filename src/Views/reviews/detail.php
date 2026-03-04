@@ -27,7 +27,7 @@
                 <?php else: ?>
                 <div class="row g-3">
                     <?php foreach ($review['photos'] as $i => $photo): ?>
-                    <div class="col-6 col-md-4">
+                    <div class="col-12 col-md-6 col-lg-4">
                         <a href="<?= $e(APP_URL . '/public/uploads/' . $photo['path']) ?>"
                            class="photo-lightbox d-block position-relative" data-lightbox="review-photos">
                             <img src="<?= $e(APP_URL . '/public/uploads/' . ($photo['thumb'] ?? $photo['path'])) ?>"
@@ -157,7 +157,7 @@
                 <div class="d-flex gap-2">
                     <?php if ($review['status'] !== 'approved'): ?>
                     <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="flex-fill">
-                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                        <input type="hidden" name="_csrf" value="<?= $_SESSION['_csrf'] ?? '' ?>">
                         <input type="hidden" name="id" value="<?= $review['id'] ?>">
                         <input type="hidden" name="status" value="approved">
                         <input type="hidden" name="admin_note" class="note-input">
@@ -169,7 +169,7 @@
                     
                     <?php if ($review['status'] !== 'rejected'): ?>
                     <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="flex-fill">
-                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                        <input type="hidden" name="_csrf" value="<?= $_SESSION['_csrf'] ?? '' ?>">
                         <input type="hidden" name="id" value="<?= $review['id'] ?>">
                         <input type="hidden" name="status" value="rejected">
                         <input type="hidden" name="admin_note" class="note-input">

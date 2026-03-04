@@ -311,4 +311,35 @@ class ReviewController extends BaseController
         
         $this->redirect('/reviews');
     }
+
+    /**
+     * Aktualizace interní poznámky (bez změny stavu)
+     */
+    public function updateNote(): void
+    {
+        $this->validateCsrf();
+        $id = (int)($_POST['id'] ?? 0);
+        $adminNote = trim($_POST['admin_note'] ?? '');
+        $userId = $this->user['id'];
+        
+        if (!$id) {
+            Session::flash('error', 'Neplatné ID recenze');
+            $this->redirect('/reviews');
+        }
+        
+        $db = Database::getInstance();
+        $stmt = $db->prepare('
+            UPDATE reviews 
+            SET admin_note = ? 
+            WHERE id = ? AND user_id = ?
+        ');
+        
+        if ($stmt->execute([$adminNote, $id, $userId])) {
+            Session::flash('success', 'Poznámka byla uložena');
+        } else {
+            Session::flash('error', 'Nepodařilo se uložit poznámku');
+        }
+        
+        $this->redirect('/reviews/' . $id);
+    }
 }
