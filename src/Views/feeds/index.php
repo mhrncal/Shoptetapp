@@ -60,7 +60,12 @@ if (!empty($runningFeeds)):
 <!-- Latest completed sync -->
 <?php 
 $latestCompleted = array_filter($timeline ?? [], function($log) {
-    // Skryj manuální akce z alertu (zobraz jen v timelineu)
+    // Skryj úspěšné syncs - zobraz jen skutečné chyby
+    if ($log['status'] === 'success') {
+        return false; // Success zobraz jen v timelineu
+    }
+    
+    // Skryj manuální akce z alertu
     $msg = $log['error_message'] ?? '';
     if ($log['status'] === 'error' && (
         str_contains($msg, 'killed manually') ||
@@ -68,8 +73,9 @@ $latestCompleted = array_filter($timeline ?? [], function($log) {
         str_contains($msg, 'Odblokováno') ||
         str_contains($msg, 'Process hung')
     )) {
-        return false; // Nezobrazuj jako alert
+        return false; // Manuální kills jen v timelineu
     }
+    
     return $log['status'] !== 'running';
 });
 $latestCompleted = array_values($latestCompleted); // Re-index array
@@ -257,7 +263,9 @@ if (!empty($latestCompleted) && isset($latestCompleted[0])):
             }
         ?>
         <div class="timeline-item mb-3">
-            <div class="card <?= $isError ? 'border-danger' : ($isSuccess ? 'border-success' : 'border-warning') ?>">
+            <div class="card <?= $isError ? 'border-danger' : ($isSuccess ? 'border-success' : 'border-warning') ?>" 
+                 style="cursor: pointer;"
+                 onclick="this.querySelector('.log-details')?.classList.toggle('d-none')">
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="flex-grow-1">
@@ -319,6 +327,37 @@ if (!empty($latestCompleted) && isset($latestCompleted[0])):
                         <i class="bi bi-exclamation-triangle"></i> <?= $e($log['error_message']) ?>
                     </div>
                     <?php endif; ?>
+                    
+                    <!-- Log viewer (klikni pro zobrazení) -->
+                    <div class="log-details d-none mt-3 p-2 bg-light rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong class="small">Procesní log:</strong>
+                            <?php
+                            // Najdi log soubor pro tento feed
+                            $feedId = $log['feed_id'];
+                            $startedAt = date('Y-m-d_H-i', strtotime($log['started_at']));
+                            $logPattern = ROOT . "/public/logs/feed_sync_{$feedId}_{$startedAt}*.log";
+                            $logFiles = glob($logPattern);
+                            if (!empty($logFiles)):
+                                $logFile = basename(end($logFiles));
+                                $logUrl = "/logs/{$logFile}";
+                            ?>
+                                <a href="<?= $logUrl ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-download"></i> Stáhnout log
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <?php if (!empty($logFiles)): 
+                            $logContent = file_get_contents(end($logFiles));
+                            $logLines = explode("\n", $logContent);
+                            $lastLines = array_slice($logLines, -20); // Posledních 20 řádků
+                        ?>
+                        <pre class="small mb-0" style="max-height: 300px; overflow-y: auto; font-size: 11px;"><?= $e(implode("\n", $lastLines)) ?></pre>
+                        <?php else: ?>
+                        <p class="small text-muted mb-0">Log soubor nenalezen</p>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
