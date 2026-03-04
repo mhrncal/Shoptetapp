@@ -620,164 +620,483 @@ code, .font-monospace {
 ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / .4); }
 
-/* ── Mobilní sidebar ─────────────────────────────────────── */
-@media (max-width: 768px) {
-    /* Sidebar na mobilu */
-    #sidebar { 
-        transform: translateX(-100%); 
-        z-index: 1050;
-        transition: transform 0.3s ease;
-    }
-    #sidebar.open { 
-        transform: translateX(0); 
-        box-shadow: 4px 0 20px rgb(0 0 0 / .1); 
-    }
-    
-    /* Backdrop overlay když je sidebar otevřený */
-    #sidebar.open::before {
-        content: '';
+/* ══════════════════════════════════════════════════════════
+   MOBILE-FIRST REDESIGN — ShopCode
+   Přístup: mobile baseline → desktop enhancement
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Bottom nav bar (pouze mobil) ───────────────────────── */
+#mobile-nav {
+    display: none;
+}
+
+@media (max-width: 767px) {
+
+    /* ── Základ: skryj sidebar, zobraz bottom nav ─────── */
+    #sidebar {
+        /* Drawer ze spodu — moderní mobilní pattern */
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: -1;
-        animation: fadeIn 0.3s;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100% !important;
+        max-width: 320px;
+        transform: translateX(-100%);
+        z-index: 1060;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        border-right: none;
+        box-shadow: none;
     }
-    
-    @keyframes fadeIn {
+
+    #sidebar.open {
+        transform: translateX(0);
+        box-shadow: 8px 0 40px rgb(0 0 0 / .18);
+    }
+
+    /* Overlay za sidebar */
+    #sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.45);
+        z-index: 1055;
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        animation: overlayIn .25s ease;
+    }
+    #sidebar-overlay.active { display: block; }
+
+    @keyframes overlayIn {
         from { opacity: 0; }
-        to { opacity: 1; }
+        to   { opacity: 1; }
     }
-    
-    /* Content na celou šířku */
-    #page-content { 
-        margin-left: 0; 
-        padding: 15px;
+
+    /* ── Page content na celou šířku ─────────────────── */
+    #page-content {
+        margin-left: 0 !important;
+        /* Prostor pro bottom nav */
+        padding-bottom: 80px;
     }
-    
-    /* Skryj search na mobilu */
-    .topbar .search-box { 
-        display: none !important; 
+
+    /* ── Topbar ──────────────────────────────────────── */
+    .topbar {
+        height: 56px;
+        padding: 0 1rem;
+        position: sticky;
+        top: 0;
+        z-index: 1040;
     }
-    
-    /* Tabulky responzivní */
+
+    .topbar .search-box { display: none !important; }
+
+    /* Hamburger tlačítko větší hit area */
+    #sidebarToggle {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        flex-shrink: 0;
+    }
+
+    /* ── Bottom Navigation Bar ───────────────────────── */
+    #mobile-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 64px;
+        background: hsl(var(--card));
+        border-top: 1px solid hsl(var(--border));
+        z-index: 1040;
+        padding: 0 .25rem;
+        padding-bottom: env(safe-area-inset-bottom);
+        box-shadow: 0 -4px 20px rgb(0 0 0 / .06);
+    }
+
+    .mobile-nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        text-decoration: none;
+        color: hsl(var(--muted-foreground));
+        font-size: .65rem;
+        font-weight: 500;
+        padding: .4rem .25rem;
+        border-radius: 12px;
+        transition: color .15s, background .15s;
+        position: relative;
+        min-width: 0;
+    }
+
+    .mobile-nav-item i {
+        font-size: 1.25rem;
+        line-height: 1;
+    }
+
+    .mobile-nav-item span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        text-align: center;
+    }
+
+    .mobile-nav-item.active {
+        color: hsl(var(--primary));
+    }
+
+    .mobile-nav-item.active i {
+        filter: drop-shadow(0 0 6px hsl(var(--primary) / .4));
+    }
+
+    /* Aktivní indikátor — tečka nad ikonou */
+    .mobile-nav-item.active::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px; height: 4px;
+        border-radius: 50%;
+        background: hsl(var(--primary));
+    }
+
+    /* Badge na notifikace */
+    .mobile-nav-badge {
+        position: absolute;
+        top: 4px;
+        right: calc(50% - 18px);
+        background: hsl(var(--destructive));
+        color: #fff;
+        font-size: .55rem;
+        font-weight: 700;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 3px;
+        border: 2px solid hsl(var(--card));
+    }
+
+    /* ── Main content area ───────────────────────────── */
+    main.p-4 {
+        padding: 1rem !important;
+    }
+
+    /* ── Dashboard stat karty — 2 sloupce ───────────── */
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.375rem;
+    }
+
+    /* ── Tabulky — horizontální scroll ──────────────── */
     .table-responsive {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        border-radius: var(--radius);
+        /* Jemný gradient naznačující scroll */
+        background:
+            linear-gradient(to right, hsl(var(--card)) 20px, transparent 20px),
+            linear-gradient(to left,  hsl(var(--card)) 20px, transparent 20px),
+            radial-gradient(farthest-side at 0 50%,   rgb(0 0 0 / .08), transparent) 0 50%,
+            radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / .08), transparent) 100% 50%;
+        background-size: 20px 100%, 20px 100%, 8px 60%, 8px 60%;
+        background-repeat: no-repeat;
+        background-attachment: local, local, scroll, scroll;
     }
-    
-    /* Karty na mobilu */
+
+    /* Kompaktnější tabulky */
+    .table th {
+        padding: .625rem .75rem;
+        font-size: .7rem;
+    }
+
+    .table td {
+        padding: .75rem .75rem;
+        font-size: .875rem;
+    }
+
+    /* ── Karty ───────────────────────────────────────── */
     .card {
-        margin-bottom: 15px;
+        margin-bottom: 1rem;
+        border-radius: var(--radius) !important;
     }
-    
-    /* Formuláře na mobilu */
-    .btn-group {
-        flex-direction: column;
-        width: 100%;
-    }
-    
-    .btn-group > .btn {
-        width: 100%;
-        margin-bottom: 5px;
-    }
-    
-    /* Timeline na mobilu */
-    .timeline-item {
-        padding-left: 15px;
-    }
-    
-    /* Topbar responsive */
-    .topbar {
-        padding: 10px 15px;
-    }
-    
-    /* Auth stránky */
-    .auth-card {
-        margin: 15px;
-        padding: 20px;
-    }
-}
 
-/* Extra malé mobily */
-@media (max-width: 576px) {
-    body {
-        font-size: 14px;
+    .card-header {
+        padding: 1rem !important;
     }
-    
-    h1 { font-size: 1.75rem; }
-    h2 { font-size: 1.5rem; }
-    h3 { font-size: 1.25rem; }
-    
-    .btn {
-        padding: 8px 12px;
-        font-size: 14px;
-    }
-    
-    /* Menší spacing */
-    .mb-4 { margin-bottom: 1rem !important; }
-    .mt-4 { margin-top: 1rem !important; }
-}
 
-/* Touch-friendly pro všechny mobily */
-@media (max-width: 768px) {
-    /* Větší klikací plochy */
-    .btn {
-        min-height: 44px;
-        padding: 12px 16px;
-    }
-    
-    .nav-link {
-        min-height: 44px;
-        padding: 12px 16px;
-    }
-    
-    /* Touch scrolling */
-    .table-responsive,
     .card-body {
-        -webkit-overflow-scrolling: touch;
+        padding: 1rem !important;
     }
-    
-    /* Lepší čitelnost na mobilu */
-    .small, small {
-        font-size: 13px;
+
+    /* ── Formuláře ───────────────────────────────────── */
+    .form-control,
+    .form-select {
+        height: 48px;
+        font-size: 16px !important; /* Zabrání iOS zoom */
+        border-radius: 10px !important;
     }
-    
-    /* Formulářové inputy větší */
-    input[type="text"],
-    input[type="email"],
-    input[type="password"],
-    input[type="number"],
-    input[type="tel"],
-    textarea,
-    select {
+
+    textarea.form-control {
+        height: auto;
+        font-size: 16px !important;
+    }
+
+    /* ── Tlačítka ────────────────────────────────────── */
+    .btn {
         min-height: 44px;
-        font-size: 16px; /* Zabrání auto-zoomu na iOS */
+        border-radius: 10px !important;
     }
-    
-    /* Modály responzivní */
+
+    .btn-sm {
+        min-height: 36px !important;
+        font-size: .8125rem !important;
+    }
+
+    /* Skupina tlačítek na full width */
+    .btn-group-mobile-stack {
+        flex-direction: column !important;
+        width: 100%;
+    }
+
+    .btn-group-mobile-stack > .btn {
+        width: 100%;
+        border-radius: 10px !important;
+        margin-bottom: .375rem;
+    }
+
+    /* ── Nav linky v sidebar větší ───────────────────── */
+    .sidebar-nav .nav-link {
+        min-height: 48px;
+        padding: .75rem 1rem;
+        font-size: .9375rem;
+        border-radius: 10px;
+    }
+
+    .sidebar-nav .nav-link i {
+        font-size: 1rem;
+        width: 1.25rem;
+    }
+
+    /* ── Modály ──────────────────────────────────────── */
     .modal-dialog {
-        margin: 10px;
+        margin: 0 !important;
+        max-width: 100% !important;
+        width: 100%;
     }
-    
-    /* Dropdown menu plná šířka */
+
+    .modal-content {
+        border-radius: 20px 20px 0 0 !important;
+        border-bottom: 0 !important;
+    }
+
+    .modal.fade .modal-dialog {
+        transform: translateY(100%);
+        transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modal.show .modal-dialog {
+        transform: translateY(0);
+    }
+
+    /* Bottom sheet handle */
+    .modal-content::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: hsl(var(--border));
+        border-radius: 2px;
+        margin: .75rem auto -.25rem;
+    }
+
+    /* Modální dialogy na celou výšku (pokud obsah vyžaduje) */
+    .modal-fullscreen-sm .modal-dialog {
+        margin: 0 !important;
+        height: 100dvh;
+    }
+
+    .modal-fullscreen-sm .modal-content {
+        height: 100%;
+        border-radius: 0 !important;
+    }
+
+    /* ── Dropdown ────────────────────────────────────── */
     .dropdown-menu {
         min-width: 200px;
     }
+
+    /* Dropdown jako bottom sheet na mobilu */
+    .dropdown-menu-mobile-sheet {
+        position: fixed !important;
+        bottom: 70px !important;
+        left: 1rem !important;
+        right: 1rem !important;
+        top: auto !important;
+        width: auto !important;
+        border-radius: 16px !important;
+        padding: .5rem;
+        transform: none !important;
+        animation: slideUp .2s ease;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Page title ──────────────────────────────────── */
+    h1, .h1 { font-size: 1.5rem !important; }
+    h4, .h4 { font-size: 1.125rem !important; }
+
+    /* ── Nadpis stránky + akce na mobilu ─────────────── */
+    .page-header-mobile {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: .75rem;
+    }
+
+    .page-header-mobile .btn-group,
+    .page-header-mobile .d-flex.gap-2 {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: .25rem;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Stránkování kompaktnější */
+    .pagination {
+        gap: .125rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .page-link {
+        padding: .375rem .625rem !important;
+        font-size: .8125rem;
+    }
+
+    /* ── Auth stránky ────────────────────────────────── */
+    .auth-bg {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .auth-card {
+        border-radius: 20px 20px 0 0 !important;
+        max-width: 100% !important;
+        border-bottom: 0 !important;
+    }
+
+    /* ── Flash alerts ────────────────────────────────── */
+    .px-4.pt-3 {
+        padding: .75rem !important;
+    }
+
+    .alert {
+        padding: .875rem 1rem;
+        font-size: .875rem;
+        border-radius: 12px;
+    }
+
+    /* ── Impersonation bar ───────────────────────────── */
+    .impersonation-bar {
+        font-size: .8rem;
+        padding: .5rem 1rem;
+        gap: .5rem;
+        flex-wrap: wrap;
+        text-align: center;
+        justify-content: center;
+    }
+
+    /* ── Utility — skryj na mobilu / zobraz na mobilu ── */
+    .d-mobile-none { display: none !important; }
+    .d-mobile-block { display: block !important; }
+    .d-mobile-flex { display: flex !important; }
+
+    /* ── Touch feedback ──────────────────────────────── */
+    .btn:active,
+    .nav-link:active,
+    .mobile-nav-item:active {
+        transform: scale(0.97);
+        transition: transform .1s;
+    }
+
+    /* ── Safe area (iPhone X+) ───────────────────────── */
+    #page-content {
+        padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    }
 }
 
-/* Landscape mode na mobilu */
+/* ── Extra malé mobily (< 375px) ────────────────────────── */
+@media (max-width: 374px) {
+    .mobile-nav-item span {
+        display: none; /* Jen ikony na velmi malých displejích */
+    }
+
+    #mobile-nav {
+        height: 56px;
+    }
+
+    main.p-4 {
+        padding: .75rem !important;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+    }
+}
+
+/* ── Landscape na mobilu ─────────────────────────────────── */
 @media (max-width: 896px) and (orientation: landscape) {
+    #mobile-nav {
+        height: 52px;
+    }
+
     #sidebar {
-        max-height: 100vh;
+        max-height: 100dvh;
         overflow-y: auto;
     }
-    
+
     .topbar {
         position: sticky;
         top: 0;
         z-index: 1040;
     }
+}
+
+/* ── Tablet (768px – 1023px) ─────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+    #sidebar {
+        width: 220px;
+    }
+
+    #page-content {
+        margin-left: 220px;
+    }
+
+    .topbar .search-box {
+        max-width: 220px;
+    }
+
+    .stat-value {
+        font-size: 1.375rem;
+    }
+}
+
+/* ── Desktop (≥ 1024px) — sidebar plná šířka ────────────── */
+@media (min-width: 1024px) {
+    #mobile-nav { display: none !important; }
 }

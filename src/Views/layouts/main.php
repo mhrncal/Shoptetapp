@@ -229,6 +229,48 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
     </div>
 </div>
 
+<!-- Sidebar overlay (mobile) -->
+<div id="sidebar-overlay"></div>
+
+<!-- Mobile Bottom Navigation -->
+<nav id="mobile-nav">
+    <a href="<?= APP_URL ?>/dashboard"
+       class="mobile-nav-item <?= (str_starts_with($currentPath, '/dashboard') || $currentPath === '/') ? 'active' : '' ?>">
+        <i class="bi bi-grid-1x2<?= (str_starts_with($currentPath, '/dashboard') || $currentPath === '/') ? '-fill' : '' ?>"></i>
+        <span>Přehled</span>
+    </a>
+    <a href="<?= APP_URL ?>/products"
+       class="mobile-nav-item <?= str_starts_with($currentPath, '/products') ? 'active' : '' ?>">
+        <i class="bi bi-box<?= str_starts_with($currentPath, '/products') ? '-fill' : '' ?>"></i>
+        <span>Produkty</span>
+    </a>
+    <?php if (in_array('reviews', $activeModules ?? []) || ($currentUser['role'] === 'superadmin')): ?>
+    <a href="<?= APP_URL ?>/reviews"
+       class="mobile-nav-item <?= str_starts_with($currentPath, '/reviews') ? 'active' : '' ?>">
+        <i class="bi bi-camera<?= str_starts_with($currentPath, '/reviews') ? '-fill' : '' ?>"></i>
+        <span>Recenze</span>
+        <?php if (!empty($counts['reviews_pending']) && $counts['reviews_pending'] > 0): ?>
+        <span class="mobile-nav-badge"><?= $counts['reviews_pending'] > 9 ? '9+' : $counts['reviews_pending'] ?></span>
+        <?php endif; ?>
+    </a>
+    <?php else: ?>
+    <a href="<?= APP_URL ?>/settings"
+       class="mobile-nav-item <?= str_starts_with($currentPath, '/settings') ? 'active' : '' ?>">
+        <i class="bi bi-gear<?= str_starts_with($currentPath, '/settings') ? '-fill' : '' ?>"></i>
+        <span>Nastavení</span>
+    </a>
+    <?php endif; ?>
+    <a href="<?= APP_URL ?>/profile"
+       class="mobile-nav-item <?= str_starts_with($currentPath, '/profile') ? 'active' : '' ?>">
+        <i class="bi bi-person<?= str_starts_with($currentPath, '/profile') ? '-fill' : '' ?>"></i>
+        <span>Profil</span>
+    </a>
+    <button type="button" class="mobile-nav-item" id="mobileMenuToggle" style="background:none;border:none;cursor:pointer;">
+        <i class="bi bi-list"></i>
+        <span>Více</span>
+    </button>
+</nav>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="<?= ASSETS_URL ?>/assets/js/app.js"></script>
