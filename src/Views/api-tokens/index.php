@@ -48,13 +48,25 @@ function copyToken() {
     </div>
 </div>
 <?php else: ?>
-<div class="card border-0">
+
+<?php
+// Společná logika
+foreach ($tokens as $t):
+    $perms   = json_decode($t['permissions'], true) ?? [];
+    $expired = $t['expires_at'] && strtotime($t['expires_at']) < time();
+    $statusBadge = $expired ? '<span class="badge bg-danger">Vypršel</span>'
+        : ($t['is_active'] ? '<span class="badge bg-success">Aktivní</span>' : '<span class="badge bg-secondary">Revokován</span>');
+endforeach;
+?>
+
+<!-- DESKTOP: tabulka -->
+<div class="card d-none d-md-block">
     <div class="card-body p-0">
         <table class="table table-hover align-middle mb-0">
             <thead>
                 <tr>
                     <th>Název</th>
-                    <th>Prefix tokenu</th>
+                    <th>Prefix</th>
                     <th>Oprávnění</th>
                     <th>Platnost</th>
                     <th>Naposledy použit</th>
@@ -64,53 +76,38 @@ function copyToken() {
             </thead>
             <tbody>
             <?php foreach ($tokens as $t):
-                $perms    = json_decode($t['permissions'], true) ?? [];
-                $expired  = $t['expires_at'] && strtotime($t['expires_at']) < time();
+                $perms   = json_decode($t['permissions'], true) ?? [];
+                $expired = $t['expires_at'] && strtotime($t['expires_at']) < time();
             ?>
             <tr class="<?= !$t['is_active'] || $expired ? 'opacity-60' : '' ?>">
                 <td class="fw-semibold"><?= $e($t['name']) ?></td>
-                <td>
-                    <code class="text-info"><?= $e($t['token_prefix']) ?>…</code>
-                </td>
+                <td><code class="text-info"><?= $e($t['token_prefix']) ?>…</code></td>
                 <td>
                     <div class="d-flex gap-1 flex-wrap">
                         <?php foreach ($perms as $p): ?>
-                        <span class="badge bg-secondary bg-opacity-30 text-body small font-monospace">
-                            <?= $e($p) ?>
-                        </span>
+                        <span class="badge bg-secondary bg-opacity-30 text-body small font-monospace"><?= $e($p) ?></span>
                         <?php endforeach; ?>
                     </div>
                 </td>
                 <td class="small text-muted">
                     <?php if ($t['expires_at']): ?>
-                        <span class="<?= $expired ? 'text-danger' : '' ?>">
-                            <?= date('d.m.Y', strtotime($t['expires_at'])) ?>
-                            <?= $expired ? '(vypršel)' : '' ?>
-                        </span>
+                        <span class="<?= $expired ? 'text-danger' : '' ?>"><?= date('d.m.Y', strtotime($t['expires_at'])) ?><?= $expired ? ' (vypršel)' : '' ?></span>
                     <?php else: ?>
                         <span class="text-success">Bez expirace</span>
                     <?php endif; ?>
                 </td>
-                <td class="small text-muted">
-                    <?= $t['last_used_at'] ? date('d.m.Y H:i', strtotime($t['last_used_at'])) : '—' ?>
-                </td>
+                <td class="small text-muted"><?= $t['last_used_at'] ? date('d.m.Y H:i', strtotime($t['last_used_at'])) : '—' ?></td>
                 <td>
-                    <?php if ($expired): ?>
-                        <span class="badge bg-danger">Vypršel</span>
-                    <?php elseif ($t['is_active']): ?>
-                        <span class="badge bg-success">Aktivní</span>
-                    <?php else: ?>
-                        <span class="badge bg-secondary">Revokován</span>
+                    <?php if ($expired): ?><span class="badge bg-danger">Vypršel</span>
+                    <?php elseif ($t['is_active']): ?><span class="badge bg-success">Aktivní</span>
+                    <?php else: ?><span class="badge bg-secondary">Revokován</span>
                     <?php endif; ?>
                 </td>
                 <td class="text-end">
-                    <form method="POST" action="<?= APP_URL ?>/api-tokens/<?= $t['id'] ?>"
-                          onsubmit="return confirm('Smazat token? Tuto akci nelze vrátit.')">
-                        <input type="hidden" name="_csrf"   value="<?= $e($csrfToken) ?>">
+                    <form method="POST" action="<?= APP_URL ?>/api-tokens/<?= $t['id'] ?>" onsubmit="return confirm('Smazat token?')">
+                        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                         <input type="hidden" name="_method" value="DELETE">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                     </form>
                 </td>
             </tr>
@@ -119,6 +116,51 @@ function copyToken() {
         </table>
     </div>
 </div>
+
+<!-- MOBIL: kartičky -->
+<div class="d-md-none d-flex flex-column gap-2">
+    <?php foreach ($tokens as $t):
+        $perms   = json_decode($t['permissions'], true) ?? [];
+        $expired = $t['expires_at'] && strtotime($t['expires_at']) < time();
+    ?>
+    <div class="card <?= !$t['is_active'] || $expired ? 'opacity-75' : '' ?>">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="fw-semibold"><?= $e($t['name']) ?></div>
+                <?php if ($expired): ?><span class="badge bg-danger">Vypršel</span>
+                <?php elseif ($t['is_active']): ?><span class="badge bg-success">Aktivní</span>
+                <?php else: ?><span class="badge bg-secondary">Revokován</span>
+                <?php endif; ?>
+            </div>
+            <div class="mb-2 small">
+                <code class="text-info"><?= $e($t['token_prefix']) ?>…</code>
+            </div>
+            <?php if (!empty($perms)): ?>
+            <div class="d-flex flex-wrap gap-1 mb-2">
+                <?php foreach ($perms as $p): ?>
+                <span class="badge bg-secondary bg-opacity-30 text-body font-monospace" style="font-size:.7rem;"><?= $e($p) ?></span>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="small text-muted">
+                    <?php if ($t['expires_at']): ?>
+                    <span class="<?= $expired ? 'text-danger' : '' ?>"><i class="bi bi-calendar me-1"></i><?= date('d.m.Y', strtotime($t['expires_at'])) ?></span>
+                    <?php else: ?>
+                    <span class="text-success"><i class="bi bi-infinity me-1"></i>Bez expirace</span>
+                    <?php endif; ?>
+                </div>
+                <form method="POST" action="<?= APP_URL ?>/api-tokens/<?= $t['id'] ?>" onsubmit="return confirm('Smazat token?')">
+                    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Smazat</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+</div>
+
 <?php endif; ?>
 
 <!-- Info box -->
