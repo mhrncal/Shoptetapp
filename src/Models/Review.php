@@ -38,7 +38,10 @@ class Review
 
         $offset = ($page - 1) * $perPage;
         $stmt   = $db->prepare('
-            SELECT r.*, p.name AS product_name, p.shoptet_id AS product_shoptet_id
+            SELECT r.*, 
+                   p.name AS product_name, 
+                   p.shoptet_id AS product_shoptet_id,
+                   (SELECT COUNT(*) FROM review_photos WHERE review_id = r.id) AS photo_count
             FROM reviews r
             LEFT JOIN products p ON p.id = r.product_id
             WHERE ' . implode(' AND ', $where) . '
