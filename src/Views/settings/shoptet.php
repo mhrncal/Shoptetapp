@@ -42,7 +42,7 @@ $e = fn($str) => htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
                     <div class="mb-4">
                         <h6 class="mb-3">Status integrace</h6>
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-12 col-md-6">
                                 <div class="d-flex align-items-center">
                                     <?php if ($hasCredentials): ?>
                                         <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
@@ -59,7 +59,7 @@ $e = fn($str) => htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-12 col-md-6">
                                 <div class="d-flex align-items-center">
                                     <?php if ($user['shoptet_auto_import']): ?>
                                         <i class="bi bi-arrow-repeat text-success fs-4 me-3"></i>
