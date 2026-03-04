@@ -64,7 +64,7 @@ class ExportGenerator
     {
         $output = fopen('php://temp', 'r+');
         
-        // Hlavička
+        // Hlavička - PHP 8.4 requires escape parameter
         fputcsv($output, [
             'code',
             'pairCode', 
@@ -76,7 +76,7 @@ class ExportGenerator
             'review_photos',
             'product_images',
             'created_at'
-        ], ';');
+        ], ';', '"', '');
         
         // Data
         foreach ($reviews as $review) {
@@ -91,15 +91,15 @@ class ExportGenerator
                 implode('|', $review['review_photos'] ?? []),
                 implode('|', $review['product_images'] ?? []),
                 $review['created_at']
-            ], ';');
+            ], ';', '"', '');
         }
         
         rewind($output);
         $csv = stream_get_contents($output);
         fclose($output);
         
-        // Konvertuj na windows-1250 pro Excel
-        return mb_convert_encoding($csv, 'windows-1250', 'UTF-8');
+        // Konvertuj na windows-1250 pro Excel pomocí iconv
+        return iconv('UTF-8', 'windows-1250//TRANSLIT', $csv);
     }
     
     /**
