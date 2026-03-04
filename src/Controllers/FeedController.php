@@ -231,7 +231,6 @@ class FeedController extends BaseController
         
         $this->redirect('/feeds');
     }
-}
 
     /**
      * Odblokuj všechny zamrzlé synchronizace
