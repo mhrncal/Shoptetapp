@@ -300,7 +300,6 @@ class ReviewController extends BaseController
         unlink($zipPath);
         exit;
     }
-}
 
     /**
      * Smazání jednotlivé recenze
@@ -326,3 +325,4 @@ class ReviewController extends BaseController
         
         $this->redirect('/reviews');
     }
+}
