@@ -1,38 +1,47 @@
-# .github/workflows/rosti_deploy.yml
-
 name: Deploy into Roští.cz
 
 on:
-    push:
-      branches: [main]
+  push:
+    branches: [main]
 
 jobs:
-    deploy:
-      runs-on: ubuntu-latest
-      env:
-        HOST: ssh.rosti.cz
-        USER: app
-        PORT: 14603
-        PHP_VERSION: 8.4.12
-      steps:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    env:
+      HOST: ssh.rosti.cz
+      USER: app
+      PORT: 14603
+      PHP_VERSION: 8.4.12
+    
+    steps:
       - uses: actions/checkout@v3
+      
       - uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.ROSTI_DEPLOY_SSH_KEY }}
-      - name: Setup hostkey
+      
+      - name: Add Rosti to known_hosts
         run: |
-          echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCnREiokRaLOWu0xDznMG1bCquxQ+s/wQIFjCDbiAts1bbZhQVjHR7/nUwEtgRzLf4STmhwkR/55DP+vrcz9VbqvQeGzU9oMrIiHYhLdkSRZF1eUKobzi31dYkAkwGIMEM1yf/ubWqT7MmPqa8ID0ScaIxO7hLCAyUOdNWdqXnwP02ne4/A5FEaYkhML0kYp8gL6IsaIvnqWQoSMV1uhIag1O7oyxK7F9w5gA5dFQt4SAKo++F8nkLH3F3gEahFtdA65yv1FtSQdVrs6b7ycQvZUc0WWIlmixEEpgkMYf8GNIa1odYB5Hq4lznQqRywDHZZMJIjEhK/vxj2IyNbwKqp" > ./known_hosts
-      - name: env
+          mkdir -p ~/.ssh
+          ssh-keyscan -p $PORT -H $HOST >> ~/.ssh/known_hosts
+      
+      - name: Setup PHP version
         run: |
-          cat << EOF > .env
-          ${{ secrets.ENV }}
-          EOF
-      - name: Setup PHP
+          ssh -p $PORT $USER@$HOST /usr/local/bin/rosti php $PHP_VERSION
+      
+      - name: Copy code to server
         run: |
-          ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST /usr/local/bin/rosti php $PHP_VERSION
-      - name: Copy code
+          rsync -aze "ssh -p $PORT" --delete-after --exclude=.git ./ $USER@$HOST:/srv/app/
+      
+      - name: Create necessary directories
         run: |
-          rsync -ae "ssh -o UserKnownHostsFile=./known_hosts -p $PORT" --delete-after --exclude=.git ./ $USER@$HOST:/srv/app/
-      - name: Apply changes
+          ssh -p $PORT $USER@$HOST << 'ENDSSH'
+            mkdir -p /srv/app/tmp/feeds /srv/app/tmp/logs /srv/app/public/logs /srv/app/public/feeds /srv/app/public/uploads
+            chmod 755 /srv/app/tmp/feeds /srv/app/tmp/logs /srv/app/public/logs /srv/app/public/feeds /srv/app/public/uploads
+            chmod +x /srv/app/scripts/watchdog_feeds.sh 2>/dev/null || true
+          ENDSSH
+      
+      - name: Restart application
         run: |
-          ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST supervisorctl restart app
+          ssh -p $PORT $USER@$HOST supervisorctl restart app
