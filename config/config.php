@@ -78,7 +78,7 @@ if (!defined('SESSION_NAME')) {
 }
 
 if (!defined('ASSETS_URL')) {
-    define('ASSETS_URL', defined('APP_URL') ? APP_URL : '');
+    define('ASSETS_URL', ''); // Prázdný string = relativní cesty
 }
 
 // Timezone
