@@ -301,3 +301,28 @@ class ReviewController extends BaseController
         exit;
     }
 }
+
+    /**
+     * Smazání jednotlivé recenze
+     */
+    public function delete(): void
+    {
+        $this->validateCsrf();
+        $id = (int)($_POST['id'] ?? 0);
+        $userId = $this->user['id'];
+        
+        if (!$id) {
+            Session::flash('error', 'Neplatné ID recenze');
+            $this->redirect('/reviews');
+        }
+        
+        $count = Review::bulkDelete([$id], $userId);
+        
+        if ($count > 0) {
+            Session::flash('success', 'Recenze byla smazána');
+        } else {
+            Session::flash('error', 'Recenze nebyla nalezena');
+        }
+        
+        $this->redirect('/reviews');
+    }

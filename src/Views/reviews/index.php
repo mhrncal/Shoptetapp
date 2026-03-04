@@ -113,6 +113,7 @@
                     <option value="reject">❌ Zamítnout</option>
                     <option value="mark_imported">📦 Označit jako importováno</option>
                     <option value="download_zip">📥 Stáhnout fotky (ZIP)</option>
+                    <option value="delete">🗑️ Smazat</option>
                 </select>
                 <button type="submit" class="btn btn-sm btn-outline-secondary"
                         onclick="return document.querySelectorAll('.review-cb:checked').length > 0 || (alert('Nevybrali jste žádné recenze.'), false)">
@@ -128,11 +129,11 @@
                         <th style="width:40px;"></th>
                         <th>Autor</th>
                         <th>Kód produktu</th>
-                        <th class="text-center">Fotek</th>
+                        <th>Fotek</th>
                         <th>Datum</th>
                         <th>Stav</th>
                         <th>Import</th>
-                        <th class="text-end">Akce</th>
+                        <th>Akce</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -148,15 +149,15 @@
                         <div class="fw-semibold"><?= $e($r['author_name']) ?></div>
                         <div class="text-muted small"><?= $e($r['author_email']) ?></div>
                     </td>
-                    <td class="text-center">
+                    <td>
                         <?php if ($r['sku']): ?>
                             <code class="text-primary"><?= $e($r['sku']) ?></code>
                         <?php else: ?>
                             <span class="text-muted">—</span>
                         <?php endif; ?>
                     </td>
-                    <td class="text-center">
-                        <?php if (!empty($r['photo_count'])): ?>
+                    <td>
+                        <?php if ($r['photo_count'] > 0): ?>
                             <span class="badge bg-primary"><?= $r['photo_count'] ?></span>
                         <?php else: ?>
                             <span class="text-muted">0</span>
@@ -168,43 +169,54 @@
                             <?= $st['label'] ?>
                         </span>
                     </td>
-                    <td class="text-center">
+                    <td>
                         <?php if ($r['imported']): ?>
                             <i class="bi bi-check-circle-fill text-success" title="Importováno <?= date('d.m.Y', strtotime($r['imported_at'])) ?>"></i>
                         <?php else: ?>
                             <i class="bi bi-dash text-muted"></i>
                         <?php endif; ?>
                     </td>
-                    <td class="text-end">
-                        <div class="btn-group btn-group-sm">
-                            <!-- Zobrazit detail -->
+                    <td>
+                        <div class="d-flex gap-1">
+                            <!-- Detail -->
                             <a href="<?= APP_URL ?>/reviews/<?= $r['id'] ?>" 
-                               class="btn btn-outline-secondary" title="Detail">
+                               class="btn btn-sm btn-outline-secondary" title="Detail">
                                 <i class="bi bi-eye"></i>
                             </a>
                             
-                            <!-- Rychlá změna stavu -->
+                            <!-- Schválit -->
                             <?php if ($r['status'] !== 'approved'): ?>
-                            <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="d-inline">
+                            <form method="POST" action="<?= APP_URL ?>/reviews/change-status">
                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                 <input type="hidden" name="status" value="approved">
-                                <button type="submit" class="btn btn-outline-success" title="Schválit">
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Schválit">
                                     <i class="bi bi-check-lg"></i>
                                 </button>
                             </form>
                             <?php endif; ?>
                             
+                            <!-- Zamítnout -->
                             <?php if ($r['status'] !== 'rejected'): ?>
-                            <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="d-inline">
+                            <form method="POST" action="<?= APP_URL ?>/reviews/change-status">
                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                 <input type="hidden" name="status" value="rejected">
-                                <button type="submit" class="btn btn-outline-danger" title="Zamítnout">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Zamítnout">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
                             </form>
                             <?php endif; ?>
+                            
+                            <!-- Smazat -->
+                            <form method="POST" action="<?= APP_URL ?>/reviews/delete" 
+                                  onsubmit="return confirm('Opravdu smazat tuto recenzi? Budou smazány i všechny fotky.')">
+                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                                <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Smazat">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                         </div>
                     </td>
                 </tr>

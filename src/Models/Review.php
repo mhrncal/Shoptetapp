@@ -173,6 +173,41 @@ class Review
         return $stmt->rowCount();
     }
 
+    public static function bulkDelete(array $ids, int $userId): int
+    {
+        if (empty($ids)) return 0;
+        $db = Database::getInstance();
+        
+        // Načti všechny fotky pro mazání souborů
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $db->prepare("
+            SELECT rp.* FROM review_photos rp
+            JOIN reviews r ON r.id = rp.review_id
+            WHERE r.id IN ({$placeholders}) AND r.user_id = ?
+        ");
+        $params = array_merge(array_map('intval', $ids), [$userId]);
+        $stmt->execute($params);
+        $photos = $stmt->fetchAll();
+        
+        // Smaž soubory
+        foreach ($photos as $photo) {
+            $dir = ROOT . '/public/uploads/' . dirname($photo['path']);
+            if (is_dir($dir)) {
+                array_map('unlink', glob("{$dir}/*"));
+                rmdir($dir);
+            }
+        }
+        
+        // Smaž z DB (CASCADE smaže i fotky)
+        $stmt = $db->prepare("
+            DELETE FROM reviews 
+            WHERE id IN ({$placeholders}) AND user_id = ?
+        ");
+        $stmt->execute($params);
+        
+        return $stmt->rowCount();
+    }
+
     public static function markImported(array $ids, int $userId): int
     {
         if (empty($ids)) return 0;
