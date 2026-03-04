@@ -14,7 +14,7 @@
         <form method="GET" class="row g-2 align-items-end">
             <div class="col-12 col-md-5">
                 <label class="form-label small text-muted mb-1">Hledat</label>
-                <div class="input-group input-group-sm">
+                <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
                     <input type="text" name="search" class="form-control" placeholder="Jméno, e-mail, shop..."
                            value="<?= $e($search) ?>">
@@ -22,7 +22,7 @@
             </div>
             <div class="col-6 col-md-3">
                 <label class="form-label small text-muted mb-1">Stav</label>
-                <select name="status" class="form-select form-select-sm">
+                <select name="status" class="form-select">
                     <option value="">Všechny</option>
                     <option value="pending"  <?= $statusFilter === 'pending'  ? 'selected' : '' ?>>Čeká na schválení</option>
                     <option value="approved" <?= $statusFilter === 'approved' ? 'selected' : '' ?>>Schváleni</option>
@@ -30,10 +30,10 @@
                 </select>
             </div>
             <div class="col-6 col-md-2">
-                <button type="submit" class="btn btn-primary btn-sm w-100">Filtrovat</button>
+                <button type="submit" class="btn btn-primary w-100">Filtrovat</button>
             </div>
             <div class="col-6 col-md-2">
-                <a href="<?= APP_URL ?>/admin/users" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
+                <a href="<?= APP_URL ?>/admin/users" class="btn btn-outline-secondary w-100">Reset</a>
             </div>
         </form>
     </div>
