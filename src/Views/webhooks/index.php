@@ -26,11 +26,11 @@
 <?php foreach ($webhooks as $wh): ?>
 <div class="card border-0 mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-3">
-            <div class="status-dot <?= $wh['is_active'] ? 'bg-success' : 'bg-secondary' ?>"></div>
-            <div>
-                <span class="fw-semibold"><?= $e($wh['name']) ?></span>
-                <span class="text-muted small ms-2"><?= $e($wh['url']) ?></span>
+        <div class="d-flex align-items-center gap-3 min-w-0">
+            <div class="status-dot <?= $wh['is_active'] ? 'bg-success' : 'bg-secondary' ?>" style="width:10px;height:10px;border-radius:50%;flex-shrink:0;"></div>
+            <div class="min-w-0">
+                <div class="fw-semibold"><?= $e($wh['name']) ?></div>
+                <div class="text-muted small text-truncate"><?= $e($wh['url']) ?></div>
             </div>
         </div>
         <div class="d-flex gap-2">
@@ -80,8 +80,8 @@
                 <?php if (empty($wh['recent_logs'])): ?>
                 <p class="text-muted small">Žádné záznamy</p>
                 <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table table-sm mb-0" style="font-size:.8rem;">
+                <div class="table-responsive" style="font-size:.8rem;">
+                    <table class="table table-sm mb-0">
                         <tbody>
                         <?php foreach ($wh['recent_logs'] as $log):
                             $ok = $log['response_status'] >= 200 && $log['response_status'] < 300;
@@ -161,9 +161,6 @@
     </div>
 </div>
 
-<style>
-.status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
-</style>
 
 <script>
 function editWebhook(wh) {
