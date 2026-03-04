@@ -42,6 +42,19 @@ foreach ($required as $const) {
     }
 }
 
+// Definuj další potřebné konstanty
+if (!defined('CSRF_TOKEN_LENGTH')) {
+    define('CSRF_TOKEN_LENGTH', 32);
+}
+
+if (!defined('APP_URL')) {
+    define('APP_URL', 'http://localhost');
+}
+
+if (!defined('ROOT')) {
+    define('ROOT', dirname(__DIR__));
+}
+
 // Timezone
 date_default_timezone_set(defined('TIMEZONE') ? TIMEZONE : 'Europe/Prague');
 
