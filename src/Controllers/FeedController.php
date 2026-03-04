@@ -273,7 +273,6 @@ class FeedController extends BaseController
         
         $this->redirect('/feeds');
     }
-}
 
     /**
      * AJAX endpoint pro zjištění progress synchronizace
