@@ -26,23 +26,43 @@ class FeedParser
             $filename = "feed_{$feedId}_" . date('Y-m-d_H-i-s') . '.csv';
             $filepath = $this->cacheDir . '/' . $filename;
             
-            // Stream download (šetří paměť)
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 300, // 5 minut
-                    'user_agent' => 'ShopCode/1.0'
-                ]
+            // Použij cURL (robustnější než fopen)
+            $ch = curl_init($url);
+            
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS => 5,
+                CURLOPT_TIMEOUT => 300, // 5 minut
+                CURLOPT_CONNECTTIMEOUT => 30,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+                CURLOPT_USERAGENT => 'ShopCode/1.0 (Feed Downloader)',
+                CURLOPT_ENCODING => '', // Accept all encodings
             ]);
             
-            $source = @fopen($url, 'r', false, $context);
-            if (!$source) {
-                throw new \RuntimeException("Nelze stáhnout feed z URL: $url");
+            $content = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+            
+            if ($content === false) {
+                throw new \RuntimeException("cURL error: $error");
             }
             
-            $dest = fopen($filepath, 'w');
-            stream_copy_to_stream($source, $dest);
-            fclose($source);
-            fclose($dest);
+            if ($httpCode !== 200) {
+                throw new \RuntimeException("HTTP error $httpCode");
+            }
+            
+            if (empty($content)) {
+                throw new \RuntimeException("Downloaded file is empty");
+            }
+            
+            // Ulož na disk
+            $bytes = file_put_contents($filepath, $content);
+            if ($bytes === false) {
+                throw new \RuntimeException("Cannot write to file: $filepath");
+            }
             
             // Smaž staré soubory (starší než 7 dní)
             $this->cleanOldFiles(7);
@@ -127,7 +147,7 @@ class FeedParser
                 continue;
             }
             
-            // Sbírej obrázky
+            // Sbírej obrázky (jen URL, ne stahuj!)
             $images = [];
             foreach ($imageColumns as $imgIdx) {
                 $imgUrl = $row[$imgIdx] ?? null;

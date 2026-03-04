@@ -82,10 +82,16 @@ class FeedController extends BaseController
             $parser = new FeedParser();
             
             // Stáhni
+            error_log("Downloading feed from: {$feed['url']}");
             $filepath = $parser->downloadFeed($id, $feed['url']);
+            
             if (!$filepath) {
-                throw new \RuntimeException('Chyba při stahování');
+                $lastError = error_get_last();
+                $errorMsg = $lastError ? $lastError['message'] : 'Neznámá chyba při stahování';
+                throw new \RuntimeException("Chyba při stahování: $errorMsg");
             }
+            
+            error_log("Downloaded to: $filepath");
             
             // Parsuj
             $stats = $parser->parseAndStore($id, $filepath, [
