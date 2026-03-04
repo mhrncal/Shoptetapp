@@ -296,4 +296,18 @@ class Review
         $db->prepare("UPDATE rate_limits SET hits = hits + 1 WHERE id = ?")->execute([$row['id']]);
         return true;
     }
+
+    public static function unmarkImported(array $ids, int $userId): int
+    {
+        if (empty($ids)) return 0;
+        $db = Database::getInstance();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $db->prepare("
+            UPDATE reviews SET imported = 0, imported_at = NULL
+            WHERE id IN ({$placeholders}) AND user_id = ?
+        ");
+        $params = array_merge(array_map('intval', $ids), [$userId]);
+        $stmt->execute($params);
+        return $stmt->rowCount();
+    }
 }

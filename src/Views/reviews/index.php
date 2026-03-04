@@ -8,14 +8,14 @@
     </div>
     <div class="d-flex gap-2">
         <!-- Export CSV -->
-        <a href="<?= APP_URL ?>/reviews/export/csv" 
+        <a href="/reviews/export/csv" 
            class="btn btn-sm btn-outline-primary"
            title="Stáhnout CSV se schválenými recenzemi pro ruční import do Shoptetu">
             <i class="bi bi-file-earmark-spreadsheet me-1"></i>Stáhnout CSV
         </a>
         
         <!-- Export XML -->
-        <a href="<?= APP_URL ?>/reviews/export/xml" 
+        <a href="/reviews/export/xml" 
            class="btn btn-sm btn-outline-success"
            title="Stáhnout XML feed se schválenými recenzemi">
             <i class="bi bi-file-earmark-code me-1"></i>Stáhnout XML
@@ -94,7 +94,7 @@
 <?php else: ?>
 
 <!-- Hromadné akce -->
-<form method="POST" action="<?= APP_URL ?>/reviews/bulk" id="bulkForm">
+<form method="POST" action="/reviews/bulk" id="bulkForm">
     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
 
     <div class="card border-0">
@@ -112,6 +112,7 @@
                     <option value="approve">✅ Schválit</option>
                     <option value="reject">❌ Zamítnout</option>
                     <option value="mark_imported">📦 Označit jako importováno</option>
+                    <option value="unmark_imported">📭 Odznačit jako importováno</option>
                     <option value="download_zip">📥 Stáhnout fotky (ZIP)</option>
                     <option value="delete">🗑️ Smazat</option>
                 </select>
@@ -179,7 +180,7 @@
                     <td>
                         <div class="d-flex gap-1">
                             <!-- Detail -->
-                            <a href="<?= APP_URL ?>/reviews/<?= $r['id'] ?>" 
+                            <a href="/reviews/<?= $r['id'] ?>" 
                                class="btn btn-sm btn-outline-secondary" title="Detail">
                                 <i class="bi bi-eye"></i>
                             </a>

@@ -113,12 +113,22 @@ class ReviewController extends BaseController
                 $count = Review::markImported($ids, $userId);
                 Session::flash('success', "Označeno jako importováno: {$count} recenzí.");
                 break;
+                
+            case 'unmark_imported':
+                $count = Review::unmarkImported($ids, $userId);
+                Session::flash('success', "Odznačeno: {$count} recenzí.");
+                break;
 
             case 'download_zip':
                 // Redirect na downloadZip metodu
                 $_POST['ids'] = $ids;
                 $this->downloadZip();
                 return;
+                
+            case 'delete':
+                $count = Review::bulkDelete($ids, $userId);
+                Session::flash('success', "Smazáno {$count} recenzí.");
+                break;
 
             default:
                 Session::flash('error', 'Neznámá akce.');
@@ -213,7 +223,7 @@ class ReviewController extends BaseController
         // Načti všechny fotky z vybraných recenzí
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $db->prepare("
-            SELECT rp.*, r.customer_name, r.product_sku
+            SELECT rp.*, r.author_name, r.sku
             FROM review_photos rp
             JOIN reviews r ON r.id = rp.review_id
             WHERE r.id IN ({$placeholders})
@@ -251,8 +261,8 @@ class ReviewController extends BaseController
             
             if (file_exists($filepath)) {
                 $ext = pathinfo($filepath, PATHINFO_EXTENSION);
-                $name = $photo['customer_name'] ?? 'zakaznik';
-                $sku = $photo['product_sku'] ?? 'produkt';
+                $name = $photo['author_name'] ?? 'zakaznik';
+                $sku = $photo['sku'] ?? 'produkt';
                 
                 // Sanitize názvu
                 $name = preg_replace('/[^a-z0-9_-]/i', '_', $name);
