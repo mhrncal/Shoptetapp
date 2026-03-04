@@ -41,10 +41,27 @@ try {
     
 } catch (Throwable $e) {
     echo "\n❌ CHYBA:\n";
+    echo "Type: " . get_class($e) . "\n";
     echo "Message: " . $e->getMessage() . "\n";
-    echo "File: " . $e->getFile() . "\n";
-    echo "Line: " . $e->getLine() . "\n";
+    echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n";
+    
+    if ($prev = $e->getPrevious()) {
+        echo "\nPředchozí chyba:\n";
+        echo "Message: " . $prev->getMessage() . "\n";
+        echo "File: " . $prev->getFile() . ":" . $prev->getLine() . "\n";
+    }
+    
     echo "\nStack trace:\n" . $e->getTraceAsString() . "\n";
+    
+    if (file_exists($e->getFile())) {
+        $lines = file($e->getFile());
+        $errorLine = $e->getLine();
+        echo "\nKód kolem chyby (řádek $errorLine):\n";
+        for ($i = max(0, $errorLine - 3); $i < min(count($lines), $errorLine + 3); $i++) {
+            $marker = ($i + 1) == $errorLine ? '>>> ' : '    ';
+            echo $marker . ($i + 1) . ": " . htmlspecialchars($lines[$i]);
+        }
+    }
 }
 
 echo "</pre></body></html>";
