@@ -148,7 +148,7 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
 </div>
 
 <?php if (!empty($tabs) || !empty($videos)): ?>
-<hr class="border-secondary my-4">
+<hr class="my-4">
 <div class="row g-4">
 
     <!-- Product Tabs -->
@@ -234,7 +234,7 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
                         $thumb    = \ShopCode\Models\ProductVideo::thumbnail($vid['url']);
                     ?>
                     <div class="col-12 col-md-6 col-xl-4">
-                        <div class="card border-secondary bg-transparent">
+                        <div class="card">
                             <?php if ($embedUrl): ?>
                             <div class="ratio ratio-16x9">
                                 <iframe src="<?= $e($embedUrl) ?>?rel=0"
@@ -272,10 +272,10 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
 <!-- Modal: Přidat záložku -->
 <div class="modal fade" id="addTabModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark border-secondary">
-            <div class="modal-header border-secondary">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title">Přidat záložku</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="<?= APP_URL ?>/products/<?= $product['id'] ?>/tabs">
                 <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
@@ -302,7 +302,7 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
                     <button type="submit" class="btn btn-primary">Přidat záložku</button>
                 </div>
@@ -314,10 +314,10 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
 <!-- Modal: Upravit záložku -->
 <div class="modal fade" id="editTabModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark border-secondary">
-            <div class="modal-header border-secondary">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title">Upravit záložku</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" id="editTabForm" action="">
                 <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
@@ -343,7 +343,7 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
                     <button type="submit" class="btn btn-primary">Uložit</button>
                 </div>
@@ -355,10 +355,10 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
 <!-- Modal: Přidat video -->
 <div class="modal fade" id="addVideoModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content bg-dark border-secondary">
-            <div class="modal-header border-secondary">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title">Přidat video</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="<?= APP_URL ?>/products/<?= $product['id'] ?>/videos">
                 <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
@@ -377,7 +377,7 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
                         <input type="number" name="sort_order" class="form-control" value="0" min="0">
                     </div>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
                     <button type="submit" class="btn btn-primary">Přidat video</button>
                 </div>

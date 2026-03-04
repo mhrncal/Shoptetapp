@@ -264,10 +264,10 @@ function openReuploadModal(photoId) {
 <!-- Lightbox pro fotky -->
 <div id="photoLightbox" class="modal fade" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content bg-dark">
+        <div class="modal-content">
             <div class="modal-header border-0">
-                <h5 class="modal-title text-white" id="lightboxTitle">Fotka 1</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="lightboxTitle">Fotka 1</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center p-0">
                 <img id="lightboxImg" src="" class="img-fluid" style="max-height:80vh;">
