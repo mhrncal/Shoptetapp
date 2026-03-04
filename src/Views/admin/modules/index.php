@@ -32,6 +32,7 @@
 </div>
 
 <!-- Uživatelé a jejich moduly -->
+<p class="text-muted small d-md-none mb-2"><i class="bi bi-arrow-left-right me-1"></i>Tabulku lze posouvat doleva/doprava</p>
 <div class="card">
     <div class="card-body p-0">
         <div class="table-responsive">
