@@ -32,7 +32,7 @@
                            class="photo-lightbox d-block position-relative" data-lightbox="review-photos">
                             <img src="<?= $e(APP_URL . '/public/uploads/' . ($photo['thumb'] ?? $photo['path'])) ?>"
                                  class="img-fluid rounded"
-                                 style="aspect-ratio:1;object-fit:cover;width:100%;"
+                                 style="width:100%;height:auto;"
                                  alt="Foto <?= $i+1 ?>"
                                  onerror="this.src='<?= APP_URL ?>/public/uploads/<?= $e($photo['path']) ?>'">
                             <div class="position-absolute top-0 end-0 m-1">
