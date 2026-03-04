@@ -204,16 +204,31 @@ class FeedController extends BaseController
             $this->redirect('/feeds');
         }
         
-        // Spusť na pozadí
+        // Vytvoř log entry před spuštěním
+        $db = Database::getInstance();
+        $logStmt = $db->prepare('
+            INSERT INTO feed_sync_log (feed_id, started_at, status)
+            VALUES (?, NOW(), "running")
+        ');
+        $logStmt->execute([$id]);
+        
+        // Spusť na pozadí - log do souboru pro debug
+        $logFile = ROOT . '/tmp/logs/feed_sync_' . $id . '_' . date('Y-m-d_H-i-s') . '.log';
         $cmd = sprintf(
-            'php %s/cron/feed_sync_single.php %d > /dev/null 2>&1 &',
+            'php %s/cron/feed_sync_single.php %d > %s 2>&1 &',
             ROOT,
-            $id
+            $id,
+            $logFile
         );
         
-        exec($cmd);
+        exec($cmd, $output, $returnCode);
         
-        Session::flash('info', 'Synchronizace byla spuštěna na pozadí. Obnovte stránku za chvíli.');
+        if ($returnCode !== 0) {
+            Session::flash('error', 'Nepodařilo se spustit synchronizaci. Zkuste to znovu.');
+        } else {
+            Session::flash('info', 'Synchronizace byla spuštěna na pozadí. Stránka se automaticky obnoví.');
+        }
+        
         $this->redirect('/feeds');
     }
 }
