@@ -30,9 +30,17 @@ jobs:
         run: |
           ssh -p $PORT $USER@$HOST /usr/local/bin/rosti php $PHP_VERSION
       
+      - name: Create .env on server
+        run: |
+          ssh -p $PORT $USER@$HOST << 'ENDSSH'
+            cat > /srv/app/.env << 'ENVEOF'
+          ${{ secrets.ENV }}
+          ENVEOF
+          ENDSSH
+      
       - name: Copy code to server
         run: |
-          rsync -aze "ssh -p $PORT" --delete-after --exclude=.git ./ $USER@$HOST:/srv/app/
+          rsync -aze "ssh -p $PORT" --delete-after --exclude=.git --exclude=.env ./ $USER@$HOST:/srv/app/
       
       - name: Create necessary directories
         run: |
