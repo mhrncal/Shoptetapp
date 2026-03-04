@@ -1,0 +1,60 @@
+name: Deploy into Roští.cz
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    env:
+      HOST: ssh.rosti.cz
+      USER: app
+      PORT: 14603
+      PHP_VERSION: 8.4.12
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.ROSTI_DEPLOY_SSH_KEY }}
+      
+      - name: Setup hostkey
+        run: |
+          echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCnREiokRaLOWu0xDznMG1bCquxQ+s/wQIFjCDbiAts1bbZhQVjHR7/nUwEtgRzLf4STmhwkR/55DP+vrcz9VbqvQeGzU9oMrIiHYhLdkSRZF1eUKobzi31dYkAkwGIMEM1yf/ubWqT7MmPqa8ID0ScaIxO7hLCAyUOdNWdqXnwP02ne4/A5FEaYkhML0kYp8gL6IsaIvnqWQoSMV1uhIag1O7oyxK7F9w5gA5dFQt4SAKo++F8nkLH3F3gEahFtdA65yv1FtSQdVrs6b7ycQvZUc0WWIlmixEEpgkMYf8GNIa1odYB5Hq4lznQqRywDHZZMJIjEhK/vxj2IyNbwKqp" > ./known_hosts
+      
+      - name: Create .env file
+        run: |
+          cat << EOF > .env
+          ${{ secrets.ENV }}
+          EOF
+      
+      - name: Setup PHP version
+        run: |
+          ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST /usr/local/bin/rosti php $PHP_VERSION
+      
+      - name: Copy code to server
+        run: |
+          rsync -ae "ssh -o UserKnownHostsFile=./known_hosts -p $PORT" --delete-after --exclude=.git ./ $USER@$HOST:/srv/app/
+      
+      - name: Create necessary directories
+        run: |
+          ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST << 'ENDSSH'
+            mkdir -p /srv/app/tmp/feeds
+            mkdir -p /srv/app/tmp/logs
+            mkdir -p /srv/app/public/logs
+            mkdir -p /srv/app/public/feeds
+            mkdir -p /srv/app/public/uploads
+            chmod 755 /srv/app/tmp/feeds
+            chmod 755 /srv/app/tmp/logs
+            chmod 755 /srv/app/public/logs
+            chmod 755 /srv/app/public/feeds
+            chmod 755 /srv/app/public/uploads
+            chmod +x /srv/app/scripts/watchdog_feeds.sh
+          ENDSSH
+      
+      - name: Restart application
+        run: |
+          ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST supervisorctl restart app
