@@ -3,8 +3,9 @@
  * CRON: Synchronizace product feedů a párování s recenzemi
  * 
  * Spustí se denně (např. 3:00 ráno)
- * */
-5 3 * * * /usr/bin/php /srv/app/cron/feed_sync.php >> /srv/app/tmp/logs/feed_sync.log 2>&1
+ * Přidej do crontab:
+ * 
+ * 5 3 * * * /usr/bin/php /srv/app/cron/feed_sync.php >> /srv/app/tmp/logs/feed_sync.log 2>&1
  */
 
 require ROOT . '/config/config.php';
