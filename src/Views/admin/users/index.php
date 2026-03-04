@@ -39,8 +39,8 @@
     </div>
 </div>
 
-<!-- Tabulka -->
-<div class="card border-0">
+<!-- DESKTOP: Tabulka -->
+<div class="card border-0 d-none d-md-block">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span class="small text-muted">Celkem: <strong><?= $total ?></strong></span>
     </div>
