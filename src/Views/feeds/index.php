@@ -55,22 +55,66 @@ $latestCompleted = array_filter($timeline ?? [], fn($log) => $log['status'] !== 
 if (!empty($latestCompleted)):
     $latest = $latestCompleted[0];
 ?>
-<div class="alert alert-<?= $latest['status'] === 'success' ? 'success' : 'danger' ?>">
-    <strong>Poslední synchronizace: <?= $e($latest['feed_name']) ?></strong><br>
+<div class="alert alert-<?= $latest['status'] === 'success' ? 'success' : 'danger' ?> alert-dismissible fade show">
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    
     <?php if ($latest['status'] === 'success'): ?>
-        <span class="small">
-            ✓ Dokončeno <?= date('d.m.Y H:i', strtotime($latest['finished_at'])) ?> 
-            (<?= $latest['duration_seconds'] ?>s)
-            • <?= $latest['products_inserted'] ?> nových
-            • <?= $latest['products_updated'] ?> aktualizováno
+        <h5 class="alert-heading">
+            <i class="bi bi-check-circle-fill"></i> 
+            Synchronizace úspěšná: <?= $e($latest['feed_name']) ?>
+        </h5>
+        <p class="mb-1">
+            Dokončeno <?= date('d.m.Y H:i', strtotime($latest['finished_at'])) ?> 
+            <span class="badge bg-success"><?= $latest['duration_seconds'] ?>s</span>
+        </p>
+        <div class="small">
+            <span class="me-3">
+                <i class="bi bi-plus-circle"></i> <strong><?= $latest['products_inserted'] ?></strong> nových produktů
+            </span>
+            <span class="me-3">
+                <i class="bi bi-arrow-repeat"></i> <strong><?= $latest['products_updated'] ?></strong> aktualizováno
+            </span>
+            <span class="me-3">
+                <i class="bi bi-box"></i> <strong><?= $latest['products_total'] ?></strong> celkem zpracováno
+            </span>
             <?php if ($latest['reviews_matched'] > 0): ?>
-            • <?= $latest['reviews_matched'] ?> recenzí spárováno
+            <span class="me-3">
+                <i class="bi bi-link-45deg"></i> <strong><?= $latest['reviews_matched'] ?></strong>/<?= $latest['reviews_total'] ?> recenzí spárováno
+            </span>
             <?php endif; ?>
-        </span>
+        </div>
     <?php else: ?>
-        <span class="small text-danger">
-            ✗ Chyba: <?= $e($latest['error_message']) ?>
-        </span>
+        <h5 class="alert-heading">
+            <i class="bi bi-exclamation-triangle-fill"></i> 
+            Chyba při synchronizaci: <?= $e($latest['feed_name']) ?>
+        </h5>
+        <p class="mb-1">
+            Selhalo <?= date('d.m.Y H:i', strtotime($latest['finished_at'])) ?>
+            <span class="badge bg-danger"><?= $latest['duration_seconds'] ?>s</span>
+        </p>
+        <hr>
+        <div class="mb-0">
+            <strong>Chybová hláška:</strong><br>
+            <code class="text-danger"><?= $e($latest['error_message']) ?></code>
+        </div>
+        <div class="mt-3">
+            <strong>Možná řešení:</strong>
+            <ul class="mb-0 small">
+                <?php if (strpos($latest['error_message'], 'HTTP') !== false): ?>
+                    <li>Zkontrolujte že URL je správná a dostupná</li>
+                    <li>Ověřte že hash parametr v URL je stále platný</li>
+                <?php elseif (strpos($latest['error_message'], 'encoding') !== false): ?>
+                    <li>Zkuste změnit kódování na UTF-8 nebo ISO-8859-2</li>
+                    <li>Ověřte formát CSV (oddělovače, uvozovky)</li>
+                <?php elseif (strpos($latest['error_message'], 'columns') !== false || strpos($latest['error_message'], 'code') !== false): ?>
+                    <li>CSV musí obsahovat sloupce: <code>code</code> a <code>name</code></li>
+                    <li>Zkontrolujte že hlavička má správné názvy sloupců</li>
+                <?php else: ?>
+                    <li>Zkuste synchronizaci spustit znovu</li>
+                    <li>Zkontrolujte formát CSV (oddělovače, kódování)</li>
+                <?php endif; ?>
+            </ul>
+        </div>
     <?php endif; ?>
 </div>
 <?php endif; ?>
