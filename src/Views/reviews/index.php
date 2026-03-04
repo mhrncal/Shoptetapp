@@ -172,9 +172,18 @@
                     </td>
                     <td>
                         <?php if ($r['imported']): ?>
-                            <i class="bi bi-check-circle-fill text-success" title="Importováno <?= date('d.m.Y', strtotime($r['imported_at'])) ?>"></i>
+                            <form method="POST" action="/reviews/bulk" style="display:inline;">
+                                <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+                                <input type="hidden" name="bulk_action" value="unmark_imported">
+                                <input type="hidden" name="ids[]" value="<?= $r['id'] ?>">
+                                <button type="submit" class="btn btn-link p-0 text-success" 
+                                        title="Importováno <?= date('d.m.Y', strtotime($r['imported_at'])) ?> - klikni pro odznačení"
+                                        onclick="return confirm('Odznačit jako importováno?')">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </button>
+                            </form>
                         <?php else: ?>
-                            <i class="bi bi-dash text-muted"></i>
+                            <i class="bi bi-dash text-muted" title="Neimportováno"></i>
                         <?php endif; ?>
                     </td>
                     <td>
