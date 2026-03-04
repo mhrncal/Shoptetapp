@@ -73,7 +73,7 @@
                 foreach ($queueColors as $s => $color):
                     $cnt = $queueStats[$s] ?? 0;
                 ?>
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-25">
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                     <span class="badge bg-<?= $color ?>"><?= $queueLabels[$s] ?></span>
                     <strong><?= $cnt ?></strong>
                 </div>
@@ -90,7 +90,7 @@
     <!-- Chybné importy -->
     <?php if (!empty($failedImports)): ?>
     <div class="col-12">
-        <div class="card border-0 border-danger border-opacity-25">
+        <div class="card border-danger border-opacity-50">
             <div class="card-header text-danger">
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-exclamation-triangle me-2"></i>Chybné XML importy</h6>
             </div>

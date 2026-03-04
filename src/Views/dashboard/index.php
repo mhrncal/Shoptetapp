@@ -167,7 +167,7 @@
                 foreach ($allModules as $name => $info):
                     $isActive = in_array($name, $activeModules) || $currentUser['role'] === 'superadmin';
                 ?>
-                <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom border-secondary border-opacity-25">
+                <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
                     <div class="d-flex align-items-center gap-2">
                         <i class="bi bi-<?= $info['icon'] ?> text-<?= $isActive ? 'primary' : 'secondary' ?>"></i>
                         <span class="small <?= $isActive ? '' : 'text-muted' ?>"><?= $info['label'] ?></span>

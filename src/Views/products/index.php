@@ -50,10 +50,10 @@ if (!empty($productIds)) {
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-6 col-md-2">
+            <div class="col-6 col-sm-4 col-md-2">
                 <button type="submit" class="btn btn-primary w-100">Filtr</button>
             </div>
-            <div class="col-6 col-md-1">
+            <div class="col-6 col-sm-4 col-md-1">
                 <a href="<?= APP_URL ?>/products" class="btn btn-outline-secondary w-100">Reset</a>
             </div>
         </form>
