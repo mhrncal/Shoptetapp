@@ -13,11 +13,11 @@ mysql -u infoshop_3356 -pShopcode2024?? infoshop_3356 << 'SQL'
 CREATE TABLE IF NOT EXISTS `product_feeds` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id` INT UNSIGNED NOT NULL,
-    `name` VARCHAR(100) NOT NULL COMMENT 'Název feedu (pro přehlednost)',
-    `url` TEXT NOT NULL COMMENT 'URL k CSV/XML feedu',
+    `name` VARCHAR(100) NOT NULL COMMENT 'Název feedu',
+    `url` TEXT NOT NULL COMMENT 'URL k CSV feedu',
     `type` ENUM('csv_simple', 'csv_with_images') NOT NULL DEFAULT 'csv_simple',
-    `delimiter` CHAR(1) DEFAULT ';' COMMENT 'CSV oddělovač',
-    `encoding` VARCHAR(20) DEFAULT 'UTF-8' COMMENT 'windows-1250, UTF-8, ISO-8859-2',
+    `delimiter` CHAR(1) DEFAULT ';',
+    `encoding` VARCHAR(20) DEFAULT 'UTF-8',
     `last_fetch_at` DATETIME DEFAULT NULL,
     `last_fetch_status` ENUM('success', 'error') DEFAULT NULL,
     `last_error` TEXT DEFAULT NULL,
@@ -29,11 +29,21 @@ CREATE TABLE IF NOT EXISTS `product_feeds` (
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Migration 008: Add pair_code
-ALTER TABLE products 
-ADD COLUMN IF NOT EXISTS `pair_code` VARCHAR(100) DEFAULT NULL COMMENT 'PairCode pro varianty produktu' 
-AFTER `code`;
+-- Migration 008: Add pair_code (safe - check first)
+SET @exist := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_SCHEMA = 'infoshop_3356' 
+    AND TABLE_NAME = 'products' 
+    AND COLUMN_NAME = 'pair_code');
 
+SET @sqlstmt := IF(@exist = 0, 
+    'ALTER TABLE products ADD COLUMN pair_code VARCHAR(100) DEFAULT NULL COMMENT "PairCode pro varianty" AFTER code',
+    'SELECT "Column pair_code already exists" as message');
+
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Index na pair_code
 CREATE INDEX IF NOT EXISTS idx_products_pair_code ON products(pair_code);
 
 -- Migration 009: Sync Log
@@ -62,25 +72,35 @@ echo "✅ Migrace dokončeny"
 # 2. Složky
 echo ""
 echo "2. Vytvářím složky..."
-mkdir -p tmp/feeds
-mkdir -p tmp/logs
-mkdir -p public/feeds
+mkdir -p tmp/feeds tmp/logs public/feeds
 chmod 755 tmp/feeds tmp/logs public/feeds
 echo "✅ Složky vytvořeny"
 
 # 3. Oprávnění
 echo ""
 echo "3. Nastavuji oprávnění..."
-chmod +x cron/feed_sync.php
-chmod +x cron/feed_sync_single.php
+chmod +x cron/feed_sync.php cron/feed_sync_single.php
 echo "✅ Oprávnění nastavena"
 
 # 4. Test
 echo ""
 echo "4. Test struktury..."
-echo "   - product_feeds: $(mysql -u infoshop_3356 -pShopcode2024?? infoshop_3356 -se "SELECT COUNT(*) FROM product_feeds" 2>/dev/null || echo '0') záznamů"
-echo "   - feed_sync_log: $(mysql -u infoshop_3356 -pShopcode2024?? infoshop_3356 -se "SELECT COUNT(*) FROM feed_sync_log" 2>/dev/null || echo '0') záznamů"
-echo "   - products.pair_code: $(mysql -u infoshop_3356 -pShopcode2024?? infoshop_3356 -se "SHOW COLUMNS FROM products LIKE 'pair_code'" 2>/dev/null | wc -l) sloupec"
+mysql -u infoshop_3356 -pShopcode2024?? infoshop_3356 << 'SQL'
+SELECT 
+    'product_feeds' as tabulka,
+    COUNT(*) as zaznamu
+FROM product_feeds
+UNION ALL
+SELECT 
+    'feed_sync_log',
+    COUNT(*)
+FROM feed_sync_log
+UNION ALL
+SELECT 
+    'products.pair_code',
+    COUNT(*)
+FROM products WHERE pair_code IS NOT NULL;
+SQL
 
 echo ""
 echo "======================================"
