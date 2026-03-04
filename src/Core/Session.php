@@ -17,7 +17,7 @@ class Session
             ini_set('session.cookie_secure', '1');
         }
 
-        session_name(SESSION_NAME);
+        session_name(defined('SESSION_NAME') ? SESSION_NAME : 'SHOPCODE_SESSION');
         session_start();
         self::$started = true;
     }

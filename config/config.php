@@ -43,18 +43,13 @@ foreach ($required as $const) {
 }
 
 // Timezone
-date_default_timezone_set('Europe/Prague');
+date_default_timezone_set(defined('TIMEZONE') ? TIMEZONE : 'Europe/Prague');
 
 // Error reporting (podle prostředí)
 if (defined('APP_ENV') && APP_ENV === 'production') {
-    error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+    error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
     ini_set('display_errors', '0');
 } else {
     error_reporting(E_ALL);
     ini_set('display_errors', '1');
 }
-
-// Session settings
-ini_set('session.cookie_httponly', '1');
-ini_set('session.cookie_secure', defined('HTTPS') && HTTPS ? '1' : '0');
-ini_set('session.use_strict_mode', '1');
