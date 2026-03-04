@@ -8,7 +8,28 @@
  * 5 3 * * * /usr/bin/php /srv/app/cron/feed_sync.php >> /srv/app/tmp/logs/feed_sync.log 2>&1
  */
 
+define('ROOT', dirname(__DIR__));
+
+// Načti config
 require ROOT . '/config/config.php';
+
+// Autoload tříd
+spl_autoload_register(function ($class) {
+    $prefix = 'ShopCode\\';
+    $base_dir = ROOT . '/src/';
+    
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
+    
+    $relative_class = substr($class, $len);
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+    
+    if (file_exists($file)) {
+        require $file;
+    }
+});
 
 use ShopCode\Core\Database;
 use ShopCode\Models\ProductFeed;
