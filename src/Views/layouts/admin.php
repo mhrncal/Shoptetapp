@@ -37,11 +37,11 @@ $active = fn($path) => str_starts_with($currentPath, $path) ? 'active' : '';
                 <?= strtoupper(substr($currentUser['first_name'] ?? $currentUser['email'], 0, 1)) ?>
             </div>
             <div class="overflow-hidden">
-                <div class="fw-medium text-truncate" style="font-size:.875rem;color:var(--sc-fg)">
+                <div class="fw-medium text-truncate" style="font-size:.875rem;">
                     <?= $e(trim($currentUser['first_name'] . ' ' . $currentUser['last_name'])) ?>
                 </div>
                 <div style="font-size:.7rem;" class="text-truncate">
-                    <span class="badge" style="background:var(--sc-primary);font-size:.65rem;">superadmin</span>
+                    <span class="badge" class="bg-primary" style="font-size:.65rem;">superadmin</span>
                 </div>
             </div>
         </div>
@@ -105,7 +105,7 @@ $active = fn($path) => str_starts_with($currentPath, $path) ? 'active' : '';
                 <input type="text" placeholder="Hledat v adminu...">
             </div>
             <div class="ms-auto d-flex align-items-center gap-2">
-                <span class="badge" style="background:var(--sc-primary);font-size:.75rem;">
+                <span class="badge" class="bg-primary" style="font-size:.75rem;">
                     <i class="bi bi-shield-fill me-1"></i>Admin panel
                 </span>
             </div>

@@ -7,12 +7,12 @@
     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
 
     <div class="row g-3 mb-3">
-        <div class="col-6">
+        <div class="col-12 col-sm-6">
             <label class="form-label">Jméno</label>
             <input type="text" name="first_name" class="form-control"
                    placeholder="Jan" required value="<?= $e($_POST['first_name'] ?? '') ?>">
         </div>
-        <div class="col-6">
+        <div class="col-12 col-sm-6">
             <label class="form-label">Příjmení</label>
             <input type="text" name="last_name" class="form-control"
                    placeholder="Novák" required value="<?= $e($_POST['last_name'] ?? '') ?>">
@@ -53,10 +53,10 @@
         Vytvořit účet
     </button>
 
-    <p class="text-center mt-4 mb-0" style="font-size:.875rem;color:var(--sc-muted-fg);">
+    <p class="text-center mt-4 mb-0" class="text-muted" style="font-size:.875rem;">
         Máte již účet?
         <a href="<?= APP_URL ?>/login"
-           style="color:var(--sc-primary);text-decoration:none;font-weight:500;">
+           class="text-decoration-none fw-medium">
             Přihlásit se
         </a>
     </p>

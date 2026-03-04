@@ -18,7 +18,7 @@
     <div class="flex-grow-1">
         <strong>Token vytvořen! Zkopírujte ho nyní — nebude znovu zobrazen.</strong>
         <div class="input-group mt-2">
-            <input type="text" class="form-control font-monospace bg-dark border-success text-white"
+            <input type="text" class="form-control font-monospace"
                    id="newTokenValue" value="<?= $e($newToken) ?>" readonly>
             <button class="btn btn-success" onclick="copyToken()">
                 <i class="bi bi-clipboard me-1"></i>Kopírovat
@@ -164,11 +164,11 @@ endforeach;
 <?php endif; ?>
 
 <!-- Info box -->
-<div class="card border-0 border-secondary border-opacity-25 mt-4">
+<div class="card mt-4">
     <div class="card-body py-3 small text-muted">
         <p class="fw-semibold text-body mb-2"><i class="bi bi-info-circle me-1"></i>Jak používat API tokeny</p>
         Přidejte token do HTTP hlavičky každého requestu:
-        <code class="d-block mt-2 p-2 bg-dark border border-secondary rounded">
+        <code class="d-block mt-2 p-2 rounded" style="background:hsl(var(--muted));">
             Authorization: Bearer sc_váš_token_zde
         </code>
     </div>
