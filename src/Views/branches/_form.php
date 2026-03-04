@@ -74,7 +74,7 @@
         <div class="card border-0">
             <div class="card-header"><h6 class="mb-0 fw-semibold"><i class="bi bi-clock me-2 text-muted"></i>Otevírací doby</h6></div>
             <div class="card-body p-0">
-                <table class="table table-hover align-middle mb-0">
+                <div class="table-responsive"><table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
                             <th style="width:50px;">Den</th>
@@ -120,7 +120,7 @@
                     </tr>
                     <?php endforeach; ?>
                     </tbody>
-                </table>
+                </table></div>
 
                 <!-- Rychlé akce -->
                 <div class="p-3 border-top border-secondary border-opacity-25">
