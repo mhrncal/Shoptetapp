@@ -9,7 +9,9 @@ error_reporting(E_ALL);
 echo "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Test App</title></head><body><pre>";
 
 try {
-    define('ROOT', dirname(__DIR__));
+    // ROOT musí být /srv/app (ne /srv)
+    define('ROOT', __DIR__);
+    echo "ROOT: " . ROOT . "\n\n";
     
     echo "1. Načítám autoloader...\n";
     spl_autoload_register(function (string $class): void {
