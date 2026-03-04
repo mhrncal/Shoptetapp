@@ -7,8 +7,6 @@
 5 3 * * * /usr/bin/php /srv/app/cron/feed_sync.php >> /srv/app/tmp/logs/feed_sync.log 2>&1
  */
 
-define('ROOT', dirname(__DIR__));
-require ROOT . '/vendor/autoload.php';
 require ROOT . '/config/config.php';
 
 use ShopCode\Core\Database;
