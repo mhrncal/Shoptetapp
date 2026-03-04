@@ -2,20 +2,15 @@
 $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 ?>
 
-<div class="container-fluid py-4">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="h3 mb-4">
-                <i class="bi bi-droplet"></i> Nastavení Watermarku
-            </h1>
-        </div>
-    </div>
+<div class="mb-4">
+    <h4 class="fw-bold mb-0"><i class="bi bi-droplet me-2"></i>Nastavení Watermarku</h4>
+</div>
 
-    <div class="row">
+<div class="row">
         <!-- Formulář -->
         <div class="col-lg-6">
             <div class="card border-0 mb-4">
-                <div class="card-header bg-white">
+                <div class="card-header">
                     <h6 class="mb-0 fw-semibold">Konfigurace</h6>
                 </div>
                 <div class="card-body">
@@ -148,8 +143,8 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 
         <!-- Live Preview -->
         <div class="col-lg-6">
-            <div class="card border-0 sticky-top" style="top: 20px;">
-                <div class="card-header bg-white">
+            <div class="card">
+                <div class="card-header">
                     <h6 class="mb-0 fw-semibold">
                         <i class="bi bi-eye"></i> Náhled
                     </h6>
@@ -170,7 +165,6 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
             </div>
         </div>
     </div>
-</div>
 
 <style>
 .position-grid {
@@ -190,13 +184,13 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
     font-size: 14px;
 }
 .position-btn:hover {
-    border-color: #0d6efd;
-    background: #f8f9fa;
+    border-color: hsl(var(--primary));
+    background: hsl(var(--muted));
 }
 .position-btn.active {
-    border-color: #0d6efd;
-    background: #0d6efd;
-    color: white;
+    border-color: hsl(var(--primary));
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
 }
 .position-btn input {
     display: none;
@@ -206,8 +200,8 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
     position: relative;
     width: 100%;
     aspect-ratio: 16/9;
-    background: #f8f9fa;
-    border-radius: 8px;
+    background: hsl(var(--muted));
+    border-radius: var(--radius);
     overflow: hidden;
 }
 .preview-image {
