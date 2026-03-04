@@ -121,7 +121,7 @@
                 <p class="text-muted small mb-0 mt-1">Přehled modulů přiřazených k vašemu účtu. Správu provádí administrátor.</p>
             </div>
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
+                <div class="table-responsive"><table class="table table-hover mb-0">
                     <thead><tr>
                         <th class="ps-3">Modul</th><th>Popis</th><th>Verze</th><th>Stav</th>
                     </tr></thead>
