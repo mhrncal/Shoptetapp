@@ -33,7 +33,7 @@
                 <h6 class="mb-0 fw-semibold">Informace o uživateli</h6>
             </div>
             <div class="card-body">
-                <table class="table table-sm table-borderless mb-0">
+                <div class="table-responsive"><table class="table table-sm table-borderless mb-0">
                     <tr>
                         <td class="text-muted w-40">User ID</td>
                         <td>
@@ -119,7 +119,7 @@
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-puzzle me-2 text-muted"></i>Přiřazené moduly</h6>
             </div>
             <div class="card-body p-0">
-                <table class="table table-hover align-middle mb-0">
+                <div class="table-responsive"><table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
                             <th>Modul</th>
@@ -150,7 +150,7 @@
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
-                </table>
+                </table></div>
             </div>
         </div>
     </div>
