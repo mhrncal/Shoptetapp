@@ -56,10 +56,10 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
                 <?= strtoupper(substr($currentUser['first_name'] ?? $currentUser['email'], 0, 1)) ?>
             </div>
             <div class="overflow-hidden">
-                <div class="fw-medium text-truncate" style="font-size:.875rem;color:var(--sc-fg)">
+                <div class="fw-medium text-truncate" style="font-size:.875rem;color:hsl(var(--foreground))">
                     <?= $e(trim($currentUser['first_name'] . ' ' . $currentUser['last_name'])) ?>
                 </div>
-                <div style="font-size:.7rem;color:var(--sc-muted-fg);" class="text-truncate">
+                <div style="font-size:.7rem;color:hsl(var(--muted-foreground));" class="text-truncate">
                     <?= $e($currentUser['email']) ?>
                 </div>
             </div>
@@ -96,9 +96,11 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
             <li>
                 <a href="<?= APP_URL ?>/watermark/settings" class="nav-link <?= $active('/watermark') ?>">
                     <i class="bi bi-droplet"></i> Watermark
-                <a href="/feeds" class="nav-link <?= str_starts_with($currentPath, '/feeds') ? 'active' : '' ?>">
-                    <i class="bi bi-cloud-download"></i> Importy produktů
                 </a>
+            </li>
+            <li>
+                <a href="<?= APP_URL ?>/feeds" class="nav-link <?= $active('/feeds') ?>">
+                    <i class="bi bi-cloud-download"></i> Importy produktů
                 </a>
             </li>
             <?php endif; ?>
@@ -204,7 +206,7 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
 
             <div class="d-flex align-items-center gap-2 ms-auto">
                 <?php if ($currentUser['role'] === 'superadmin'): ?>
-                <span class="badge" style="background:var(--sc-primary-light);color:var(--sc-primary);font-size:.75rem;">
+                <span class="badge" style="background:hsl(var(--primary)/.1);color:hsl(var(--primary));font-size:.75rem;">
                     <i class="bi bi-shield-fill me-1"></i>Superadmin
                 </span>
                 <?php endif; ?>
