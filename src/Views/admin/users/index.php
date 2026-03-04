@@ -49,7 +49,7 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th style="width: 60px;">ID</th>
+                        <th>ID</th>
                         <th>Uživatel</th>
                         <th>Shop</th>
                         <th>Role</th>
@@ -74,7 +74,7 @@
                                     <div class="fw-semibold small">
                                         <?= $e($u['first_name'] . ' ' . $u['last_name']) ?>
                                     </div>
-                                    <div class="text-muted" style="font-size:.75rem;"><?= $e($u['email']) ?></div>
+                                    <div class="text-muted" class="small"><?= $e($u['email']) ?></div>
                                 </div>
                             </div>
                         </td>

@@ -36,7 +36,7 @@
 <div class="card border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" style="font-size:.85rem;">
+            <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -54,7 +54,7 @@
                         <td class="text-muted"><?= $item['id'] ?></td>
                         <td>
                             <div class="small"><?= $e($item['shop_name'] ?? '—') ?></div>
-                            <div class="text-muted" style="font-size:.7rem;"><?= $e($item['email']) ?></div>
+                            <div class="text-muted" class="small"><?= $e($item['email']) ?></div>
                         </td>
                         <td class="text-muted" style="max-width:200px;">
                             <div class="text-truncate" title="<?= $e($item['xml_feed_url']) ?>">
@@ -72,7 +72,7 @@
                             <div class="progress" style="height:6px;width:80px;">
                                 <div class="progress-bar bg-info" style="width:<?= $item['progress_percentage'] ?>%"></div>
                             </div>
-                            <div class="text-muted" style="font-size:.7rem;"><?= $item['progress_percentage'] ?>%</div>
+                            <div class="text-muted" class="small"><?= $item['progress_percentage'] ?>%</div>
                             <?php else: ?>
                             <span class="text-muted">—</span>
                             <?php endif; ?>

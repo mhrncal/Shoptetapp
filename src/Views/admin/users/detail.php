@@ -132,7 +132,7 @@
                         <tr>
                             <td>
                                 <div class="fw-semibold small"><?= $e($m['label']) ?></div>
-                                <div class="text-muted" style="font-size:.75rem;"><?= $e($m['description'] ?? '') ?></div>
+                                <div class="text-muted" class="small"><?= $e($m['description'] ?? '') ?></div>
                             </td>
                             <td>
                                 <span class="badge bg-<?= ($m['status'] ?? 'inactive') === 'active' ? 'success' : 'secondary' ?>">

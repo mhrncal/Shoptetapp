@@ -16,12 +16,12 @@
                     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
 
                     <div class="row g-3 mb-3">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label">Jméno</label>
                             <input type="text" name="first_name" class="form-control"
                                    value="<?= $e($targetUser['first_name']) ?>">
                         </div>
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label">Příjmení</label>
                             <input type="text" name="last_name" class="form-control"
                                    value="<?= $e($targetUser['last_name']) ?>">
@@ -48,7 +48,7 @@
                     </div>
 
                     <div class="row g-3 mb-4">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label">Stav účtu</label>
                             <select name="status" class="form-select">
                                 <option value="pending"  <?= $targetUser['status'] === 'pending'  ? 'selected' : '' ?>>Čeká na schválení</option>
@@ -57,7 +57,7 @@
                             </select>
                         </div>
                         <?php if ($targetUser['role'] !== 'superadmin'): ?>
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label">Role</label>
                             <select name="role" class="form-select">
                                 <option value="user"       <?= $targetUser['role'] === 'user'       ? 'selected' : '' ?>>User</option>
