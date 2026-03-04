@@ -186,7 +186,7 @@
                             
                             <!-- Schválit -->
                             <?php if ($r['status'] !== 'approved'): ?>
-                            <form method="POST" action="<?= APP_URL ?>/reviews/change-status">
+                            <form method="POST" action="/reviews/change-status">
                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                 <input type="hidden" name="status" value="approved">
@@ -198,7 +198,7 @@
                             
                             <!-- Zamítnout -->
                             <?php if ($r['status'] !== 'rejected'): ?>
-                            <form method="POST" action="<?= APP_URL ?>/reviews/change-status">
+                            <form method="POST" action="/reviews/change-status">
                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                 <input type="hidden" name="status" value="rejected">
@@ -209,7 +209,7 @@
                             <?php endif; ?>
                             
                             <!-- Smazat -->
-                            <form method="POST" action="<?= APP_URL ?>/reviews/delete" 
+                            <form method="POST" action="/reviews/delete" 
                                   onsubmit="return confirm('Opravdu smazat tuto recenzi? Budou smazány i všechny fotky.')">
                                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
