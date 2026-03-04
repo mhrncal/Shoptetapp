@@ -41,7 +41,7 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
         <div class="card border-0">
             <div class="card-header"><h6 class="mb-0 fw-semibold">Základní informace</h6></div>
             <div class="card-body p-0">
-                <table class="table table-sm table-borderless mb-0">
+                <div class="table-responsive"><table class="table table-sm table-borderless mb-0">
                     <tr><td class="text-muted w-40 ps-3">Shoptet ID</td>
                         <td class="font-monospace"><?= $e($product['shoptet_id']) ?></td></tr>
                     <tr><td class="text-muted ps-3">Cena</td>
@@ -60,7 +60,7 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
                         <td class="small"><?= date('d.m.Y H:i', strtotime($product['created_at'])) ?></td></tr>
                     <tr><td class="text-muted ps-3">Aktualizováno</td>
                         <td class="small"><?= date('d.m.Y H:i', strtotime($product['updated_at'])) ?></td></tr>
-                </table>
+                </table></div>
             </div>
         </div>
     </div>
@@ -85,7 +85,7 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
         <div class="card border-0 mb-4">
             <div class="card-header"><h6 class="mb-0 fw-semibold">Parametry</h6></div>
             <div class="card-body p-0">
-                <table class="table table-sm table-hover mb-0">
+                <div class="table-responsive"><table class="table table-sm table-hover mb-0">
                     <tbody>
                     <?php foreach ($parameters as $key => $val): ?>
                     <tr>
@@ -94,7 +94,7 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
                     </tr>
                     <?php endforeach; ?>
                     </tbody>
-                </table>
+                </table></div>
             </div>
         </div>
         <?php endif; ?>

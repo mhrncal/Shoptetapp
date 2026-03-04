@@ -80,7 +80,7 @@
         <div class="card border-0 mb-4">
             <div class="card-header"><h6 class="mb-0 fw-semibold">Informace</h6></div>
             <div class="card-body p-0">
-                <table class="table table-borderless mb-0">
+                <div class="table-responsive"><table class="table table-borderless mb-0">
                     <tr>
                         <td class="text-muted ps-3" style="width:110px;">Autor</td>
                         <td><strong><?= $e($review['author_name']) ?></strong></td>
@@ -126,7 +126,7 @@
                         <td><?= date('d.m.Y H:i', strtotime($review['reviewed_at'])) ?></td>
                     </tr>
                     <?php endif; ?>
-                </table>
+                </table></div>
                 <?php if ($review['comment']): ?>
                 <div class="px-3 pb-3">
                     <div class="text-muted small mb-1">Komentář zákazníka:</div>
