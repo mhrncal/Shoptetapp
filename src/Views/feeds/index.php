@@ -60,9 +60,15 @@ if (!empty($runningFeeds)):
 <!-- Latest completed sync -->
 <?php 
 $latestCompleted = array_filter($timeline ?? [], function($log) {
-    // Skryj manuální kills z alertu (zobraz jen v timelineu)
-    if ($log['status'] === 'error' && str_contains($log['error_message'] ?? '', 'killed manually')) {
-        return false;
+    // Skryj manuální akce z alertu (zobraz jen v timelineu)
+    $msg = $log['error_message'] ?? '';
+    if ($log['status'] === 'error' && (
+        str_contains($msg, 'killed manually') ||
+        str_contains($msg, 'killed after') ||
+        str_contains($msg, 'Odblokováno') ||
+        str_contains($msg, 'Process hung')
+    )) {
+        return false; // Nezobrazuj jako alert
     }
     return $log['status'] !== 'running';
 });
