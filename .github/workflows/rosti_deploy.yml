@@ -41,6 +41,14 @@ jobs:
       - name: Copy code to server
         run: |
           rsync -aze "ssh -p $PORT" --delete-after --exclude=.git --exclude=.env ./ $USER@$HOST:/srv/app/
+          
+      - name: Ensure assets are present
+        run: |
+          ssh -p $PORT $USER@$HOST << 'ENDSSH'
+            # Verify assets exist
+            ls -la /srv/app/public/assets/css/app.css || echo "WARNING: CSS missing!"
+            ls -la /srv/app/public/assets/js/app.js || echo "WARNING: JS missing!"
+          ENDSSH
       
       - name: Create necessary directories
         run: |
