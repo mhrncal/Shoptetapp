@@ -13,7 +13,7 @@
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-database me-2 text-muted"></i>Databáze — počty záznamů</h6>
             </div>
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
+                <div class="table-responsive"><table class="table table-hover mb-0">
                     <tbody>
                         <?php foreach ($tables as $table => $count): ?>
                         <tr>
@@ -22,8 +22,8 @@
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
-                </table>
-            </div>
+                </table></div>
+</div>            </div>
         </div>
     </div>
 
@@ -34,7 +34,7 @@
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-code-square me-2 text-muted"></i>PHP prostředí</h6>
             </div>
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
+                <div class="table-responsive"><table class="table table-hover mb-0">
                     <tr>
                         <td class="text-muted small">PHP verze</td>
                         <td><span class="badge bg-primary"><?= $e($phpInfo['version']) ?></span></td>
@@ -57,7 +57,7 @@
                         </td>
                     </tr>
                     <?php endforeach; ?>
-                </table>
+                </table></div>
             </div>
         </div>
 
@@ -112,7 +112,7 @@
                             <?php endforeach; ?>
                         </tbody>
                     </table>
-                </div>
+</div>                </div>
             </div>
         </div>
     </div>
