@@ -134,13 +134,6 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
             </li>
             <?php endif; ?>
 
-            <?php if ($hasModule('xml_import')): ?>
-            <li>
-                <a href="<?= APP_URL ?>/xml" class="nav-link <?= $active('/xml') ?>">
-                    <i class="bi bi-file-earmark-arrow-down"></i> XML Import
-                </a>
-            </li>
-            <?php endif; ?>
 
             <?php if ($hasModule('api_access')): ?>
             <li>
