@@ -98,7 +98,7 @@
         <div class="card border-0 h-100">
             <div class="card-header"><h6 class="mb-0 fw-semibold">Cenové statistiky</h6></div>
             <div class="card-body p-0">
-                <table class="table table-borderless mb-0">
+                <div class="table-responsive"><table class="table table-borderless mb-0">
                     <tr>
                         <td class="text-muted ps-3">Nejnižší cena</td>
                         <td class="fw-semibold text-success"><?= $fmt($priceStats['price_min']) ?> Kč</td>
@@ -136,7 +136,7 @@
                     <span class="badge bg-<?= $colors[$lastImport['status']] ?? 'secondary' ?> mb-2">
                         <?= $e($lastImport['status']) ?>
                     </span>
-                    <table class="table table-sm table-borderless mb-0">
+                    <div class="table-responsive"><table class="table table-sm table-borderless mb-0">
                         <tr>
                             <td class="text-muted ps-0">Nové</td>
                             <td><?= $fmt($lastImport['products_imported']) ?></td>
@@ -149,7 +149,7 @@
                             <td class="text-muted ps-0">Datum</td>
                             <td class="small"><?= date('d.m.Y H:i', strtotime($lastImport['created_at'])) ?></td>
                         </tr>
-                    </table>
+                    </table></div>
                 </div>
                 <a href="<?= APP_URL ?>/xml" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-file-earmark-arrow-down me-1"></i>Nový import
@@ -165,7 +165,7 @@
         <div class="card border-0 h-100">
             <div class="card-header"><h6 class="mb-0 fw-semibold">Importy (posledních 30 dní)</h6></div>
             <div class="card-body p-0">
-                <table class="table table-sm table-hover mb-0">
+                <div class="table-responsive"><table class="table table-sm table-hover mb-0">
                     <thead><tr>
                         <th class="ps-3">Den</th><th>Stav</th><th class="text-end pe-3">Počet</th>
                     </tr></thead>
@@ -184,7 +184,7 @@
                     </tr>
                     <?php endforeach; ?>
                     </tbody>
-                </table>
+                </table></div>
             </div>
         </div>
     </div>
