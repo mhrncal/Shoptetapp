@@ -197,7 +197,7 @@
                             <!-- Schválit -->
                             <?php if ($r['status'] !== 'approved'): ?>
                             <form method="POST" action="/reviews/change-status">
-                                <input type="hidden" name="_csrf" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                                <input type="hidden" name="_csrf" value="<?= $csrfToken ?? '' ?>">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                 <input type="hidden" name="status" value="approved">
                                 <button type="submit" class="btn btn-sm btn-outline-success" title="Schválit">
@@ -209,7 +209,7 @@
                             <!-- Zamítnout -->
                             <?php if ($r['status'] !== 'rejected'): ?>
                             <form method="POST" action="/reviews/change-status">
-                                <input type="hidden" name="_csrf" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                                <input type="hidden" name="_csrf" value="<?= $csrfToken ?? '' ?>">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                 <input type="hidden" name="status" value="rejected">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Zamítnout">
@@ -221,7 +221,7 @@
                             <!-- Smazat -->
                             <form method="POST" action="/reviews/delete" 
                                   onsubmit="return confirm('Opravdu smazat tuto recenzi? Budou smazány i všechny fotky.')">
-                                <input type="hidden" name="_csrf" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                                <input type="hidden" name="_csrf" value="<?= $csrfToken ?? '' ?>">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Smazat">
                                     <i class="bi bi-trash"></i>

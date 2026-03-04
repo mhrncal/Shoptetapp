@@ -40,7 +40,7 @@ class ReviewController extends BaseController
             'status'    => $status,
             'search'    => $search,
             'xmlFeedUrl' => $xmlFeedUrl,
-            'csrfToken' => $_SESSION['_csrf'] ?? '',
+            // csrfToken je automaticky dostupný z View::render()
         ]);
     }
 
