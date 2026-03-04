@@ -2,7 +2,7 @@
 # Watchdog: Zabij zamrzlé feed synchronizace
 # Spouští se každých 5 minut přes CRON
 
-LOG_FILE="/srv/app/tmp/logs/watchdog.log"
+LOG_FILE="/srv/app/public/logs/watchdog.log"
 MAX_MINUTES=10
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Watchdog started" >> "$LOG_FILE"

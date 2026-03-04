@@ -213,7 +213,7 @@ class FeedController extends BaseController
         $logStmt->execute([$id]);
         
         // Spusť na pozadí - log do souboru pro debug
-        $logFile = ROOT . '/tmp/logs/feed_sync_' . $id . '_' . date('Y-m-d_H-i-s') . '.log';
+        $logFile = ROOT . '/public/logs/feed_sync_' . $id . '_' . date('Y-m-d_H-i-s') . '.log';
         $cmd = sprintf(
             'php %s/cron/feed_sync_single.php %d > %s 2>&1 &',
             ROOT,
@@ -228,6 +228,49 @@ class FeedController extends BaseController
         } else {
             Session::flash('info', 'Synchronizace byla spuštěna na pozadí. Stránka se automaticky obnoví.');
         }
+        
+        $this->redirect('/feeds');
+    }
+}
+
+    /**
+     * Odblokuj všechny zamrzlé synchronizace
+     */
+    public function unlockAll(): void
+    {
+        $this->validateCsrf();
+        $userId = $this->user['id'];
+        
+        $db = Database::getInstance();
+        
+        // Najdi všechny running syncs pro tohoto usera
+        $stmt = $db->prepare('
+            SELECT l.id 
+            FROM feed_sync_log l
+            JOIN product_feeds f ON f.id = l.feed_id
+            WHERE f.user_id = ? AND l.status = "running"
+        ');
+        $stmt->execute([$userId]);
+        $running = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+        
+        if (empty($running)) {
+            Session::flash('info', 'Žádné zamrzlé synchronizace nenalezeny');
+            $this->redirect('/feeds');
+        }
+        
+        // Označ jako error
+        $stmt = $db->prepare('
+            UPDATE feed_sync_log 
+            SET status = "error",
+                error_message = "Odblokováno uživatelem",
+                finished_at = NOW(),
+                duration_seconds = TIMESTAMPDIFF(SECOND, started_at, NOW())
+            WHERE id IN (' . implode(',', array_fill(0, count($running), '?')) . ')
+        ');
+        $stmt->execute($running);
+        
+        $count = count($running);
+        Session::flash('success', "Odblokováno $count zamrzlých synchronizací");
         
         $this->redirect('/feeds');
     }

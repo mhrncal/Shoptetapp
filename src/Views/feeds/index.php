@@ -2,9 +2,17 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0">Importy produktů</h1>
-    <a href="/feeds/create" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>Nový import
-    </a>
+    <div class="d-flex gap-2">
+        <form method="POST" action="/feeds/unlock-all" onsubmit="return confirm('Odblokovat všechny zamrzlé synchronizace?')">
+            <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
+            <button type="submit" class="btn btn-outline-warning">
+                <i class="bi bi-unlock me-1"></i>Odblokovat zamrzlé
+            </button>
+        </form>
+        <a href="/feeds/create" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Nový import
+        </a>
+    </div>
 </div>
 
 <!-- Progress bar pro synchronizaci -->
@@ -51,7 +59,13 @@ if (!empty($runningFeeds)):
 
 <!-- Latest completed sync -->
 <?php 
-$latestCompleted = array_filter($timeline ?? [], fn($log) => $log['status'] !== 'running');
+$latestCompleted = array_filter($timeline ?? [], function($log) {
+    // Skryj manuální kills z alertu (zobraz jen v timelineu)
+    if ($log['status'] === 'error' && str_contains($log['error_message'] ?? '', 'killed manually')) {
+        return false;
+    }
+    return $log['status'] !== 'running';
+});
 $latestCompleted = array_values($latestCompleted); // Re-index array
 if (!empty($latestCompleted) && isset($latestCompleted[0])):
     $latest = $latestCompleted[0];

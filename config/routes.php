@@ -133,6 +133,7 @@ return [
     ['POST',   '/feeds/sync',                'FeedController@sync',           ['auth','approved']],
     ['POST',   '/feeds/sync-background',     'FeedController@syncBackground', ['auth','approved']],
     ['POST',   '/feeds/delete',              'FeedController@delete',         ['auth','approved']],
+    ['POST',   '/feeds/unlock-all',          'FeedController@unlockAll',      ['auth','approved']],
     ['POST',   '/reviews/delete',            'ReviewController@delete',       ['auth','approved','module:reviews']],
     ['POST',   '/reviews/download-zip',       'ReviewController@downloadZip',  ['auth','approved','module:reviews']],
     ['POST',   '/photo/delete',                'PhotoController@delete',        ['auth','approved']],
