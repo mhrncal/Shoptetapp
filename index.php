@@ -24,7 +24,20 @@ $configFile = ROOT . '/config/config.php';
 if (!file_exists($configFile)) {
     die('Chybí config/config.php — zkopíruj config/config.example.php a uprav nastavení.');
 }
-require_once $configFile;
+
+try {
+    require_once $configFile;
+} catch (\Throwable $e) {
+    die('Chyba při načítání config.php: ' . $e->getMessage());
+}
+
+// Ověř že jsou definované kritické konstanty
+$criticalConstants = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS', 'APP_URL', 'APP_DEBUG'];
+foreach ($criticalConstants as $const) {
+    if (!defined($const)) {
+        die("Kritická konstanta není definovaná: $const");
+    }
+}
 
 // Error handling
 if (APP_DEBUG) {
@@ -36,4 +49,14 @@ if (APP_DEBUG) {
 }
 
 // Spuštění aplikace
-\ShopCode\Core\App::run();
+try {
+    \ShopCode\Core\App::run();
+} catch (\Throwable $e) {
+    if (APP_DEBUG) {
+        echo "<h1>Chyba aplikace</h1>";
+        echo "<pre>" . htmlspecialchars($e->getMessage()) . "</pre>";
+        echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+    } else {
+        echo "Omlouváme se, došlo k chybě. Kontaktujte administrátora.";
+    }
+}
