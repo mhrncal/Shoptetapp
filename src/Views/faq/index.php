@@ -16,23 +16,23 @@
     <div class="card-body py-3">
         <form method="GET" class="row g-2 align-items-end">
             <div class="col-12 col-md-5">
-                <div class="input-group input-group-sm">
+                <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
                     <input type="text" name="search" class="form-control" placeholder="Hledat v otázkách..."
                            value="<?= $e($search) ?>">
                 </div>
             </div>
             <div class="col-6 col-md-3">
-                <select name="filter" class="form-select form-select-sm">
+                <select name="filter" class="form-select">
                     <option value="">Vše</option>
                     <option value="general" <?= $filter === 'general' ? 'selected' : '' ?>>Pouze obecné</option>
                 </select>
             </div>
             <div class="col-3 col-md-1">
-                <button type="submit" class="btn btn-primary btn-sm w-100">Filtr</button>
+                <button type="submit" class="btn btn-primary w-100">Filtr</button>
             </div>
             <div class="col-3 col-md-1">
-                <a href="<?= APP_URL ?>/faq" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
+                <a href="<?= APP_URL ?>/faq" class="btn btn-outline-secondary w-100">Reset</a>
             </div>
         </form>
     </div>
@@ -73,7 +73,7 @@ $prodFaqs = array_filter($faqs, fn($f) => $f['product_id'] !== null);
             <?php foreach ($section['items'] as $faq): ?>
             <div class="accordion-item bg-transparent border-0 border-bottom border-secondary border-opacity-25">
                 <h2 class="accordion-header">
-                    <button class="accordion-button collapsed bg-transparent text-white shadow-none py-3"
+                    <button class="accordion-button collapsed bg-transparent shadow-none py-3"
                             type="button" data-bs-toggle="collapse"
                             data-bs-target="#faq<?= $faq['id'] ?>">
                         <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 w-100 me-3">
@@ -123,17 +123,17 @@ $prodFaqs = array_filter($faqs, fn($f) => $f['product_id'] !== null);
 <!-- Modal: Přidat FAQ -->
 <div class="modal fade" id="addFaqModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark border-secondary">
-            <div class="modal-header border-secondary">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title">Přidat FAQ položku</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="<?= APP_URL ?>/faq">
                 <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                 <div class="modal-body">
                     <?= \ShopCode\Core\View::partial('faq/_form', ['products' => $products, 'faq' => null, 'csrfToken' => $csrfToken]) ?>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
                     <button type="submit" class="btn btn-primary">Přidat</button>
                 </div>
@@ -145,17 +145,17 @@ $prodFaqs = array_filter($faqs, fn($f) => $f['product_id'] !== null);
 <!-- Modal: Upravit FAQ -->
 <div class="modal fade" id="editFaqModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark border-secondary">
-            <div class="modal-header border-secondary">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title">Upravit FAQ položku</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" id="editFaqForm" action="">
                 <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                 <div class="modal-body" id="editFaqBody">
                     <?= \ShopCode\Core\View::partial('faq/_form', ['products' => $products, 'faq' => null, 'csrfToken' => $csrfToken]) ?>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
                     <button type="submit" class="btn btn-primary">Uložit</button>
                 </div>
