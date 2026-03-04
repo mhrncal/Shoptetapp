@@ -5,10 +5,9 @@
 $e = fn($str) => htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
 ?>
 
-<div class="container-fluid py-4">
-    <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <div class="card shadow-sm">
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-shop text-primary me-2"></i>
@@ -229,7 +228,6 @@ $e = fn($str) => htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
                         </p>
                     </div>
                 </div>
-            </div>
         </div>
     </div>
 </div>
