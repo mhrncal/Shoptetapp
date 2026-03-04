@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-define('ROOT', __DIR__);
+if (!defined('ROOT')) {
+    define('ROOT', __DIR__);
+}
 
 // Autoloader (PSR-4, bez Composeru)
 spl_autoload_register(function (string $class): void {

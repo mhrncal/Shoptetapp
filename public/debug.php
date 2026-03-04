@@ -13,35 +13,36 @@ echo "PHP verze: " . phpversion() . "\n";
 echo "Server: " . $_SERVER['SERVER_SOFTWARE'] ?? 'unknown' . "\n\n";
 
 echo "=== CESTY ===\n";
-echo "ROOT: " . __DIR__ . "\n";
-echo "Config: " . __DIR__ . '/config/config.php' . "\n";
+$rootDir = dirname(__DIR__); // /srv/app (rodič public/)
+echo "ROOT: " . $rootDir . "\n";
+echo "Config: " . $rootDir . '/config/config.php' . "\n";
 echo "Index: " . __DIR__ . '/index.php' . "\n\n";
 
 echo "=== SOUBORY ===\n";
-echo ".env existuje: " . (file_exists(__DIR__ . '/.env') ? 'ANO' : 'NE') . "\n";
-if (file_exists(__DIR__ . '/.env')) {
-    echo ".env velikost: " . filesize(__DIR__ . '/.env') . " bytes\n";
-    $envContent = file_get_contents(__DIR__ . '/.env');
+echo ".env existuje: " . (file_exists($rootDir . '/.env') ? 'ANO' : 'NE') . "\n";
+if (file_exists($rootDir . '/.env')) {
+    echo ".env velikost: " . filesize($rootDir . '/.env') . " bytes\n";
+    $envContent = file_get_contents($rootDir . '/.env');
     echo ".env řádků: " . substr_count($envContent, "\n") . "\n";
     echo ".env obsahuje DB_HOST: " . (strpos($envContent, 'DB_HOST') !== false ? 'ANO' : 'NE') . "\n";
 }
 
-echo "\nconfig.php existuje: " . (file_exists(__DIR__ . '/config/config.php') ? 'ANO' : 'NE') . "\n";
+echo "\nconfig.php existuje: " . (file_exists($rootDir . '/config/config.php') ? 'ANO' : 'NE') . "\n";
 echo "index.php existuje: " . (file_exists(__DIR__ . '/index.php') ? 'ANO' : 'NE') . "\n\n";
 
 echo "=== TEST CONFIG NAČTENÍ ===\n";
 try {
-    define('ROOT', __DIR__);
+    define('ROOT', $rootDir);
     
-    if (!file_exists(__DIR__ . '/.env')) {
-        throw new Exception('.env soubor neexistuje!');
+    if (!file_exists($rootDir . '/.env')) {
+        throw new Exception('.env soubor neexistuje v ' . $rootDir);
     }
     
-    if (!file_exists(__DIR__ . '/config/config.php')) {
-        throw new Exception('config.php neexistuje!');
+    if (!file_exists($rootDir . '/config/config.php')) {
+        throw new Exception('config.php neexistuje v ' . $rootDir . '/config/');
     }
     
-    require __DIR__ . '/config/config.php';
+    require $rootDir . '/config/config.php';
     
     echo "✅ Config načten úspěšně!\n\n";
     
