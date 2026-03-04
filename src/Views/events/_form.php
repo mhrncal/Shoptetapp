@@ -9,12 +9,12 @@
 </div>
 
 <div class="row g-3 mb-3">
-    <div class="col-6">
+    <div class="col-12 col-sm-6">
         <label class="form-label">Začátek <span class="text-danger">*</span></label>
         <input type="datetime-local" name="start_date" class="form-control" required
                value="<?= $e($toLocal($ev['start_date'] ?? '')) ?>">
     </div>
-    <div class="col-6">
+    <div class="col-12 col-sm-6">
         <label class="form-label">Konec <span class="text-danger">*</span></label>
         <input type="datetime-local" name="end_date" class="form-control" required
                value="<?= $e($toLocal($ev['end_date'] ?? '')) ?>">
@@ -34,12 +34,12 @@
 </div>
 
 <div class="row g-3 mb-3">
-    <div class="col-6">
+    <div class="col-12 col-sm-6">
         <label class="form-label">URL akce</label>
         <input type="url" name="event_url" class="form-control"
                value="<?= $e($ev['event_url'] ?? '') ?>" placeholder="https://...">
     </div>
-    <div class="col-6">
+    <div class="col-12 col-sm-6">
         <label class="form-label">URL obrázku</label>
         <input type="url" name="image_url" class="form-control"
                value="<?= $e($ev['image_url'] ?? '') ?>" placeholder="https://...">

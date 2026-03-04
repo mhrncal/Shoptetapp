@@ -54,12 +54,12 @@
                            value="<?= $e($branch['image_url'] ?? '') ?>" placeholder="https://...">
                 </div>
                 <div class="row g-2">
-                    <div class="col-6">
+                    <div class="col-12 col-sm-6">
                         <label class="form-label">Zeměpisná šířka</label>
                         <input type="number" name="latitude" step="any" class="form-control"
                                value="<?= $e($branch['latitude'] ?? '') ?>" placeholder="50.0755">
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-sm-6">
                         <label class="form-label">Zeměpisná délka</label>
                         <input type="number" name="longitude" step="any" class="form-control"
                                value="<?= $e($branch['longitude'] ?? '') ?>" placeholder="14.4378">
@@ -123,7 +123,7 @@
                 </table></div>
 
                 <!-- Rychlé akce -->
-                <div class="p-3 border-top border-secondary border-opacity-25">
+                <div class="p-3 border-top">
                     <div class="d-flex gap-2 flex-wrap">
                         <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setWeekdays()">
                             Po–Pá 9–17

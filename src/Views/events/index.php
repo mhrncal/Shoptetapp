@@ -14,7 +14,7 @@
 </div>
 
 <!-- Taby -->
-<ul class="nav nav-tabs border-secondary mb-4">
+<ul class="nav nav-tabs mb-4">
     <li class="nav-item">
         <a class="nav-link <?= $tab === 'upcoming' ? 'active' : 'text-muted' ?>"
            href="?tab=upcoming">Nadcházející</a>

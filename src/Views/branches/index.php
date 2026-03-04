@@ -65,7 +65,7 @@
                 <?php endif; ?>
 
                 <!-- Otevírací doby -->
-                <div class="border-top border-secondary border-opacity-25 pt-3">
+                <div class="border-top pt-3">
                     <h6 class="small fw-semibold text-muted mb-2">
                         <i class="bi bi-clock me-1"></i>Otevírací doby
                     </h6>

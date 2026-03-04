@@ -29,12 +29,12 @@
 </div>
 
 <div class="row g-3">
-    <div class="col-6">
+    <div class="col-12 col-sm-6">
         <label class="form-label">Pořadí</label>
         <input type="number" name="sort_order" class="form-control" min="0"
                value="<?= $e($faq['sort_order'] ?? 0) ?>">
     </div>
-    <div class="col-6 d-flex align-items-end">
+    <div class="col-12 col-sm-6 d-flex align-items-end">
         <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" name="is_public" id="isPublic_<?= uniqid() ?>"
                    value="1" <?= (!$faq || $faq['is_public']) ? 'checked' : '' ?>>

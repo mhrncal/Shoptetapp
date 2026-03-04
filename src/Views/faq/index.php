@@ -71,7 +71,7 @@ $prodFaqs = array_filter($faqs, fn($f) => $f['product_id'] !== null);
     <div class="card-body p-0">
         <div class="accordion accordion-flush" id="faqAccordion<?= $section['general'] ? 'G' : 'P' ?>">
             <?php foreach ($section['items'] as $faq): ?>
-            <div class="accordion-item bg-transparent border-0 border-bottom border-secondary border-opacity-25">
+            <div class="accordion-item border-0 border-bottom">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed bg-transparent shadow-none py-3"
                             type="button" data-bs-toggle="collapse"
