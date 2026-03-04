@@ -154,6 +154,20 @@
                     <textarea id="adminNote" class="form-control form-control-sm" rows="2"
                               placeholder="Důvod zamítnutí, poznámka..."><?= $e($review['admin_note'] ?? '') ?></textarea>
                 </div>
+                
+                <!-- Uložit poznámku -->
+                <div class="mb-3">
+                    <form method="POST" action="/reviews/update-note">
+                        <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
+                        <input type="hidden" name="id" value="<?= $review['id'] ?>">
+                        <input type="hidden" name="admin_note" id="saveNoteInput">
+                        <button type="submit" class="btn btn-sm btn-secondary w-100" 
+                                onclick="this.form.querySelector('#saveNoteInput').value = document.getElementById('adminNote').value">
+                            <i class="bi bi-save me-1"></i>Uložit poznámku
+                        </button>
+                    </form>
+                </div>
+                
                 <div class="d-flex gap-2">
                     <?php if ($review['status'] !== 'approved'): ?>
                     <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="flex-fill">
