@@ -40,35 +40,7 @@ jobs:
       
       - name: Copy code to server
         run: |
-          rsync -aze "ssh -p $PORT" --delete-after --exclude=.git --exclude=.env ./ $USER@$HOST:/srv/app/
-          
-      - name: Verify and fix assets
-        run: |
-          ssh -p $PORT $USER@$HOST << 'ENDSSH'
-            echo "=== Checking assets ==="
-            
-            # Verify directory structure
-            ls -la /srv/app/public/assets/ || mkdir -p /srv/app/public/assets/{css,js}
-            
-            # Check files
-            if [ ! -f /srv/app/public/assets/css/app.css ]; then
-              echo "ERROR: CSS missing!"
-              ls -R /srv/app/public/
-            else
-              echo "✓ CSS exists ($(wc -c < /srv/app/public/assets/css/app.css) bytes)"
-            fi
-            
-            if [ ! -f /srv/app/public/assets/js/app.js ]; then
-              echo "ERROR: JS missing!"
-            else
-              echo "✓ JS exists ($(wc -c < /srv/app/public/assets/js/app.js) bytes)"
-            fi
-            
-            # Set permissions
-            chmod -R 755 /srv/app/public/assets/
-            
-            echo "=== Asset check complete ==="
-          ENDSSH
+          rsync -avz --delete-after --exclude=.git --exclude=.env -e "ssh -p $PORT" ./ $USER@$HOST:/srv/app/
       
       - name: Create necessary directories
         run: |
