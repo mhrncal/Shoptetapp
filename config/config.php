@@ -77,6 +77,10 @@ if (!defined('SESSION_NAME')) {
     define('SESSION_NAME', 'shopcode_session');
 }
 
+if (!defined('ASSETS_URL')) {
+    define('ASSETS_URL', defined('APP_URL') ? APP_URL : '');
+}
+
 // Timezone
 date_default_timezone_set(defined('TIMEZONE') ? TIMEZONE : 'Europe/Prague');
 
