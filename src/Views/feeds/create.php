@@ -33,7 +33,7 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-12 col-md-6 mb-3">
                             <label class="form-label">Oddělovač</label>
                             <select name="delimiter" class="form-select">
                                 <option value=";">; (středník)</option>
@@ -42,7 +42,7 @@
                             </select>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
+                        <div class="col-12 col-md-6 mb-3">
                             <label class="form-label">Kódování</label>
                             <select name="encoding" class="form-select">
                                 <option value="windows-1250" selected>windows-1250</option>
