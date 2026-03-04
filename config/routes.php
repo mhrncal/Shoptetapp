@@ -130,6 +130,12 @@ return [
     ['DELETE', '/reviews/{id}',               'ReviewController@delete',     ['auth','approved','module:reviews']],
     ['POST',   '/reviews/change-status',      'ReviewController@changeStatus', ['auth','approved','module:reviews']],
     ['POST',   '/reviews/update-note',       'ReviewController@updateNote',   ['auth','approved','module:reviews']],
+    // Feeds
+    ['GET',    '/feeds',                     'FeedController@index',          ['auth','approved']],
+    ['GET',    '/feeds/create',              'FeedController@create',         ['auth','approved']],
+    ['POST',   '/feeds/store',               'FeedController@store',          ['auth','approved']],
+    ['POST',   '/feeds/sync',                'FeedController@sync',           ['auth','approved']],
+    ['POST',   '/feeds/delete',              'FeedController@delete',         ['auth','approved']],
     ['POST',   '/reviews/delete',            'ReviewController@delete',       ['auth','approved','module:reviews']],
     ['POST',   '/reviews/download-zip',       'ReviewController@downloadZip',  ['auth','approved','module:reviews']],
     ['POST',   '/photo/delete',                'PhotoController@delete',        ['auth','approved']],

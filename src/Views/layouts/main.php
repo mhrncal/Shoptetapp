@@ -95,6 +95,9 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
             <li>
                 <a href="<?= APP_URL ?>/watermark/settings" class="nav-link <?= $active('/watermark') ?>">
                     <i class="bi bi-droplet"></i> Watermark
+                <a href="/feeds" class="nav-link <?= str_starts_with($currentPath, '/feeds') ? 'active' : '' ?>">
+                    <i class="bi bi-cloud-download"></i> Importy produktů
+                </a>
                 </a>
             </li>
             <?php endif; ?>
