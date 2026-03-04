@@ -127,31 +127,6 @@ class ReviewController extends BaseController
         $this->redirect('/reviews');
     }
 
-    public function delete(): void
-    {
-        $this->validateCsrf();
-        $id     = (int)$this->request->param('id');
-        $userId = $this->user['id'];
-        $review = Review::delete($id, $userId);
-
-        if ($review) {
-            // Smažeme fotky z disku
-            if (!empty($review['photos'])) {
-                // UUID ze cesty: {user_id}/{uuid}/filename
-                $firstPhoto = $review['photos'][0]['path'] ?? '';
-                $parts      = explode('/', $firstPhoto);
-                if (count($parts) >= 2) {
-                    $uuid = $parts[1];
-                    (new ImageHandler())->deleteFolder($userId, $uuid);
-                }
-            }
-            Session::flash('success', 'Recenze byla smazána.');
-        } else {
-            Session::flash('error', 'Recenze nenalezena.');
-        }
-
-        $this->redirect('/reviews');
-    }
 
     public function exportCsv(): void
     {
