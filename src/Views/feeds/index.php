@@ -168,8 +168,9 @@ if (!empty($latestCompleted) && isset($latestCompleted[0])):
                     <strong><?= $e($feed['name']) ?></strong><br>
                     <small class="text-muted"><?= $e(substr($feed['url'], 0, 60)) ?>...</small>
                     <?php if ($isRunning): ?>
-                        <br><span class="badge bg-warning text-dark">
-                            <span class="spinner-border spinner-border-sm"></span> Synchronizuje se...
+                        <br><span class="badge bg-warning text-dark" id="progress-<?= $feed['id'] ?>">
+                            <span class="spinner-border spinner-border-sm"></span> 
+                            <span class="progress-text">Synchronizuje se...</span>
                         </span>
                     <?php endif; ?>
                 </td>
@@ -391,4 +392,36 @@ var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggl
 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl)
 });
+
+// Real-time progress update pro běžící syncs
+<?php 
+$runningFeedIds = [];
+foreach ($feeds as $f) {
+    foreach ($timeline ?? [] as $log) {
+        if ($log['feed_id'] == $f['id'] && $log['status'] === 'running') {
+            $runningFeedIds[] = $f['id'];
+            break;
+        }
+    }
+}
+if (!empty($runningFeedIds)): 
+?>
+function updateProgress() {
+    <?php foreach ($runningFeedIds as $fid): ?>
+    fetch('/feeds/sync-progress?feed_id=<?= $fid ?>')
+        .then(r => r.json())
+        .then(data => {
+            const el = document.getElementById('progress-<?= $fid ?>');
+            if (el && data.message) {
+                el.querySelector('.progress-text').textContent = data.message;
+            }
+        })
+        .catch(e => console.error('Progress fetch error:', e));
+    <?php endforeach; ?>
+}
+
+// Update každé 2 sekundy
+setInterval(updateProgress, 2000);
+updateProgress(); // První update okamžitě
+<?php endif; ?>
 </script>

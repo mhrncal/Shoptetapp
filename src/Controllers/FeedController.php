@@ -274,3 +274,79 @@ class FeedController extends BaseController
         $this->redirect('/feeds');
     }
 }
+
+    /**
+     * AJAX endpoint pro zjištění progress synchronizace
+     */
+    public function syncProgress(): void
+    {
+        header('Content-Type: application/json');
+        
+        $feedId = (int)($_GET['feed_id'] ?? 0);
+        if (!$feedId) {
+            echo json_encode(['error' => 'Missing feed_id']);
+            exit;
+        }
+        
+        // Najdi poslední running log pro tento feed
+        $db = Database::getInstance();
+        $stmt = $db->prepare('
+            SELECT l.id, l.started_at
+            FROM feed_sync_log l
+            WHERE l.feed_id = ? AND l.status = "running"
+            ORDER BY l.started_at DESC
+            LIMIT 1
+        ');
+        $stmt->execute([$feedId]);
+        $log = $stmt->fetch();
+        
+        if (!$log) {
+            echo json_encode(['status' => 'not_running']);
+            exit;
+        }
+        
+        // Najdi log soubor
+        $logPattern = ROOT . '/public/logs/feed_sync_' . $feedId . '_*.log';
+        $files = glob($logPattern);
+        
+        if (empty($files)) {
+            echo json_encode(['status' => 'running', 'message' => 'Spouští se...']);
+            exit;
+        }
+        
+        // Čti poslední řádek logu
+        $latestFile = end($files);
+        $lines = file($latestFile);
+        $lastLine = trim(end($lines));
+        
+        // Parsuj progress zprávy
+        if (strpos($lastLine, 'Downloading') !== false) {
+            $message = 'Stahování CSV...';
+        } elseif (strpos($lastLine, 'Downloaded') !== false) {
+            $message = 'CSV staženo';
+        } elseif (strpos($lastLine, 'Parsing') !== false) {
+            $message = 'Parsování CSV...';
+        } elseif (preg_match('/Processed (\d+) rows/', $lastLine, $m)) {
+            $message = 'Zpracováno ' . number_format($m[1], 0, ',', ' ') . ' řádků...';
+        } elseif (strpos($lastLine, 'Parse stats') !== false) {
+            $message = 'Parsování dokončeno';
+        } elseif (strpos($lastLine, 'Matching reviews') !== false) {
+            $message = 'Párování recenzí...';
+        } elseif (strpos($lastLine, 'Match stats') !== false) {
+            $message = 'Párování dokončeno';
+        } elseif (strpos($lastLine, 'Generating exports') !== false) {
+            $message = 'Generování exportů...';
+        } elseif (strpos($lastLine, 'SUCCESS') !== false) {
+            $message = 'Dokončeno!';
+        } else {
+            $message = 'Synchronizuje se...';
+        }
+        
+        echo json_encode([
+            'status' => 'running',
+            'message' => $message,
+            'last_line' => $lastLine
+        ]);
+        exit;
+    }
+}
