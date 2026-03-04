@@ -14,16 +14,66 @@
             <span class="visually-hidden">Loading...</span>
         </div>
         <div class="flex-grow-1">
-            <strong>Synchronizuji...</strong>
+            <strong>Synchronizace spuštěna na pozadí</strong>
             <div class="progress mt-2" style="height: 20px;">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" 
                      role="progressbar" style="width: 100%">
-                    Stahování CSV a zpracování dat
+                    Stránka se automaticky obnoví za <span id="countdown">10</span>s
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Running feeds notification -->
+<?php 
+$runningFeeds = array_filter($timeline ?? [], fn($log) => $log['status'] === 'running');
+if (!empty($runningFeeds)): 
+?>
+<div class="alert alert-warning">
+    <div class="d-flex align-items-center">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        <div class="flex-grow-1">
+            <strong>Právě běží <?= count($runningFeeds) ?> synchronizace</strong>
+            <div class="mt-1 small">
+                <?php foreach ($runningFeeds as $log): ?>
+                    • <?= $e($log['feed_name']) ?> 
+                    <span class="text-muted">(spuštěno <?= date('H:i', strtotime($log['started_at'])) ?>)</span><br>
+                <?php endforeach; ?>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary mt-2" onclick="location.reload()">
+                <i class="bi bi-arrow-repeat"></i> Obnovit stránku
+            </button>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Latest completed sync -->
+<?php 
+$latestCompleted = array_filter($timeline ?? [], fn($log) => $log['status'] !== 'running');
+if (!empty($latestCompleted)):
+    $latest = $latestCompleted[0];
+?>
+<div class="alert alert-<?= $latest['status'] === 'success' ? 'success' : 'danger' ?>">
+    <strong>Poslední synchronizace: <?= $e($latest['feed_name']) ?></strong><br>
+    <?php if ($latest['status'] === 'success'): ?>
+        <span class="small">
+            ✓ Dokončeno <?= date('d.m.Y H:i', strtotime($latest['finished_at'])) ?> 
+            (<?= $latest['duration_seconds'] ?>s)
+            • <?= $latest['products_inserted'] ?> nových
+            • <?= $latest['products_updated'] ?> aktualizováno
+            <?php if ($latest['reviews_matched'] > 0): ?>
+            • <?= $latest['reviews_matched'] ?> recenzí spárováno
+            <?php endif; ?>
+        </span>
+    <?php else: ?>
+        <span class="small text-danger">
+            ✗ Chyba: <?= $e($latest['error_message']) ?>
+        </span>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <?php if (!empty($feeds)): ?>
 <div class="table-responsive">
@@ -38,11 +88,25 @@
             </tr>
         </thead>
         <tbody>
-        <?php foreach ($feeds as $feed): ?>
-            <tr>
+        <?php foreach ($feeds as $feed): 
+            // Zjisti jestli tento feed právě běží
+            $isRunning = false;
+            foreach ($timeline ?? [] as $log) {
+                if ($log['feed_id'] == $feed['id'] && $log['status'] === 'running') {
+                    $isRunning = true;
+                    break;
+                }
+            }
+        ?>
+            <tr class="<?= $isRunning ? 'table-warning' : '' ?>">
                 <td>
                     <strong><?= $e($feed['name']) ?></strong><br>
                     <small class="text-muted"><?= $e(substr($feed['url'], 0, 60)) ?>...</small>
+                    <?php if ($isRunning): ?>
+                        <br><span class="badge bg-warning text-dark">
+                            <span class="spinner-border spinner-border-sm"></span> Synchronizuje se...
+                        </span>
+                    <?php endif; ?>
                 </td>
                 <td>
                     <?php if ($feed['type'] === 'csv_with_images'): ?>
@@ -74,7 +138,9 @@
                         <form method="POST" action="/feeds/sync-background" class="sync-form">
                             <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
                             <input type="hidden" name="id" value="<?= $feed['id'] ?>">
-                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Synchronizovat teď">
+                            <button type="submit" class="btn btn-sm btn-outline-primary" 
+                                    title="Synchronizovat teď"
+                                    <?= $isRunning ? 'disabled' : '' ?>>
                                 <i class="bi bi-arrow-repeat"></i>
                             </button>
                         </form>
@@ -99,32 +165,30 @@
 </div>
 <?php endif; ?>
 
-<script>
-// Zobraz progress bar při synchronizaci
-document.querySelectorAll('.sync-form').forEach(form => {
-    form.addEventListener('submit', function() {
-        document.getElementById('syncProgress').style.display = 'block';
-        window.scrollTo(0, 0);
-    });
-});
-
-// Inicializuj Bootstrap tooltips
-var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl)
-});
-</script>
-
 <!-- Časová osa synchronizací -->
 <?php if (!empty($timeline)): ?>
 <div class="mt-5">
-    <h5 class="mb-3">Časová osa synchronizací</h5>
+    <h5 class="mb-3">
+        Časová osa synchronizací 
+        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="location.reload()">
+            <i class="bi bi-arrow-repeat"></i> Obnovit
+        </button>
+    </h5>
     
     <div class="timeline">
-        <?php foreach ($timeline as $log): 
+        <?php foreach (array_slice($timeline, 0, 10) as $log): 
             $isRunning = $log['status'] === 'running';
             $isSuccess = $log['status'] === 'success';
             $isError = $log['status'] === 'error';
+            
+            // Vypočítej jak dlouho běží
+            $runningTime = '';
+            if ($isRunning) {
+                $started = new DateTime($log['started_at']);
+                $now = new DateTime();
+                $diff = $now->getTimestamp() - $started->getTimestamp();
+                $runningTime = "{$diff}s";
+            }
         ?>
         <div class="timeline-item mb-3">
             <div class="card <?= $isError ? 'border-danger' : ($isSuccess ? 'border-success' : 'border-warning') ?>">
@@ -134,7 +198,7 @@ var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                             <!-- Status badge -->
                             <?php if ($isRunning): ?>
                                 <span class="badge bg-warning text-dark">
-                                    <i class="bi bi-hourglass-split"></i> Běží...
+                                    <span class="spinner-border spinner-border-sm"></span> Běží... <?= $runningTime ?>
                                 </span>
                             <?php elseif ($isSuccess): ?>
                                 <span class="badge bg-success">
@@ -232,16 +296,34 @@ var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     background: #6c757d;
     border: 2px solid white;
 }
-
-.timeline-item .card.border-success + * .timeline-item::after {
-    background: #198754;
-}
-
-.timeline-item .card.border-danger + * .timeline-item::after {
-    background: #dc3545;
-}
-
-.timeline-item .card.border-warning + * .timeline-item::after {
-    background: #ffc107;
-}
 </style>
+
+<script>
+// Auto-refresh když něco běží
+<?php if (!empty($runningFeeds)): ?>
+let countdown = 10;
+const countdownEl = document.getElementById('countdown');
+
+setInterval(() => {
+    countdown--;
+    if (countdownEl) countdownEl.textContent = countdown;
+    if (countdown <= 0) {
+        location.reload();
+    }
+}, 1000);
+<?php endif; ?>
+
+// Zobraz progress bar při kliknutí sync
+document.querySelectorAll('.sync-form').forEach(form => {
+    form.addEventListener('submit', function() {
+        document.getElementById('syncProgress').style.display = 'block';
+        window.scrollTo(0, 0);
+    });
+});
+
+// Inicializuj Bootstrap tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+</script>
