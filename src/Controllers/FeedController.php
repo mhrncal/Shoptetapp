@@ -136,7 +136,6 @@ class FeedController extends BaseController
         
         $this->redirect('/feeds');
     }
-}
 
     /**
      * Spusť sync na pozadí (aby nebylo 504)
@@ -165,3 +164,4 @@ class FeedController extends BaseController
         Session::flash('info', 'Synchronizace byla spuštěna na pozadí. Obnovte stránku za chvíli.');
         $this->redirect('/feeds');
     }
+}
