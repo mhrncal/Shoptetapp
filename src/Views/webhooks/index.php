@@ -120,17 +120,17 @@
 <!-- Modal: Přidat webhook -->
 <div class="modal fade" id="addWebhookModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark border-secondary">
-            <div class="modal-header border-secondary">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title">Přidat webhook</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="<?= APP_URL ?>/webhooks">
                 <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                 <div class="modal-body">
                     <?= \ShopCode\Core\View::partial('webhooks/_form', ['webhook' => null, 'allEvents' => $allEvents]) ?>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
                     <button type="submit" class="btn btn-primary">Přidat webhook</button>
                 </div>
@@ -142,17 +142,17 @@
 <!-- Modal: Upravit webhook -->
 <div class="modal fade" id="editWebhookModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark border-secondary">
-            <div class="modal-header border-secondary">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title">Upravit webhook</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" id="editWebhookForm" action="">
                 <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                 <div class="modal-body" id="editWebhookBody">
                     <?= \ShopCode\Core\View::partial('webhooks/_form', ['webhook' => null, 'allEvents' => $allEvents]) ?>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
                     <button type="submit" class="btn btn-primary">Uložit</button>
                 </div>

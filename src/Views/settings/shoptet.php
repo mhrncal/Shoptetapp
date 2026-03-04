@@ -9,7 +9,7 @@ $e = fn($str) => htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
     <div class="row">
         <div class="col-lg-8 mx-auto">
             <div class="card shadow-sm">
-                <div class="card-header bg-white border-bottom">
+                <div class="card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-shop text-primary me-2"></i>
                         Shoptet Integrace
@@ -179,7 +179,7 @@ $e = fn($str) => htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
 
             <!-- Nápověda -->
             <div class="card shadow-sm mt-4">
-                <div class="card-header bg-white border-bottom">
+                <div class="card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-question-circle text-info me-2"></i>
                         Jak to funguje?
@@ -207,7 +207,7 @@ $e = fn($str) => htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
 
             <!-- Požadavky serveru -->
             <div class="card shadow-sm mt-4">
-                <div class="card-header bg-white border-bottom">
+                <div class="card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-server text-warning me-2"></i>
                         Požadavky na server

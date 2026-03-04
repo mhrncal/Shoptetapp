@@ -177,10 +177,10 @@ endforeach;
 <!-- Modal: Vytvořit token -->
 <div class="modal fade" id="addTokenModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content bg-dark border-secondary">
-            <div class="modal-header border-secondary">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title">Vytvořit API token</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="<?= APP_URL ?>/api-tokens">
                 <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
@@ -213,7 +213,7 @@ endforeach;
                         <div class="form-text">Ponechte prázdné pro token bez expirace.</div>
                     </div>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-key me-1"></i>Vytvořit token
