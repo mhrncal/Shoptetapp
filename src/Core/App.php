@@ -9,6 +9,11 @@ class App
         // Inicializace
         View::init();
         Session::start();
+        
+        // Vygeneruj CSRF token pokud neexistuje
+        if (!isset($_SESSION['_csrf'])) {
+            Session::regenerateCsrf();
+        }
 
         // Request + Router
         $request = new Request();
