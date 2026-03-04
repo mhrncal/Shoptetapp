@@ -95,7 +95,7 @@ class FeedParser
         }
         
         // Čti hlavičku
-        $header = fgetcsv($handle, 0, $delimiter);
+        $header = fgetcsv($handle, 0, $delimiter, '"', '');
         if (!$header) {
             fclose($handle);
             throw new \RuntimeException("CSV nemá hlavičku");
@@ -103,7 +103,7 @@ class FeedParser
         
         // Konvertuj encoding hlavičky
         if ($encoding !== 'UTF-8') {
-            $header = array_map(fn($h) => mb_convert_encoding($h, 'UTF-8', $encoding), $header);
+            $header = array_map(fn($h) => mb_convert_encoding($h, 'UTF-8', $encoding === 'windows-1250' ? 'CP1250' : $encoding), $header);
         }
         
         // Najdi indexy sloupců
@@ -130,12 +130,12 @@ class FeedParser
         $batchSize = 500;
         $batch = [];
         
-        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+        while (($row = fgetcsv($handle, 0, $delimiter, '"', '')) !== false) {
             $stats['total']++;
             
             // Konvertuj encoding
             if ($encoding !== 'UTF-8') {
-                $row = array_map(fn($r) => mb_convert_encoding($r, 'UTF-8', $encoding), $row);
+                $row = array_map(fn($r) => mb_convert_encoding($r, 'UTF-8', $encoding === 'windows-1250' ? 'CP1250' : $encoding), $row);
             }
             
             $code = $row[$codeIdx] ?? null;
