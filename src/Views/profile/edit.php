@@ -16,12 +16,12 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-3 mb-3">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label">Jméno <span class="text-danger">*</span></label>
                             <input type="text" name="first_name" class="form-control"
                                    value="<?= $e($user['first_name']) ?>" required>
                         </div>
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label">Příjmení <span class="text-danger">*</span></label>
                             <input type="text" name="last_name" class="form-control"
                                    value="<?= $e($user['last_name']) ?>" required>
