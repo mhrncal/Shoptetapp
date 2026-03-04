@@ -96,20 +96,26 @@ class FeedController extends BaseController
             $this->redirect('/feeds');
         }
         
+        $db = Database::getInstance();
+        $startTime = microtime(true);
+        
+        // Vytvoř log entry
+        $logStmt = $db->prepare('
+            INSERT INTO feed_sync_log (feed_id, started_at, status)
+            VALUES (?, NOW(), "running")
+        ');
+        $logStmt->execute([$id]);
+        $logId = (int)$db->lastInsertId();
+        
         try {
             $parser = new FeedParser();
             
             // Stáhni
-            error_log("Downloading feed from: {$feed['url']}");
             $filepath = $parser->downloadFeed($id, $feed['url']);
             
             if (!$filepath) {
-                $lastError = error_get_last();
-                $errorMsg = $lastError ? $lastError['message'] : 'Neznámá chyba při stahování';
-                throw new \RuntimeException("Chyba při stahování: $errorMsg");
+                throw new \RuntimeException("Chyba při stahování");
             }
-            
-            error_log("Downloaded to: $filepath");
             
             // Parsuj
             $stats = $parser->parseAndStore($id, $filepath, [
@@ -124,12 +130,58 @@ class FeedController extends BaseController
             // Spáruj
             $matchStats = ReviewMatcher::matchReviews($userId);
             
+            // Vygeneruj exporty
+            $reviews = ReviewMatcher::getExportableReviews($userId);
+            if (!empty($reviews)) {
+                $xml = ExportGenerator::generateXML($reviews);
+                ExportGenerator::saveToFile($xml, "user_{$userId}_reviews_with_products.xml");
+                
+                $csv = ExportGenerator::generateCSV($reviews);
+                ExportGenerator::saveToFile($csv, "user_{$userId}_reviews_with_products.csv");
+            }
+            
+            // Aktualizuj log - SUCCESS
+            $duration = round(microtime(true) - $startTime);
+            $updateStmt = $db->prepare('
+                UPDATE feed_sync_log 
+                SET finished_at = NOW(),
+                    status = "success",
+                    products_inserted = ?,
+                    products_updated = ?,
+                    products_total = ?,
+                    reviews_matched = ?,
+                    reviews_total = ?,
+                    duration_seconds = ?
+                WHERE id = ?
+            ');
+            $updateStmt->execute([
+                $stats['inserted'] ?? 0,
+                $stats['updated'] ?? 0,
+                $stats['total'] ?? 0,
+                $matchStats['matched'] ?? 0,
+                $matchStats['total'] ?? 0,
+                $duration,
+                $logId
+            ]);
+            
             Session::flash('success', 
                 "Synchronizováno! Produktů: {$stats['inserted']} nových, {$stats['updated']} aktualizováno. " .
                 "Recenzí spárováno: {$matchStats['matched']}/{$matchStats['total']}"
             );
             
         } catch (\Exception $e) {
+            // Aktualizuj log - ERROR
+            $duration = round(microtime(true) - $startTime);
+            $updateStmt = $db->prepare('
+                UPDATE feed_sync_log 
+                SET finished_at = NOW(),
+                    status = "error",
+                    error_message = ?,
+                    duration_seconds = ?
+                WHERE id = ?
+            ');
+            $updateStmt->execute([$e->getMessage(), $duration, $logId]);
+            
             ProductFeed::updateFetchStatus($id, false, $e->getMessage());
             Session::flash('error', 'Chyba: ' . $e->getMessage());
         }
