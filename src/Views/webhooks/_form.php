@@ -17,7 +17,7 @@
     <label class="form-label">Eventy <span class="text-danger">*</span></label>
     <div class="row g-2">
         <?php foreach ($allEvents as $key => $label): ?>
-        <div class="col-6">
+        <div class="col-12 col-sm-6">
             <div class="form-check">
                 <input class="form-check-input" type="checkbox"
                        name="events[]" value="<?= $e($key) ?>"
@@ -34,7 +34,7 @@
 </div>
 
 <div class="row g-3">
-    <div class="col-6">
+    <div class="col-12 col-sm-6">
         <label class="form-label">Počet pokusů</label>
         <select name="retry_count" class="form-select">
             <?php foreach ([1,2,3,5] as $n): ?>
@@ -44,7 +44,7 @@
             <?php endforeach; ?>
         </select>
     </div>
-    <div class="col-6 d-flex align-items-end pb-2">
+    <div class="col-12 col-sm-6 d-flex align-items-end pb-2">
         <div class="form-check">
             <input class="form-check-input" type="checkbox" name="is_active" value="1"
                    <?= (!$wh || $wh['is_active']) ? 'checked' : '' ?>>

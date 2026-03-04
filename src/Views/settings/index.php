@@ -6,7 +6,7 @@
 </div>
 
 <!-- Taby -->
-<ul class="nav nav-tabs border-secondary mb-4" id="settingsTabs">
+<ul class="nav nav-tabs mb-4" id="settingsTabs">
     <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-profile">Profil</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-password">Heslo</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-modules">Moduly</a></li>
@@ -24,12 +24,12 @@
                     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
 
                     <div class="row g-3 mb-3">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label">Jméno <span class="text-danger">*</span></label>
                             <input type="text" name="first_name" class="form-control" required
                                    value="<?= $e($user['first_name']) ?>">
                         </div>
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label">Příjmení <span class="text-danger">*</span></label>
                             <input type="text" name="last_name" class="form-control" required
                                    value="<?= $e($user['last_name']) ?>">
@@ -42,7 +42,7 @@
                         <div class="form-text">E-mail nelze změnit. Kontaktujte administrátora.</div>
                     </div>
 
-                    <hr class="border-secondary">
+                    <hr>
 
                     <div class="mb-3">
                         <label class="form-label">Název e-shopu</label>

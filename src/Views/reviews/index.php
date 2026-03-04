@@ -82,7 +82,7 @@
         <a href="?status=<?= $e($val) ?>&search=<?= $e($search) ?>"
            class="btn btn-sm flex-shrink-0 <?= $status === $val ? "btn-{$color}" : "btn-outline-{$color}" ?>">
             <?= $label ?>
-            <span class="badge ms-1 <?= $status === $val ? 'bg-white text-'.$color : 'bg-'.$color.' text-white' ?>"><?= $cnt ?></span>
+            <span class="badge ms-1 <?= $status === $val ? 'bg-opacity-75 text-'.$color : 'bg-'.$color.' text-white' ?>"><?= $cnt ?></span>
         </a>
         <?php endforeach; ?>
     </div>

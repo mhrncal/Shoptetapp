@@ -36,7 +36,7 @@
                                  alt="Foto <?= $i+1 ?>"
                                  onerror="this.src='<?= APP_URL ?>/public/uploads/<?= $e($photo['path']) ?>'">
                             <div class="position-absolute top-0 end-0 m-1">
-                                <span class="badge bg-dark bg-opacity-75"><?= $i+1 ?></span>
+                                <span class="badge bg-secondary"><?= $i+1 ?></span>
                             </div>
                         </a>
                         <div class="mt-2 d-flex gap-1">
@@ -197,7 +197,7 @@
         </div>
         
         <?php if (false && $review['admin_note']): ?>
-        <div class="card border-0 border-secondary border-opacity-25 mb-4">
+        <div class="card mb-4">
             <div class="card-body">
                 <div class="text-muted small mb-1">Interní poznámka:</div>
                 <p class="small mb-0"><?= nl2br($e($review['admin_note'])) ?></p>

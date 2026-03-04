@@ -170,7 +170,7 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
             </div>
             <?php else: ?>
             <div class="card-body p-0">
-                <div class="nav nav-tabs border-secondary px-3 pt-2 gap-1" id="productTabNav">
+                <div class="nav nav-tabs px-3 pt-2 gap-1" id="productTabNav">
                     <?php foreach ($tabs as $i => $tab): ?>
                     <button class="nav-link <?= $i === 0 ? 'active' : '' ?> <?= !$tab['is_active'] ? 'text-muted' : '' ?>"
                             data-bs-toggle="tab" data-bs-target="#ptab<?= $tab['id'] ?>">
@@ -290,11 +290,11 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
                                   placeholder="Obsah záložky (podporuje HTML)..."></textarea>
                     </div>
                     <div class="row g-3">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label">Pořadí</label>
                             <input type="number" name="sort_order" class="form-control" value="0" min="0">
                         </div>
-                        <div class="col-6 d-flex align-items-end pb-2">
+                        <div class="col-12 col-sm-6 d-flex align-items-end pb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="is_active" value="1" checked>
                                 <label class="form-check-label">Aktivní</label>
@@ -331,11 +331,11 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
                         <textarea name="content" class="form-control" rows="8"></textarea>
                     </div>
                     <div class="row g-3">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label">Pořadí</label>
                             <input type="number" name="sort_order" class="form-control" min="0">
                         </div>
-                        <div class="col-6 d-flex align-items-end pb-2">
+                        <div class="col-12 col-sm-6 d-flex align-items-end pb-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="is_active" value="1">
                                 <label class="form-check-label">Aktivní</label>

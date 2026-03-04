@@ -109,7 +109,7 @@
 <?php endif; ?>
 
 <!-- Info: ověření podpisu -->
-<div class="card border-0 border-secondary border-opacity-25 mt-2">
+<div class="card mt-2">
     <div class="card-body py-3 small text-muted">
         <p class="fw-semibold text-body mb-2"><i class="bi bi-shield-check me-1"></i>Ověření podpisu</p>
         Každý request obsahuje hlavičku <code>X-ShopCode-Signature</code> ve formátu
