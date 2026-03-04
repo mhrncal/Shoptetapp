@@ -42,7 +42,7 @@ foreach ($required as $const) {
     }
 }
 
-// Definuj další potřebné konstanty
+// Definuj další potřebné konstanty (pokud nejsou v .env)
 if (!defined('CSRF_TOKEN_LENGTH')) {
     define('CSRF_TOKEN_LENGTH', 32);
 }
@@ -51,8 +51,24 @@ if (!defined('APP_URL')) {
     define('APP_URL', 'http://localhost');
 }
 
-if (!defined('ROOT')) {
-    define('ROOT', dirname(__DIR__));
+if (!defined('APP_DEBUG')) {
+    define('APP_DEBUG', defined('APP_ENV') && APP_ENV === 'development');
+}
+
+if (!defined('APP_NAME')) {
+    define('APP_NAME', 'ShopCode');
+}
+
+if (!defined('DB_PORT')) {
+    define('DB_PORT', '3306');
+}
+
+if (!defined('DB_CHARSET')) {
+    define('DB_CHARSET', 'utf8mb4');
+}
+
+if (!defined('SESSION_NAME')) {
+    define('SESSION_NAME', 'shopcode_session');
 }
 
 // Timezone
