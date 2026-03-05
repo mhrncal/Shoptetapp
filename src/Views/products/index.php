@@ -23,7 +23,7 @@ if (!empty($productIds)) {
         <h4 class="fw-bold mb-0"><i class="bi bi-box me-2"></i>Produkty</h4>
         <p class="text-muted small mb-0">Celkem: <strong><?= number_format($total) ?></strong> produktů</p>
     </div>
-    <a href="<?= APP_URL ?>/xml" class="btn btn-primary btn-sm flex-shrink-0">
+    <a href="<?= APP_URL ?>/feeds" class="btn btn-primary btn-sm flex-shrink-0">
         <i class="bi bi-file-earmark-arrow-down me-1"></i><span class="d-none d-sm-inline">XML </span>Import
     </a>
 </div>
@@ -69,7 +69,7 @@ if (!empty($productIds)) {
             <a href="<?= APP_URL ?>/products" class="btn btn-outline-secondary btn-sm">Zobrazit vše</a>
         <?php else: ?>
             <p>Zatím žádné produkty. Spusťte XML import.</p>
-            <a href="<?= APP_URL ?>/xml" class="btn btn-primary btn-sm">
+            <a href="<?= APP_URL ?>/feeds" class="btn btn-primary btn-sm">
                 <i class="bi bi-file-earmark-arrow-down me-1"></i>Spustit import
             </a>
         <?php endif; ?>

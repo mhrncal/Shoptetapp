@@ -94,6 +94,11 @@ return [
     ['GET',  '/admin/system',             'Admin\SystemController@index',   ['auth', 'approved', 'superadmin']],
     ['GET',  '/admin/audit-log',          'Admin\SystemController@auditLog',['auth', 'approved', 'superadmin']],
 
+    // ---- Shoptet Settings ----------------------------------
+    ['GET',    '/settings/shoptet',        'ShoptetSettingsController@index',  ['auth','approved']],
+    ['POST',   '/settings/shoptet',        'ShoptetSettingsController@store',  ['auth','approved']],
+    ['POST',   '/settings/shoptet/delete', 'ShoptetSettingsController@delete', ['auth','approved']],
+
     // ============================================================
     // REST API v1 (Bearer token auth)
     // ============================================================

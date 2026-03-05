@@ -15,7 +15,7 @@
         <strong>Probíhá XML import</strong> —
         <?= number_format($activeImport['products_processed']) ?> produktů
         (<?= $activeImport['progress_percentage'] ?>%)
-        <a href="<?= APP_URL ?>/xml" class="ms-1 alert-link">Detail →</a>
+        <a href="<?= APP_URL ?>/feeds" class="ms-1 alert-link">Detail →</a>
     </div>
 </div>
 <?php endif; ?>
@@ -78,7 +78,7 @@
                     <i class="bi bi-file-earmark-arrow-down me-2 text-muted"></i>Poslední importy
                 </h6>
                 <?php if (in_array('xml_import', $activeModules)): ?>
-                <a href="<?= APP_URL ?>/xml" class="btn btn-sm btn-outline-primary">
+                <a href="<?= APP_URL ?>/feeds" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-plus me-1"></i>Import
                 </a>
                 <?php endif; ?>

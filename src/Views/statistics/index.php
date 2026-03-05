@@ -128,7 +128,7 @@
             <div class="card-body">
                 <?php if (!$lastImport): ?>
                 <p class="text-muted small">Zatím žádný import.</p>
-                <a href="<?= APP_URL ?>/xml" class="btn btn-sm btn-primary">Spustit import</a>
+                <a href="<?= APP_URL ?>/feeds" class="btn btn-sm btn-primary">Spustit import</a>
                 <?php else:
                     $colors = ['completed'=>'success','failed'=>'danger','processing'=>'info','pending'=>'warning'];
                 ?>
@@ -151,7 +151,7 @@
                         </tr>
                     </table></div>
                 </div>
-                <a href="<?= APP_URL ?>/xml" class="btn btn-sm btn-outline-secondary">
+                <a href="<?= APP_URL ?>/feeds" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-file-earmark-arrow-down me-1"></i>Nový import
                 </a>
                 <?php endif; ?>
@@ -197,7 +197,7 @@
     <div class="card-body text-center py-4">
         <i class="bi bi-cloud-download fs-2 text-primary mb-3 d-block"></i>
         <p class="mb-2">Zatím žádná data. Začněte importem XML feedu.</p>
-        <a href="<?= APP_URL ?>/xml" class="btn btn-primary btn-sm">
+        <a href="<?= APP_URL ?>/feeds" class="btn btn-primary btn-sm">
             <i class="bi bi-file-earmark-arrow-down me-1"></i>Spustit XML import
         </a>
     </div>
