@@ -10,99 +10,83 @@ class ExportGenerator
     public static function generateXML(array $reviews): string
     {
         $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><SHOP></SHOP>');
-        
+
         // Seskup podle SKU
         $grouped = [];
         foreach ($reviews as $review) {
-            $code = $review['code'] ?? $review['sku'];
+            $code = $review['code'] ?? $review['sku'] ?? '';
+            if (!$code) continue;
             if (!isset($grouped[$code])) {
                 $grouped[$code] = [
-                    'code' => $code,
+                    'code'           => $code,
                     'product_images' => $review['product_images'] ?? [],
-                    'review_photos' => []
+                    'review_photos'  => [],
                 ];
             }
-            
-            // Přidej review fotky
             foreach ($review['review_photos'] ?? [] as $photo) {
                 $grouped[$code]['review_photos'][] = $photo;
             }
         }
-        
-        // Generuj XML pro každý produkt
+
         foreach ($grouped as $data) {
-            $item = $xml->addChild('SHOPITEM');
-            $item->addChild('CODE', htmlspecialchars($data['code']));
-            
+            $item   = $xml->addChild('SHOPITEM');
+            $item->addChild('CODE', htmlspecialchars((string)$data['code']));
             $images = $item->addChild('IMAGES');
-            
-            // Produktové fotky první
             foreach ($data['product_images'] as $img) {
-                $image = $images->addChild('IMAGE', htmlspecialchars($img));
+                $image = $images->addChild('IMAGE', htmlspecialchars((string)$img));
                 $image->addAttribute('description', '');
             }
-            
-            // Review fotky
             foreach ($data['review_photos'] as $photo) {
-                $image = $images->addChild('IMAGE', htmlspecialchars($photo));
+                $image = $images->addChild('IMAGE', htmlspecialchars((string)$photo));
                 $image->addAttribute('description', 'Zákaznická fotka');
             }
-            
-            // První obrázek jako hlavní
             if (!empty($data['product_images'])) {
-                $item->addChild('IMAGE_REF', htmlspecialchars($data['product_images'][0]));
+                $item->addChild('IMAGE_REF', htmlspecialchars((string)$data['product_images'][0]));
             }
         }
-        
-        return $xml->asXML();
+
+        return (string)$xml->asXML();
     }
-    
+
     /**
-     * Generuj CSV export
+     * Generuj CSV export (UTF-8 s BOM pro Excel)
      */
     public static function generateCSV(array $reviews): string
     {
-        $output = fopen('php://temp', 'r+');
-        
-        // Hlavička - PHP 8.4 requires escape parameter
-        fputcsv($output, [
-            'code',
-            'pairCode', 
-            'name',
-            'author_name',
-            'author_email',
-            'rating',
-            'comment',
-            'review_photos',
-            'product_images',
-            'created_at'
-        ], ';', '"', '');
-        
-        // Data
-        foreach ($reviews as $review) {
-            fputcsv($output, [
-                $review['code'] ?? $review['sku'],
-                $review['pair_code'] ?? '',
-                $review['product_name'] ?? '',
-                $review['author_name'],
-                $review['author_email'],
-                $review['rating'] ?? '',
-                $review['comment'] ?? '',
-                implode('|', $review['review_photos'] ?? []),
-                implode('|', $review['product_images'] ?? []),
-                $review['created_at']
-            ], ';', '"', '');
+        $rows   = [];
+        $rows[] = ['code', 'pairCode', 'name', 'author_name', 'author_email',
+                   'rating', 'comment', 'review_photos', 'product_images', 'created_at'];
+
+        foreach ($reviews as $r) {
+            $rows[] = [
+                $r['code'] ?? $r['sku'] ?? '',
+                $r['pair_code'] ?? '',
+                $r['product_name'] ?? '',
+                $r['author_name'] ?? '',
+                $r['author_email'] ?? '',
+                $r['rating'] ?? '',
+                $r['comment'] ?? '',
+                implode('|', $r['review_photos'] ?? []),
+                implode('|', $r['product_images'] ?? []),
+                $r['created_at'] ?? '',
+            ];
         }
-        
-        rewind($output);
-        $csv = stream_get_contents($output);
-        fclose($output);
-        
-        // Konvertuj na windows-1250 pro Excel pomocí iconv (s fallbackem)
-        $converted = iconv('UTF-8', 'windows-1250//TRANSLIT//IGNORE', $csv);
-        return $converted !== false ? $converted : $csv;
+
+        // Ruční sestavení CSV — bez iconv, bez fputcsv problémů
+        $lines = [];
+        foreach ($rows as $row) {
+            $cells = [];
+            foreach ($row as $cell) {
+                $cell    = str_replace('"'  , '""'  , (string)$cell);
+                $cells[] = '"' . $cell . '"';
+            }
+            $lines[] = implode(';', $cells);
+        }
+
+        // UTF-8 BOM aby Excel správně dekódoval
+        return "\xEF\xBB\xBF" . implode("\r\n", $lines) . "\r\n";
     }
-    
+
     /**
      * Ulož export do souboru
      */
@@ -110,12 +94,18 @@ class ExportGenerator
     {
         $dir = ROOT . '/public/feeds';
         if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+            if (!mkdir($dir, 0775, true) && !is_dir($dir)) {
+                throw new \RuntimeException("Nelze vytvořit složku: {$dir}");
+            }
         }
-        
+
         $filepath = $dir . '/' . $filename;
-        file_put_contents($filepath, $content);
-        
+        $bytes    = file_put_contents($filepath, $content);
+
+        if ($bytes === false) {
+            throw new \RuntimeException("Nelze zapsat soubor: {$filepath}");
+        }
+
         return $filepath;
     }
 }
