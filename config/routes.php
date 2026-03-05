@@ -5,6 +5,9 @@
  */
 return [
 
+
+    // Diagnostika
+    ['GET', '/diag', 'DiagController@index', []],
     // ---- Auth -----------------------------------------------
     ['GET',  '/login',    'AuthController@loginForm',  []],
     ['POST', '/login',    'AuthController@login',       []],
