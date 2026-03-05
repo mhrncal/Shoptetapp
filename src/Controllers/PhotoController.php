@@ -12,7 +12,8 @@ class PhotoController extends BaseController
      */
     public function delete(): void
     {
-        $id = (int)\$this->request->post('id', 0);
+        $this->validateCsrf();
+        $id = (int)$this->request->post('id', 0);
         
         $db = Database::getInstance();
         
@@ -48,7 +49,8 @@ class PhotoController extends BaseController
      */
     public function reupload(): void
     {
-        $id = (int)\$this->request->post('photo_id', 0);
+        $this->validateCsrf();
+        $id = (int)$this->request->post('photo_id', 0);
         
         if (empty($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
             Session::flash('error', 'Vyberte fotku k nahrání');
