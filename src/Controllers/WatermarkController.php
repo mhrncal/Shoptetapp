@@ -30,6 +30,7 @@ class WatermarkController extends BaseController
     
     public function update(): void
     {
+        $this->validateCsrf();
         $userId = $this->user['id'] ?? null;
         if (!$userId) {
             $this->redirect('/login');
@@ -61,6 +62,7 @@ class WatermarkController extends BaseController
      */
     public function regenerate(): void
     {
+        $this->validateCsrf();
         $userId = $this->user['id'] ?? null;
         if (!$userId) {
             $this->redirect('/login');
