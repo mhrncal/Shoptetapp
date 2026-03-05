@@ -74,7 +74,7 @@
                                     <div class="fw-semibold small">
                                         <?= $e($u['first_name'] . ' ' . $u['last_name']) ?>
                                     </div>
-                                    <div class="text-muted" class="small"><?= $e($u['email']) ?></div>
+                                    <div class="text-muted small"><?= $e($u['email']) ?></div>
                                 </div>
                             </div>
                         </td>
