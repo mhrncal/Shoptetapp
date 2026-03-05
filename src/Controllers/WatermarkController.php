@@ -2,7 +2,7 @@
 
 namespace ShopCode\Controllers;
 
-use ShopCode\Core\Database;
+use ShopCode\Core\{Database, Session};
 use ShopCode\Models\WatermarkSettings;
 
 class WatermarkController extends BaseController

@@ -1,7 +1,7 @@
 <?php
 namespace ShopCode\Controllers;
 
-use ShopCode\Core\Session;
+use ShopCode\Core\{Session, Response};
 use ShopCode\Models\{Faq, Product};
 
 class FaqController extends BaseController

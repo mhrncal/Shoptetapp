@@ -4,6 +4,7 @@ namespace ShopCode\Services;
 
 use ShopCode\Models\Webhook;
 use ShopCode\Services\AdminNotifier;
+use ShopCode\Core\Database;
 
 /**
  * Odesílá webhook notifikace.
