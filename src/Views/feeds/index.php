@@ -24,12 +24,13 @@ $anyRunning = !empty(array_filter($timeline ?? [], fn($l) => $l['status'] === 'r
 </div>
 
 <!-- Progress po kliknutí sync -->
-<div id="syncProgress" class="alert alert-info mb-3" style="display:none;">
-    <div class="d-flex align-items-center gap-2">
+<!-- Sync progress toast — fixní dole, nepřekáží klikání -->
+<div id="syncProgress" style="display:none;position:fixed;bottom:calc(var(--bottom-nav-h,60px) + 12px);left:50%;transform:translateX(-50%);z-index:1080;min-width:260px;max-width:calc(100vw - 32px);">
+    <div class="alert alert-info mb-0 shadow d-flex align-items-center gap-2 py-2 px-3">
         <div class="spinner-border spinner-border-sm flex-shrink-0" role="status"></div>
-        <div>
-            <strong>Synchronizace spuštěna</strong>
-            <div class="small text-muted mt-1">Stránka se obnoví za <span id="countdown">10</span>s</div>
+        <div class="small">
+            <strong>Synchronizace běží</strong>
+            <div class="text-muted" id="syncProgressMsg">Spouštím...</div>
         </div>
     </div>
 </div>
@@ -303,6 +304,10 @@ if (!empty($latestCompleted)):
 <script>
 // ── updateProgressUI — vždy definovaná ──────────────────────────
 function updateProgressUI(feedId, data) {
+    // Aktualizuj toast zprávu
+    const toastMsg = document.getElementById('syncProgressMsg');
+    if (toastMsg && data.message) toastMsg.textContent = data.message;
+
     const el = document.getElementById('progress-' + feedId);
     if (!el) return;
     const textEl  = el.querySelector('.progress-text');
@@ -379,7 +384,6 @@ document.querySelectorAll('.sync-form').forEach(form => {
             if (b === btn) b.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
         });
         document.getElementById('syncProgress').style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
         const fd = new FormData(form);
         fetch(form.action, { method: 'POST', body: fd })
             .catch(() => {});
