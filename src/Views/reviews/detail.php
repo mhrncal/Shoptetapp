@@ -55,9 +55,10 @@
                                         onclick="openReuploadModal(<?= $photo['id'] ?>)" title="Nahradit fotku">
                                     <i class="bi bi-upload"></i>
                                 </button>
-                                <form method="POST" action="<?= APP_URL ?>/photo/delete" 
-                                      onsubmit="return confirm('Opravdu smazat tuto fotku?')" 
+                                <form method="POST" action="<?= APP_URL ?>/photo/delete"
+                                      onsubmit="return confirm('Opravdu smazat tuto fotku?')"
                                       class="flex-fill">
+                                    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                                     <input type="hidden" name="id" value="<?= $photo['id'] ?>">
                                     <button type="submit" class="btn btn-sm btn-outline-danger w-100" title="Smazat">
                                         <i class="bi bi-trash"></i>
@@ -171,7 +172,7 @@
                 <div class="d-flex gap-2">
                     <?php if ($review['status'] !== 'approved'): ?>
                     <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="flex-fill">
-                        <input type="hidden" name="_csrf" value="<?= $_SESSION['_csrf'] ?? '' ?>">
+                        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                         <input type="hidden" name="id" value="<?= $review['id'] ?>">
                         <input type="hidden" name="status" value="approved">
                         <input type="hidden" name="admin_note" class="note-input">
@@ -183,7 +184,7 @@
                     
                     <?php if ($review['status'] !== 'rejected'): ?>
                     <form method="POST" action="<?= APP_URL ?>/reviews/change-status" class="flex-fill">
-                        <input type="hidden" name="_csrf" value="<?= $_SESSION['_csrf'] ?? '' ?>">
+                        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                         <input type="hidden" name="id" value="<?= $review['id'] ?>">
                         <input type="hidden" name="status" value="rejected">
                         <input type="hidden" name="admin_note" class="note-input">
@@ -227,6 +228,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="<?= APP_URL ?>/photo/reupload" enctype="multipart/form-data">
+                <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                 <div class="modal-header">
                     <h5 class="modal-title">Nahradit fotku</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

@@ -15,6 +15,7 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
                 </div>
                 <div class="card-body">
                     <form method="POST" action="<?= APP_URL ?>/watermark/update" id="watermark-form">
+                        <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
                         
                         <!-- Povolit watermark -->
                         <div class="mb-4">
@@ -130,8 +131,9 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
                             Aplikuj nové nastavení watermarku na všechny existující fotky.
                             Originální fotky zůstanou zachovány.
                         </p>
-                        <form method="POST" action="<?= APP_URL ?>/watermark/regenerate" 
+                        <form method="POST" action="<?= APP_URL ?>/watermark/regenerate"
                               onsubmit="return confirm('Opravdu chcete přegenerovat watermark na všech fotkách? Může to chvíli trvat.')">
+                            <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
                             <button type="submit" class="btn btn-outline-warning w-100">
                                 <i class="bi bi-arrow-repeat"></i> Přegenerovat všechny fotky
                             </button>
