@@ -20,55 +20,59 @@ class FeedParser
     /**
      * Stáhni CSV feed a ulož na disk
      */
-    public function downloadFeed(int $feedId, string $url): ?string
+    /**
+     * @param callable|null $onProgress fn(int $downloadedMb, int $totalMb)
+     */
+    public function downloadFeed(int $feedId, string $url, ?callable $onProgress = null): ?string
     {
         try {
             $filename = "feed_{$feedId}_" . date('Y-m-d_H-i-s') . '.csv';
             $filepath = $this->cacheDir . '/' . $filename;
-            
-            // Použij cURL (robustnější než fopen)
+
+            $fp = @fopen($filepath, 'wb');
+            if (!$fp) throw new \RuntimeException("Nelze otevřít soubor pro zápis: $filepath");
+
+            $lastReported = 0;
+
             $ch = curl_init($url);
-            
             curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FILE           => $fp,
                 CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_MAXREDIRS => 5,
-                CURLOPT_TIMEOUT => 300, // 5 minut
+                CURLOPT_MAXREDIRS      => 5,
+                CURLOPT_TIMEOUT        => 1800,
                 CURLOPT_CONNECTTIMEOUT => 30,
                 CURLOPT_SSL_VERIFYPEER => true,
                 CURLOPT_SSL_VERIFYHOST => 2,
-                CURLOPT_USERAGENT => 'ShopCode/1.0 (Feed Downloader)',
-                CURLOPT_ENCODING => '', // Accept all encodings
+                CURLOPT_USERAGENT      => 'ShopCode/1.0 (Feed Downloader)',
+                CURLOPT_ENCODING       => '',
+                CURLOPT_BUFFERSIZE     => 1024 * 256,
+                CURLOPT_NOPROGRESS     => $onProgress === null,
+                CURLOPT_PROGRESSFUNCTION => function($ch, $dlTotal, $dlNow) use ($onProgress, &$lastReported) {
+                    if ($onProgress === null) return 0;
+                    $nowMb   = (int)($dlNow   / 1048576);
+                    $totalMb = (int)($dlTotal  / 1048576);
+                    // Reportuj každých 0.5 MB
+                    if ($nowMb >= $lastReported + 1 || ($dlTotal > 0 && $dlNow === $dlTotal)) {
+                        $lastReported = $nowMb;
+                        ($onProgress)($nowMb, $totalMb);
+                    }
+                    return 0;
+                },
             ]);
-            
-            $content = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $error = curl_error($ch);
+
+            $ok       = curl_exec($ch);
+            $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error    = curl_error($ch);
             curl_close($ch);
-            
-            if ($content === false) {
-                throw new \RuntimeException("cURL error: $error");
-            }
-            
-            if ($httpCode !== 200) {
-                throw new \RuntimeException("HTTP error $httpCode");
-            }
-            
-            if (empty($content)) {
-                throw new \RuntimeException("Downloaded file is empty");
-            }
-            
-            // Ulož na disk
-            $bytes = file_put_contents($filepath, $content);
-            if ($bytes === false) {
-                throw new \RuntimeException("Cannot write to file: $filepath");
-            }
-            
-            // Smaž staré soubory (starší než 7 dní)
+            fclose($fp);
+
+            if (!$ok)            throw new \RuntimeException("cURL error: $error");
+            if ($httpCode !== 200) throw new \RuntimeException("HTTP error $httpCode");
+            if (!filesize($filepath)) throw new \RuntimeException("Stažený soubor je prázdný");
+
             $this->cleanOldFiles(7);
-            
             return $filepath;
-            
+
         } catch (\Exception $e) {
             error_log("FeedParser download error: " . $e->getMessage());
             return null;

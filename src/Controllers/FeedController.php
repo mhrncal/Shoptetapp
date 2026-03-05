@@ -140,8 +140,15 @@ class FeedController extends BaseController
             $parser = new FeedParser();
 
             // --- STAHOVÁNÍ ---
-            $writeProgress('download', '⬇️ Stahuji feed z: ' . $feed['url']);
-            $filepath = $parser->downloadFeed($id, $feed['url']);
+            $writeProgress('download', '⬇️ Připojuji se k serveru...');
+            $filepath = $parser->downloadFeed($id, $feed['url'], function(int $nowMb, int $totalMb) use ($writeProgress) {
+                $totalStr = $totalMb > 0 ? " / {$totalMb} MB" : '';
+                $pct      = $totalMb > 0 ? round($nowMb / $totalMb * 100) : null;
+                $writeProgress('download',
+                    "⬇️ Stahuji: {$nowMb} MB{$totalStr}" . ($pct !== null ? " ({$pct}%)" : ''),
+                    ['downloaded_mb' => $nowMb, 'total_mb' => $totalMb ?: '?', 'percent' => $pct]
+                );
+            });
             if (!$filepath) throw new \RuntimeException("Chyba při stahování");
 
             $sizeMb = round(filesize($filepath) / 1048576, 1);
