@@ -22,7 +22,7 @@ class PhotoController extends BaseController
         $photo = $stmt->fetch();
         
         if (!$photo) {
-            $_SESSION['flash'] = ['error' => 'Fotka nenalezena'];
+            Session::flash('error', 'Fotka nenalezena');
             header('Location: ' . $_SERVER['HTTP_REFERER'] ?? APP_URL . '/reviews');
             exit;
         }
@@ -38,7 +38,7 @@ class PhotoController extends BaseController
         $stmt = $db->prepare('DELETE FROM review_photos WHERE id = ?');
         $stmt->execute([$id]);
         
-        $_SESSION['flash'] = ['success' => 'Fotka byla smazána'];
+        Session::flash('success', 'Fotka byla smazána');
         header('Location: ' . $_SERVER['HTTP_REFERER'] ?? APP_URL . '/reviews');
         exit;
     }
@@ -51,7 +51,7 @@ class PhotoController extends BaseController
         $id = (int)($_POST['photo_id'] ?? 0);
         
         if (empty($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
-            $_SESSION['flash'] = ['error' => 'Vyberte fotku k nahrání'];
+            Session::flash('error', 'Vyberte fotku k nahrání');
             header('Location: ' . $_SERVER['HTTP_REFERER'] ?? APP_URL . '/reviews');
             exit;
         }
@@ -69,7 +69,7 @@ class PhotoController extends BaseController
         $oldPhoto = $stmt->fetch();
         
         if (!$oldPhoto) {
-            $_SESSION['flash'] = ['error' => 'Fotka nenalezena'];
+            Session::flash('error', 'Fotka nenalezena');
             header('Location: ' . $_SERVER['HTTP_REFERER'] ?? APP_URL . '/reviews');
             exit;
         }
@@ -171,10 +171,10 @@ class PhotoController extends BaseController
                 $id
             ]);
             
-            $_SESSION['flash'] = ['success' => 'Fotka byla nahrazena'];
+            Session::flash('success', 'Fotka byla nahrazena');
             
         } catch (\Exception $e) {
-            $_SESSION['flash'] = ['error' => 'Chyba při nahrávání: ' . $e->getMessage()];
+            Session::flash('error', 'Chyba při nahrávání: ' . $e->getMessage());
         }
         
         header('Location: ' . $_SERVER['HTTP_REFERER'] ?? APP_URL . '/reviews');

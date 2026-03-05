@@ -9,10 +9,9 @@ class WatermarkController extends BaseController
 {
     public function settings(): void
     {
-        $userId = $this->user['id'] ?? $_SESSION['user_id'] ?? null;
+        $userId = $this->user['id'] ?? null;
         if (!$userId) {
-            header('Location: ' . APP_URL . '/login');
-            exit;
+            $this->redirect('/login');
         }
         
         $settings = WatermarkSettings::getForUser($userId);
@@ -31,10 +30,9 @@ class WatermarkController extends BaseController
     
     public function update(): void
     {
-        $userId = $this->user['id'] ?? $_SESSION['user_id'] ?? null;
+        $userId = $this->user['id'] ?? null;
         if (!$userId) {
-            header('Location: ' . APP_URL . '/login');
-            exit;
+            $this->redirect('/login');
         }
         
         $data = [
@@ -50,13 +48,12 @@ class WatermarkController extends BaseController
         ];
         
         if (WatermarkSettings::update($userId, $data)) {
-            $_SESSION['flash'] = ['success' => 'Nastavení watermarku uloženo'];
+            Session::flash('success', 'Nastavení watermarku uloženo');
         } else {
-            $_SESSION['flash'] = ['error' => 'Chyba při ukládání nastavení'];
+            Session::flash('error', 'Chyba při ukládání nastavení');
         }
         
-        header('Location: ' . APP_URL . '/watermark/settings');
-        exit;
+        $this->redirect('/watermark/settings');
     }
 
     /**
@@ -64,10 +61,9 @@ class WatermarkController extends BaseController
      */
     public function regenerate(): void
     {
-        $userId = $this->user['id'] ?? $_SESSION['user_id'] ?? null;
+        $userId = $this->user['id'] ?? null;
         if (!$userId) {
-            header('Location: ' . APP_URL . '/login');
-            exit;
+            $this->redirect('/login');
         }
         
         $db = Database::getInstance();
@@ -83,9 +79,8 @@ class WatermarkController extends BaseController
         $photos = $stmt->fetchAll();
         
         if (empty($photos)) {
-            $_SESSION['flash'] = ['error' => 'Žádné fotky k přegenerování'];
-            header('Location: ' . APP_URL . '/watermark/settings');
-            exit;
+            Session::flash('error', 'Žádné fotky k přegenerování');
+            $this->redirect('/watermark/settings');
         }
         
         $uploadDir = ROOT . '/public/uploads';
@@ -153,8 +148,7 @@ class WatermarkController extends BaseController
         }
         
         $total = count($photos);
-        $_SESSION['flash'] = ['success' => "Přegenerováno {$success} z {$total} fotek" . ($failed > 0 ? " ({$failed} selhalo)" : "")];
-        header('Location: ' . APP_URL . '/watermark/settings');
-        exit;
+        Session::flash('success', "Přegenerováno {$success} z {$total} fotek" . ($failed > 0 ? " ({$failed} selhalo)" : ""));
+        $this->redirect('/watermark/settings');
     }
 }
