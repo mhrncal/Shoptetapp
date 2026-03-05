@@ -174,20 +174,27 @@ class FeedController extends BaseController
             );
 
             ProductFeed::updateFetchStatus($id, true);
-            $writeProgress('match', "✅ Zpracováno {$stats['total']} produktů ({$stats['inserted']} nových, {$stats['updated']} aktualizováno). Páruju recenze...",
+            $writeProgress('match', "✅ Zpracováno {$stats['total']} produktů ({$stats['inserted']} nových, {$stats['updated']} aktualizováno).",
                 ['inserted' => $stats['inserted'], 'updated' => $stats['updated'], 'total' => $stats['total']]);
 
-            // --- PÁROVÁNÍ ---
-            $writeProgress('match', '🔗 Páruju recenze s produkty...',
-                ['inserted' => $stats['inserted'], 'updated' => $stats['updated']]);
-            $matchStats = ReviewMatcher::matchReviews($userId);
+            // --- PÁROVÁNÍ — pouze pro csv_with_images ---
+            $matchStats = ['matched' => 0, 'total' => 0];
+            if ($feed['type'] === 'csv_with_images') {
+                $writeProgress('match', '🔗 Páruju recenze s produkty...');
+                $matchStats = ReviewMatcher::matchReviews($userId);
+                $writeProgress('match', "🔗 Spárováno {$matchStats['matched']}/{$matchStats['total']} recenzí.");
+            } else {
+                $writeProgress('match', 'ℹ️ Základní import — párování recenzí přeskočeno.');
+            }
 
-            // Export se NEgeneruje zde — dělá to CRON (generate-xml-feeds.php) každý den v 18:00
-            $matchCount = $matchStats['matched'] ?? 0;
-            $matchTotal = $matchStats['total'] ?? 0;
-            
-            // Aktualizuj log - SUCCESS
-            $duration = round(microtime(true) - $startTime);
+            // Aktualizuj log - SUCCESS (včetně log_text)
+            $duration = round(microtime(true) - $syncStart);
+            $writeProgress('done', "✅ Hotovo! {$stats['total']} produktů, {$duration}s.", [
+                'inserted' => $stats['inserted'], 'updated' => $stats['updated'],
+                'total' => $stats['total'], 'matched' => $matchStats['matched'],
+            ]);
+            $logLines[] = '[' . date('H:i:s') . '] Dokončeno za ' . $duration . 's';
+
             $updateStmt = $db->prepare('
                 UPDATE feed_sync_log 
                 SET finished_at = NOW(),
@@ -197,7 +204,8 @@ class FeedController extends BaseController
                     products_total = ?,
                     reviews_matched = ?,
                     reviews_total = ?,
-                    duration_seconds = ?
+                    duration_seconds = ?,
+                    log_text = ?
                 WHERE id = ?
             ');
             $updateStmt->execute([
@@ -207,33 +215,30 @@ class FeedController extends BaseController
                 $matchStats['matched'] ?? 0,
                 $matchStats['total'] ?? 0,
                 $duration,
+                implode("\n", $logLines),
                 $logId
             ]);
-            
-            $duration = round(microtime(true) - $startTime);
-            $writeProgress('done', "✅ Hotovo! {$stats['total']} produktů, {$duration}s.", [
-                'inserted' => $stats['inserted'], 'updated' => $stats['updated'],
-                'total' => $stats['total'], 'matched' => $matchStats['matched'] ?? 0,
-            ]);
             @unlink($progressFile);
-            // Session::flash není potřeba — browser byl přesměrován přes fastcgi_finish_request
-            
+
+            // Smaž staré logy z DB (starší 30 dní)
+            $db->prepare('DELETE FROM feed_sync_log WHERE started_at < DATE_SUB(NOW(), INTERVAL 30 DAY) AND feed_id IN (SELECT id FROM product_feeds WHERE user_id = ?)')
+               ->execute([$userId]);
+
         } catch (\Exception $e) {
             $writeProgress('error', '❌ Chyba: ' . $e->getMessage());
             @unlink($progressFile);
-            // Aktualizuj log - ERROR
-            $duration = round(microtime(true) - $startTime);
+            $duration = round(microtime(true) - $syncStart);
             $logLines[] = '[' . date('H:i:s') . '] ERROR: ' . $e->getMessage();
             $updateStmt = $db->prepare('
                 UPDATE feed_sync_log 
                 SET finished_at = NOW(),
                     status = "error",
                     error_message = ?,
-                    duration_seconds = ?
+                    duration_seconds = ?,
+                    log_text = ?
                 WHERE id = ?
             ');
-            $updateStmt->execute([$e->getMessage(), $duration, $logId]);
-            
+            $updateStmt->execute([$e->getMessage(), $duration, implode("\n", $logLines), $logId]);
             ProductFeed::updateFetchStatus($id, false, $e->getMessage());
         }
         // Response již odeslána přes fastcgi_finish_request
@@ -404,4 +409,41 @@ class FeedController extends BaseController
         }
         exit;
     }
+    /**
+     * Stáhni log synchronizace jako textový soubor
+     */
+    public function downloadLog(): void
+    {
+        $id     = (int)($this->params['id'] ?? 0);
+        $userId = $this->user['id'];
+        $db     = Database::getInstance();
+
+        $stmt = $db->prepare('
+            SELECT l.log_text, l.error_message, l.status, l.started_at, l.duration_seconds, f.name
+            FROM feed_sync_log l
+            JOIN product_feeds f ON f.id = l.feed_id
+            WHERE l.id = ? AND f.user_id = ?
+        ');
+        $stmt->execute([$id, $userId]);
+        $log = $stmt->fetch();
+
+        if (!$log) {
+            Session::flash('error', 'Log nenalezen');
+            $this->redirect('/feeds');
+        }
+
+        $filename = 'sync_log_' . $id . '_' . date('Y-m-d', strtotime($log['started_at'])) . '.txt';
+        header('Content-Type: text/plain; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+        echo "=== Sync log #{$id} — {$log['name']} ===\n";
+        echo "Datum:  " . $log['started_at'] . "\n";
+        echo "Status: " . $log['status'] . "\n";
+        echo "Délka:  " . ($log['duration_seconds'] ?? '?') . "s\n";
+        if ($log['error_message']) echo "Chyba:  " . $log['error_message'] . "\n";
+        echo "\n--- Log ---\n";
+        echo $log['log_text'] ?? '(prázdný log)';
+        exit;
+    }
+
 }

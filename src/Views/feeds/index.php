@@ -274,13 +274,16 @@ if (!empty($latestCompleted)):
                                 <?php if (!empty($log['log_text'])): ?>
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="small fw-medium">Log synchronizace</span>
-                                    <span class="text-muted small"><?= count(explode("\n", trim($log['log_text']))) ?> řádků</span>
+                                    <a href="/feeds/log/<?= $log['id'] ?>" class="btn btn-xs btn-outline-secondary"><i class="bi bi-download me-1"></i>Stáhnout</a>
                                 </div>
                                 <pre class="mb-0" style="font-size:11px;max-height:250px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;"><?= $e($log['log_text']) ?></pre>
                                 <?php elseif (!empty($log['error_message'])): ?>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small fw-medium text-danger">Chyba synchronizace</span>
+                                </div>
                                 <p class="small text-danger mb-0"><i class="bi bi-exclamation-triangle me-1"></i><?= $e($log['error_message']) ?></p>
                                 <?php else: ?>
-                                <p class="small text-muted mb-0">Log pro tuto synchronizaci není k dispozici</p>
+                                <p class="small text-muted mb-0">Log není k dispozici (starší synchronizace)</p>
                                 <?php endif; ?>
                             </div>
                         </div>

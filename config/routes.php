@@ -144,6 +144,7 @@ return [
     ['POST',   '/feeds/delete',              'FeedController@delete',         ['auth','approved']],
     ['POST',   '/feeds/unlock-all',          'FeedController@unlockAll',      ['auth','approved']],
     ['GET',    '/feeds/sync-progress',       'FeedController@syncProgress',   ['auth','approved']],
+    ['GET',    '/feeds/log/{id}',            'FeedController@downloadLog',    ['auth','approved']],
     ['POST',   '/reviews/delete',            'ReviewController@delete',       ['auth','approved','module:reviews']],
     ['POST',   '/reviews/download-zip',       'ReviewController@downloadZip',  ['auth','approved','module:reviews']],
     ['POST',   '/photo/delete',                'PhotoController@delete',        ['auth','approved']],
