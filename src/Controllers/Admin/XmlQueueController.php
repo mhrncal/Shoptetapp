@@ -13,8 +13,15 @@ class XmlQueueController extends BaseController
         $page   = max(1, (int)$this->request->get('page', 1));
         $status = $this->request->get('status', '');
 
-        $where  = $status ? "WHERE q.status = '{$status}'" : '';
         $offset = ($page - 1) * 25;
+        $params = [];
+
+        if ($status) {
+            $where  = "WHERE q.status = ?";
+            $params[] = $status;
+        } else {
+            $where = '';
+        }
 
         $stmt = $db->prepare("
             SELECT q.*, u.email, u.shop_name
@@ -24,11 +31,12 @@ class XmlQueueController extends BaseController
             ORDER BY q.priority ASC, q.created_at ASC
             LIMIT 25 OFFSET {$offset}
         ");
-        $stmt->execute();
+        $stmt->execute($params);
         $queue = $stmt->fetchAll();
 
-        $stmt  = $db->query("SELECT COUNT(*) FROM xml_processing_queue {$where}");
-        $total = (int)$stmt->fetchColumn();
+        $countStmt = $db->prepare("SELECT COUNT(*) FROM xml_processing_queue " . ($status ? "WHERE status = ?" : ""));
+        $countStmt->execute($status ? [$status] : []);
+        $total = (int)$countStmt->fetchColumn();
 
         // Stats
         $stmt = $db->query("SELECT status, COUNT(*) as cnt FROM xml_processing_queue GROUP BY status");
