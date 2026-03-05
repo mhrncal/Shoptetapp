@@ -65,6 +65,30 @@ if (!defined('CSRF_TOKEN_LENGTH')) {
     define('CSRF_TOKEN_LENGTH', 32);
 }
 
+if (!defined('LOGIN_MAX_ATTEMPTS')) {
+    define('LOGIN_MAX_ATTEMPTS', 5);
+}
+
+if (!defined('LOGIN_LOCKOUT_MINUTES')) {
+    define('LOGIN_LOCKOUT_MINUTES', 15);
+}
+
+if (!defined('REMEMBER_LIFETIME')) {
+    define('REMEMBER_LIFETIME', 2592000); // 30 dní
+}
+
+if (!defined('SESSION_LIFETIME')) {
+    define('SESSION_LIFETIME', 7200); // 2 hodiny
+}
+
+if (!defined('UPLOAD_DIR')) {
+    define('UPLOAD_DIR', ROOT . '/public/uploads/');
+}
+
+if (!defined('UPLOAD_MAX_SIZE')) {
+    define('UPLOAD_MAX_SIZE', 10 * 1024 * 1024); // 10 MB
+}
+
 if (!defined('DB_PORT')) {
     define('DB_PORT', '3306');
 }
