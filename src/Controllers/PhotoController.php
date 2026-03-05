@@ -12,7 +12,7 @@ class PhotoController extends BaseController
      */
     public function delete(): void
     {
-        $id = (int)($_POST['id'] ?? 0);
+        $id = (int)\$this->request->post('id', 0);
         
         $db = Database::getInstance();
         
@@ -48,7 +48,7 @@ class PhotoController extends BaseController
      */
     public function reupload(): void
     {
-        $id = (int)($_POST['photo_id'] ?? 0);
+        $id = (int)\$this->request->post('photo_id', 0);
         
         if (empty($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
             Session::flash('error', 'Vyberte fotku k nahrání');
@@ -186,7 +186,7 @@ class PhotoController extends BaseController
      */
     public function download(): void
     {
-        $id = $_GET['id'] ?? '';
+        $id = $this->request->get('id', '');
         
         // Legacy ID check (pro staré JSON fotky)
         if (str_starts_with($id, 'legacy_')) {

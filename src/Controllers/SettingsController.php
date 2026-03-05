@@ -50,7 +50,7 @@ class SettingsController extends BaseController
 
         User::update($userId, $data);
         // Aktualizuj session
-        $_SESSION['user'] = array_merge($_SESSION['user'], $data);
+        Session::set('user', array_merge(Session::get('user', []), $data));
         Session::flash('success', 'Profil byl uložen.');
         $this->redirect('/settings');
     }

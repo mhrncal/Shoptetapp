@@ -36,15 +36,15 @@ class WatermarkController extends BaseController
         }
         
         $data = [
-            'text' => $_POST['text'] ?? 'Zákaznická fotka',
-            'font' => $_POST['font'] ?? 'Arial',
-            'position' => $_POST['position'] ?? 'BR',
-            'color' => $_POST['color'] ?? '#FFFFFF',
-            'size' => $_POST['size'] ?? 'medium',
-            'opacity' => (int)($_POST['opacity'] ?? 80),
-            'padding' => (int)($_POST['padding'] ?? 20),
-            'shadow_enabled' => isset($_POST['shadow_enabled']),
-            'enabled' => isset($_POST['enabled']),
+            'text' => $this->request->post('text', 'Zákaznická fotka'),
+            'font' => $this->request->post('font', 'Arial'),
+            'position' => $this->request->post('position', 'BR'),
+            'color' => $this->request->post('color', '#FFFFFF'),
+            'size' => $this->request->post('size', 'medium'),
+            'opacity' => (int)\$this->request->post('opacity', 80),
+            'padding' => (int)\$this->request->post('padding', 20),
+            'shadow_enabled' => ($this->request->post('shadow_enabled') !== null),
+            'enabled' => ($this->request->post('enabled') !== null),
         ];
         
         if (WatermarkSettings::update($userId, $data)) {

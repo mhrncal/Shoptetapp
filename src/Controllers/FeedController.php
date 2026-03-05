@@ -46,12 +46,12 @@ class FeedController extends BaseController
         $userId = $this->user['id'];
         
         $data = [
-            'name' => trim($_POST['name'] ?? ''),
-            'url' => trim($_POST['url'] ?? ''),
-            'type' => $_POST['type'] ?? 'csv_simple',
-            'delimiter' => $_POST['delimiter'] ?? ';',
-            'encoding' => $_POST['encoding'] ?? 'windows-1250',
-            'enabled' => isset($_POST['enabled'])
+            'name' => trim($this->request->post('name', '')),
+            'url' => trim($this->request->post('url', '')),
+            'type' => $this->request->post('type', 'csv_simple'),
+            'delimiter' => $this->request->post('delimiter', ';'),
+            'encoding' => $this->request->post('encoding', 'windows-1250'),
+            'enabled' => ($this->request->post('enabled') !== null)
         ];
         
         if (empty($data['name']) || empty($data['url'])) {
@@ -67,7 +67,7 @@ class FeedController extends BaseController
     public function delete(): void
     {
         $this->validateCsrf();
-        $id = (int)($_POST['id'] ?? 0);
+        $id = (int)\$this->request->post('id', 0);
         $userId = $this->user['id'];
         
         if (ProductFeed::delete($id, $userId)) {
@@ -87,7 +87,7 @@ class FeedController extends BaseController
         ini_set('memory_limit', '256M');
         
         $this->validateCsrf();
-        $id = (int)($_POST['id'] ?? 0);
+        $id = (int)\$this->request->post('id', 0);
         $userId = $this->user['id'];
         
         $feed = ProductFeed::findById($id, $userId);
@@ -195,7 +195,7 @@ class FeedController extends BaseController
     public function syncBackground(): void
     {
         $this->validateCsrf();
-        $id = (int)($_POST['id'] ?? 0);
+        $id = (int)\$this->request->post('id', 0);
         $userId = $this->user['id'];
         
         $feed = ProductFeed::findById($id, $userId);
@@ -281,7 +281,7 @@ class FeedController extends BaseController
     {
         header('Content-Type: application/json');
         
-        $feedId = (int)($_GET['feed_id'] ?? 0);
+        $feedId = (int)($this->request->get('feed_id', 0));
         if (!$feedId) {
             echo json_encode(['error' => 'Missing feed_id']);
             exit;
