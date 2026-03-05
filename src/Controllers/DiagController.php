@@ -103,6 +103,18 @@ class DiagController extends BaseController
         echo "httpbin.org: HTTP $code " . ($err ? "ERROR: $err" : "OK") . "\n";
 
         echo "\n=== Konec diagnostiky ===\n";
+
+        // Spusť migraci pokud je požadována
+        if (isset($_GET['migrate'])) {
+            echo "\n=== Migrace ===\n";
+            try {
+                $pdo->exec("ALTER TABLE `product_videos` ADD COLUMN `autoplay` TINYINT(1) NOT NULL DEFAULT 0 AFTER `sort_order`");
+                echo "OK — sloupec autoplay přidán\n";
+            } catch (\Exception $ex) {
+                echo "INFO: " . $ex->getMessage() . "\n";
+            }
+        }
+
         exit;
     }
     public function runMigration(): void
