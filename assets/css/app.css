@@ -51,6 +51,7 @@ body {
     font-family: Inter, sans-serif;
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     --bs-body-bg: hsl(var(--background));
@@ -211,6 +212,9 @@ body {
     display: flex;
     flex-direction: column;
     margin-left: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+    min-width: 0;
     /* Prostor pro bottom nav na mobilu */
     padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
 }
@@ -973,4 +977,31 @@ main.p-4 { padding: 1rem !important; }
 
 @media (min-width: 768px) {
     main.p-4 { padding: 1.5rem !important; }
+}
+
+/* === Mobilní overflow fix === */
+main {
+    overflow-x: hidden;
+    min-width: 0;
+    max-width: 100%;
+    word-break: break-word;
+}
+
+/* Tabulky na mobilu vždy scrollovatelné */
+.table-responsive {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Dlouhé URL a texty — nezpůsobují overflow */
+pre, code, .font-monospace {
+    overflow-x: auto;
+    max-width: 100%;
+    word-break: break-all;
+}
+
+/* Fix pro row uvnitř card — nezpůsobuje horizontální scroll */
+.card .row {
+    --bs-gutter-x: 1rem;
+    margin-left: calc(var(--bs-gutter-x) * -0.5);
+    margin-right: calc(var(--bs-gutter-x) * -0.5);
 }
