@@ -42,8 +42,8 @@ class WatermarkController extends BaseController
             'position' => $this->request->post('position', 'BR'),
             'color' => $this->request->post('color', '#FFFFFF'),
             'size' => $this->request->post('size', 'medium'),
-            'opacity' => (int)\$this->request->post('opacity', 80),
-            'padding' => (int)\$this->request->post('padding', 20),
+            'opacity' => (int)$this->request->post('opacity', 80),
+            'padding' => (int)$this->request->post('padding', 20),
             'shadow_enabled' => ($this->request->post('shadow_enabled') !== null),
             'enabled' => ($this->request->post('enabled') !== null),
         ];

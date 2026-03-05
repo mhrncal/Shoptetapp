@@ -100,7 +100,7 @@ class ApiController
     {
         $this->requirePermission('faq:read');
         $userId    = ApiAuthMiddleware::userId();
-        $productId = ($this->request->get('product_id') !== null) ? (int)\$this->request->get('product_id', 0) : null;
+        $productId = ($this->request->get('product_id') !== null) ? (int)$this->request->get('product_id', 0) : null;
 
         $filters = ['search' => $this->request->get('search', '')];
         if ($productId) $filters['product_id'] = $productId;
@@ -147,8 +147,8 @@ class ApiController
         $this->requirePermission('events:read');
         $userId  = ApiAuthMiddleware::userId();
         $filters = ['is_active' => 1];
-        if ((bool)\$this->request->get('upcoming')) $filters['upcoming'] = true;
-        if ((bool)\$this->request->get('past'))     $filters['past']     = true;
+        if ((bool)$this->request->get('upcoming')) $filters['upcoming'] = true;
+        if ((bool)$this->request->get('past'))     $filters['past']     = true;
 
         $items = Event::allForUser($userId, $filters);
         $this->json(['data' => $items, 'total' => count($items)]);
