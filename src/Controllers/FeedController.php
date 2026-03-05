@@ -96,8 +96,8 @@ class FeedController extends BaseController
         }
 
         // Progress soubor — čte ho syncProgress AJAX endpoint
-        $progressFile = ROOT . '/public/tmp/feed_progress_' . $id . '.json';
-        if (!is_dir(ROOT . '/public/tmp')) { @mkdir(ROOT . '/public/tmp', 0775, true); }
+        $progressFile = ROOT . '/tmp/feed_progress_' . $id . '.json';
+        if (!is_dir(ROOT . '/tmp')) { @mkdir(ROOT . '/tmp', 0775, true); }
 
         // Log buffer — zapíše se do DB na konci + průběžně do progress souboru
         $logLines = [];
@@ -339,7 +339,7 @@ class FeedController extends BaseController
         }
 
         // Přečti progress JSON soubor (zapisuje feed_sync_single.php)
-        $progressFile = ROOT . '/public/tmp/feed_progress_' . $feedId . '.json';
+        $progressFile = ROOT . '/tmp/feed_progress_' . $feedId . '.json';
 
         if (file_exists($progressFile)) {
             $data = @file_get_contents($progressFile);

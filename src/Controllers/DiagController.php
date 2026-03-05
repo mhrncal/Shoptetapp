@@ -45,7 +45,7 @@ class DiagController extends BaseController
         echo "\n";
 
         echo "--- Progress soubory ---\n";
-        $tmpDir = ROOT . '/public/tmp';
+        $tmpDir = ROOT . '/tmp';
         $files  = is_dir($tmpDir) ? (glob($tmpDir . '/feed_progress_*.json') ?: []) : [];
         if (empty($files)) {
             echo "Žádné progress soubory\n";
