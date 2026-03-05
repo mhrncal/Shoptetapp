@@ -70,7 +70,7 @@ class FeedParser
             if ($httpCode !== 200) throw new \RuntimeException("HTTP error $httpCode");
             if (!filesize($filepath)) throw new \RuntimeException("Stažený soubor je prázdný");
 
-            $this->cleanOldFiles(7);
+            $this->cleanOldFiles(3);
             return $filepath;
 
         } catch (\Exception $e) {
