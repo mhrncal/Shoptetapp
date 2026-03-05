@@ -160,5 +160,7 @@ return [
     ['POST',   '/products/tabs/{id}',           'ProductTabController@tabUpdate',   ['auth','approved','module:product_tabs']],
     ['DELETE', '/products/tabs/{id}',           'ProductTabController@tabDelete',   ['auth','approved','module:product_tabs']],
     ['POST',   '/products/{product_id}/videos', 'ProductTabController@videoStore',  ['auth','approved','module:product_videos']],
-    ['DELETE', '/products/videos/{id}',         'ProductTabController@videoDelete', ['auth','approved','module:product_videos']],
+    ['DELETE', '/products/videos/{id}',         'ProductTabController@videoDelete',             ['auth','approved','module:product_videos']],
+    ['POST',   '/products/videos/{id}/autoplay',  'ProductTabController@videoToggleAutoplay',    ['auth','approved','module:product_videos']],
+    ['POST',   '/products/videos/{id}/delete',    'ProductTabController@videoDeleteFromIndex',   ['auth','approved','module:product_videos']],
 ];

@@ -25,9 +25,17 @@ class ProductVideo
     public static function create(int $userId, int $productId, array $data): int
     {
         $db   = Database::getInstance();
-        $stmt = $db->prepare('INSERT INTO product_videos (user_id, product_id, title, url, sort_order) VALUES (?,?,?,?,?)');
-        $stmt->execute([$userId, $productId, $data['title'] ?: null, $data['url'], (int)($data['sort_order'] ?? 0)]);
+        $stmt = $db->prepare('INSERT INTO product_videos (user_id, product_id, title, url, sort_order, autoplay) VALUES (?,?,?,?,?,?)');
+        $stmt->execute([$userId, $productId, $data['title'] ?: null, $data['url'], (int)($data['sort_order'] ?? 0), (int)!empty($data['autoplay'])]);
         return (int)$db->lastInsertId();
+    }
+
+    public static function update(int $id, int $userId, array $data): bool
+    {
+        $db   = Database::getInstance();
+        $stmt = $db->prepare('UPDATE product_videos SET title=?, url=?, sort_order=?, autoplay=? WHERE id=? AND user_id=?');
+        $stmt->execute([$data['title'] ?: null, $data['url'], (int)($data['sort_order'] ?? 0), (int)!empty($data['autoplay']), $id, $userId]);
+        return $stmt->rowCount() > 0;
     }
 
     public static function delete(int $id, int $userId): bool

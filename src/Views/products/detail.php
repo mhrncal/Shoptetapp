@@ -376,6 +376,12 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
                         <label class="form-label">Pořadí</label>
                         <input type="number" name="sort_order" class="form-control" value="0" min="0">
                     </div>
+                    <div class="mb-0">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="autoplay" value="1" id="detailAutoplay">
+                            <label class="form-check-label" for="detailAutoplay">Autoplay</label>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
