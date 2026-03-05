@@ -67,7 +67,7 @@ class FeedController extends BaseController
     public function delete(): void
     {
         $this->validateCsrf();
-        $id = (int)\$this->request->post('id', 0);
+        $id = (int)$this->request->post('id', 0);
         $userId = $this->user['id'];
         
         if (ProductFeed::delete($id, $userId)) {
@@ -87,7 +87,7 @@ class FeedController extends BaseController
         ini_set('memory_limit', '256M');
         
         $this->validateCsrf();
-        $id = (int)\$this->request->post('id', 0);
+        $id = (int)$this->request->post('id', 0);
         $userId = $this->user['id'];
         
         $feed = ProductFeed::findById($id, $userId);
@@ -195,7 +195,7 @@ class FeedController extends BaseController
     public function syncBackground(): void
     {
         $this->validateCsrf();
-        $id = (int)\$this->request->post('id', 0);
+        $id = (int)$this->request->post('id', 0);
         $userId = $this->user['id'];
         
         $feed = ProductFeed::findById($id, $userId);
