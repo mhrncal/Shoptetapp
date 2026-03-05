@@ -172,10 +172,10 @@ class User
                 END
             WHERE email = ?
         ');
-        $stmt->execute([LOGIN_MAX_ATTEMPTS, LOGIN_LOCKOUT_MINUTES, $email]);
+        $stmt->execute([\LOGIN_MAX_ATTEMPTS, \LOGIN_LOCKOUT_MINUTES, $email]);
 
         // Zjistíme jestli jsme právě zamkli
-        if (!$wasAlreadyLocked && ($user['login_attempts'] + 1) >= LOGIN_MAX_ATTEMPTS) {
+        if (!$wasAlreadyLocked && ($user['login_attempts'] + 1) >= \LOGIN_MAX_ATTEMPTS) {
             return true; // Právě zamknuto
         }
 
@@ -200,7 +200,7 @@ class User
             INSERT INTO remember_tokens (user_id, token_hash, expires_at)
             VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))
         ');
-        $stmt->execute([$userId, $hash, REMEMBER_LIFETIME]);
+        $stmt->execute([$userId, $hash, \REMEMBER_LIFETIME]);
     }
 
     public static function deleteRememberToken(int $userId): void

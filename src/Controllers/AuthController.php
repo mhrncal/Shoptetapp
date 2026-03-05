@@ -53,7 +53,7 @@ class AuthController extends BaseController
                         userId:      $user['id'],
                         email:       $email,
                         ipAddress:   $_SERVER['REMOTE_ADDR'] ?? 'neznámá',
-                        attempts:    LOGIN_MAX_ATTEMPTS,
+                        attempts:    \LOGIN_MAX_ATTEMPTS,
                         lockMinutes: LOGIN_LOCKOUT_MINUTES
                     );
                 } catch (\Throwable $e) {
@@ -84,7 +84,7 @@ class AuthController extends BaseController
             setcookie(
                 'remember_token',
                 $token,
-                time() + REMEMBER_LIFETIME,
+                time() + \REMEMBER_LIFETIME,
                 '/',
                 '',
                 APP_ENV === 'production',

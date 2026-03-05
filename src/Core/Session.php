@@ -71,7 +71,7 @@ class Session
     public static function getCsrfToken(): string
     {
         if (!isset($_SESSION['_csrf'])) {
-            $_SESSION['_csrf'] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
+            $_SESSION['_csrf'] = bin2hex(random_bytes(\CSRF_TOKEN_LENGTH));
         }
         return $_SESSION['_csrf'];
     }
@@ -83,6 +83,6 @@ class Session
 
     public static function regenerateCsrf(): void
     {
-        $_SESSION['_csrf'] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
+        $_SESSION['_csrf'] = bin2hex(random_bytes(\CSRF_TOKEN_LENGTH));
     }
 }
