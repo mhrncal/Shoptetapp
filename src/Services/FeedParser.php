@@ -222,9 +222,7 @@ class FeedParser
         $batchSize = 500; // Batch upsert — bezpečné a rychlé
         $batch = [];
         
-        $debugLimit = 10; // TODO: odstranit po debugu
         while (($row = fgetcsv($handle, 0, $delimiter, '"', '')) !== false) {
-            if ($stats['total'] >= $debugLimit) break;
             $stats['total']++;
             
             // Konvertuj encoding
