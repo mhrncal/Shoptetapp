@@ -167,26 +167,9 @@ class FeedController extends BaseController
                 ['inserted' => $stats['inserted'], 'updated' => $stats['updated']]);
             $matchStats = ReviewMatcher::matchReviews($userId);
 
-            // --- EXPORT ---
+            // Export se NEgeneruje zde — dělá to CRON (generate-xml-feeds.php) každý den v 18:00
             $matchCount = $matchStats['matched'] ?? 0;
             $matchTotal = $matchStats['total'] ?? 0;
-            $writeProgress('export', "✅ Spárováno {$matchCount}/{$matchTotal} recenzí. Načítám recenze pro export...");
-            $reviews = ReviewMatcher::getExportableReviews($userId);
-            $reviewCount = count($reviews);
-            $writeProgress('export', "📄 Generuji export pro {$reviewCount} recenzí...");
-            if (!empty($reviews)) {
-                $writeProgress('export', "📄 Generuji XML...");
-                $xml = ExportGenerator::generateXML($reviews);
-                $writeProgress('export', "📄 Ukládám XML...");
-                ExportGenerator::saveToFile($xml, "user_{$userId}_reviews_with_products.xml");
-                $writeProgress('export', "📄 Generuji CSV...");
-                $csv = ExportGenerator::generateCSV($reviews);
-                $writeProgress('export', "📄 Ukládám CSV...");
-                ExportGenerator::saveToFile($csv, "user_{$userId}_reviews_with_products.csv");
-                $writeProgress('export', "✅ Export dokončen ({$reviewCount} recenzí).");
-            } else {
-                $writeProgress('export', "ℹ️ Žádné recenze k exportu.");
-            }
             
             // Aktualizuj log - SUCCESS
             $duration = round(microtime(true) - $startTime);
