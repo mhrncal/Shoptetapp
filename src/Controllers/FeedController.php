@@ -280,72 +280,78 @@ class FeedController extends BaseController
     public function syncProgress(): void
     {
         header('Content-Type: application/json');
-        
+        header('Cache-Control: no-store');
+
         $feedId = (int)($this->request->get('feed_id', 0));
         if (!$feedId) {
             echo json_encode(['error' => 'Missing feed_id']);
             exit;
         }
-        
-        // Najdi poslední running log pro tento feed
+
+        // Přečti progress JSON soubor (zapisuje feed_sync_single.php)
+        $progressFile = ROOT . '/tmp/feed_progress_' . $feedId . '.json';
+
+        if (file_exists($progressFile)) {
+            $data = @file_get_contents($progressFile);
+            $progress = $data ? json_decode($data, true) : null;
+
+            if ($progress) {
+                $phase = $progress['phase'] ?? 'running';
+
+                // Ikona a stav pro UI
+                $icons = [
+                    'start'    => '🚀',
+                    'download' => '⬇️',
+                    'parse'    => '⚙️',
+                    'match'    => '🔗',
+                    'export'   => '📄',
+                    'done'     => '✅',
+                    'error'    => '❌',
+                ];
+                $icon = $icons[$phase] ?? '⏳';
+
+                echo json_encode([
+                    'status'    => $phase === 'done' ? 'done' : ($phase === 'error' ? 'error' : 'running'),
+                    'phase'     => $phase,
+                    'message'   => $icon . ' ' . ($progress['message'] ?? 'Synchronizuje se...'),
+                    'percent'   => $progress['percent'] ?? null,
+                    'elapsed'   => $progress['elapsed'] ?? 0,
+                    'details'   => array_filter([
+                        'downloaded_mb' => $progress['downloaded_mb'] ?? null,
+                        'total_mb'      => $progress['total_mb'] ?? null,
+                        'done'          => $progress['done'] ?? null,
+                        'total'         => $progress['total'] ?? null,
+                        'inserted'      => $progress['inserted'] ?? null,
+                        'updated'       => $progress['updated'] ?? null,
+                        'matched'       => $progress['matched'] ?? null,
+                    ]),
+                ]);
+                exit;
+            }
+        }
+
+        // Progress soubor neexistuje — zkontroluj DB jestli sync běží
         $db = Database::getInstance();
         $stmt = $db->prepare('
-            SELECT l.id, l.started_at
-            FROM feed_sync_log l
-            WHERE l.feed_id = ? AND l.status = "running"
-            ORDER BY l.started_at DESC
+            SELECT status, started_at, TIMESTAMPDIFF(SECOND, started_at, NOW()) as elapsed
+            FROM feed_sync_log
+            WHERE feed_id = ?
+            ORDER BY started_at DESC
             LIMIT 1
         ');
         $stmt->execute([$feedId]);
         $log = $stmt->fetch();
-        
-        if (!$log) {
+
+        if (!$log || $log['status'] !== 'running') {
             echo json_encode(['status' => 'not_running']);
-            exit;
-        }
-        
-        // Najdi log soubor
-        $logPattern = ROOT . '/public/logs/feed_sync_' . $feedId . '_*.log';
-        $files = glob($logPattern);
-        
-        if (empty($files)) {
-            echo json_encode(['status' => 'running', 'message' => 'Spouští se...']);
-            exit;
-        }
-        
-        // Čti poslední řádek logu
-        $latestFile = end($files);
-        $lines = file($latestFile);
-        $lastLine = trim(end($lines));
-        
-        // Parsuj progress zprávy
-        if (strpos($lastLine, 'Downloading') !== false) {
-            $message = 'Stahování CSV...';
-        } elseif (strpos($lastLine, 'Downloaded') !== false) {
-            $message = 'CSV staženo';
-        } elseif (strpos($lastLine, 'Parsing') !== false) {
-            $message = 'Parsování CSV...';
-        } elseif (preg_match('/Processed (\d+) rows/', $lastLine, $m)) {
-            $message = 'Zpracováno ' . number_format($m[1], 0, ',', ' ') . ' řádků...';
-        } elseif (strpos($lastLine, 'Parse stats') !== false) {
-            $message = 'Parsování dokončeno';
-        } elseif (strpos($lastLine, 'Matching reviews') !== false) {
-            $message = 'Párování recenzí...';
-        } elseif (strpos($lastLine, 'Match stats') !== false) {
-            $message = 'Párování dokončeno';
-        } elseif (strpos($lastLine, 'Generating exports') !== false) {
-            $message = 'Generování exportů...';
-        } elseif (strpos($lastLine, 'SUCCESS') !== false) {
-            $message = 'Dokončeno!';
         } else {
-            $message = 'Synchronizuje se...';
+            echo json_encode([
+                'status'  => 'running',
+                'phase'   => 'start',
+                'message' => '🚀 Spouští se... (' . $log['elapsed'] . 's)',
+                'elapsed' => (int)$log['elapsed'],
+            ]);
         }
-        
-        echo json_encode([
-            'status' => 'running',
-            'message' => $message,
-            'last_line' => $lastLine
-        ]);
         exit;
     }
 }

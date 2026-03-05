@@ -321,7 +321,64 @@ function updateProgress() {
     <?php foreach ($runningFeedIds as $fid): ?>
     fetch('/feeds/sync-progress?feed_id=<?= $fid ?>').then(r=>r.json()).then(data => {
         const el = document.getElementById('progress-<?= $fid ?>');
-        if (el && data.message) el.querySelector('.progress-text').textContent = data.message;
+        if (!el) return;
+
+        const textEl  = el.querySelector('.progress-text');
+        const barWrap = el.querySelector('.progress-bar-wrap');
+
+        if (data.message && textEl) textEl.textContent = data.message;
+
+        // Progress bar
+        if (data.percent !== null && data.percent !== undefined) {
+            if (!barWrap) {
+                const bar = document.createElement('div');
+                bar.className = 'progress progress-bar-wrap mt-1';
+                bar.style.height = '4px';
+                bar.innerHTML = '<div class="progress-bar bg-primary" style="width:' + data.percent + '%"></div>';
+                textEl && textEl.parentNode.appendChild(bar);
+            } else {
+                const inner = barWrap.querySelector('.progress-bar');
+                if (inner) inner.style.width = data.percent + '%';
+            }
+        }
+
+        // Detail řádek
+        let detail = '';
+        if (data.details) {
+            const d = data.details;
+            if (d.downloaded_mb) detail = d.downloaded_mb + (d.total_mb !== '?' ? ' / ' + d.total_mb : '') + ' MB';
+            else if (d.done && d.total) detail = d.done.toLocaleString('cs') + ' / ' + d.total.toLocaleString('cs') + ' řádků';
+            if (d.inserted !== undefined) detail += (detail ? ' • ' : '') + d.inserted + ' nových, ' + d.updated + ' aktualizovaných';
+        }
+        const detailEl = el.querySelector('.progress-detail');
+        if (detailEl) detailEl.textContent = detail;
+        else if (detail && textEl) {
+            const span = document.createElement('span');
+            span.className = 'progress-detail text-muted d-block';
+            span.style.fontSize = '.75rem';
+            span.textContent = detail;
+            textEl.parentNode.insertBefore(span, textEl.nextSibling);
+        }
+
+        // Elapsed
+        if (data.elapsed) {
+            const elapsed = data.elapsed;
+            const min = Math.floor(elapsed / 60), sec = elapsed % 60;
+            const timeStr = (min > 0 ? min + 'm ' : '') + sec + 's';
+            const timeEl = el.querySelector('.progress-elapsed');
+            if (timeEl) timeEl.textContent = timeStr;
+            else if (textEl) {
+                const span = document.createElement('span');
+                span.className = 'progress-elapsed text-muted ms-2';
+                span.style.fontSize = '.75rem';
+                span.textContent = timeStr;
+                textEl.after(span);
+            }
+        }
+
+        if (data.status === 'done' || data.status === 'not_running') {
+            setTimeout(() => location.reload(), 1500);
+        }
     }).catch(()=>{});
     <?php endforeach; ?>
 }

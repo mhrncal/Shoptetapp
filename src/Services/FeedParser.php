@@ -78,6 +78,92 @@ class FeedParser
     /**
      * Parsuj CSV a ulož do DB
      */
+
+    /**
+     * Parsuj CSV a ulož do DB — s progress callbackem
+     * @param callable $onProgress fn(int $done, int $total, array $stats)
+     */
+    public function parseAndStoreWithProgress(int $feedId, string $filepath, array $config, callable $onProgress): array
+    {
+        $userId    = $config['user_id'];
+        $delimiter = $config['delimiter'] ?? ';';
+        $encoding  = $config['encoding']  ?? 'windows-1250';
+
+        $db    = Database::getInstance();
+        $stats = ['total' => 0, 'inserted' => 0, 'updated' => 0, 'errors' => 0];
+
+        $handle = fopen($filepath, 'r');
+        if (!$handle) throw new \RuntimeException("Nelze otevřít soubor: $filepath");
+
+        // Hlavička
+        $header = fgetcsv($handle, 0, $delimiter, '"', '');
+        if (!$header) { fclose($handle); throw new \RuntimeException("CSV nemá hlavičku"); }
+        if ($encoding !== 'UTF-8') {
+            $header = array_map(fn($h) => iconv($encoding, 'UTF-8//TRANSLIT', $h), $header);
+        }
+
+        $codeIdx     = array_search('code', $header);
+        $pairCodeIdx = array_search('pairCode', $header);
+        $nameIdx     = array_search('name', $header);
+        if ($codeIdx === false || $nameIdx === false) {
+            fclose($handle);
+            throw new \RuntimeException("CSV nemá povinné sloupce: code, name");
+        }
+
+        $imageColumns = [];
+        if ($config['type'] === 'csv_with_images') {
+            foreach ($header as $idx => $col) {
+                if ($col === 'defaultImage' || preg_match('/^image\d*$/', $col)) {
+                    $imageColumns[] = $idx;
+                }
+            }
+        }
+
+        $batchSize = 100;
+        $batch     = [];
+        $lastProgress = 0;
+
+        while (($row = fgetcsv($handle, 0, $delimiter, '"', '')) !== false) {
+            $stats['total']++;
+
+            if ($encoding !== 'UTF-8') {
+                $row = array_map(fn($r) => iconv($encoding, 'UTF-8//TRANSLIT', $r), $row);
+            }
+
+            $code     = $row[$codeIdx] ?? null;
+            $pairCode = $pairCodeIdx !== false ? ($row[$pairCodeIdx] ?? null) : null;
+            $name     = $row[$nameIdx] ?? null;
+
+            if (empty($code) || empty($name)) { $stats['errors']++; continue; }
+
+            $images = [];
+            foreach ($imageColumns as $imgIdx) {
+                $imgUrl = $row[$imgIdx] ?? null;
+                if (!empty($imgUrl) && filter_var($imgUrl, FILTER_VALIDATE_URL)) $images[] = $imgUrl;
+            }
+
+            $batch[] = ['code' => $code, 'pair_code' => $pairCode, 'name' => $name, 'images' => $images];
+
+            if (count($batch) >= $batchSize) {
+                $this->insertBatch($userId, $batch, $stats);
+                $batch = [];
+                // Callback každých 500 řádků
+                if ($stats['total'] - $lastProgress >= 500) {
+                    $onProgress($stats['total'], 0, $stats);
+                    $lastProgress = $stats['total'];
+                }
+            }
+        }
+
+        if (!empty($batch)) {
+            $this->insertBatch($userId, $batch, $stats);
+        }
+
+        fclose($handle);
+        $onProgress($stats['total'], $stats['total'], $stats);
+        return $stats;
+    }
+
     public function parseAndStore(int $feedId, string $filepath, array $config): array
     {
         $userId = $config['user_id'];
