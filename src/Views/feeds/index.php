@@ -1,4 +1,7 @@
-<?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES); ?>
+<?php
+$e          = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
+$anyRunning = !empty(array_filter($timeline ?? [], fn($l) => $l['status'] === 'running'));
+?>
 
 <div class="d-flex justify-content-between align-items-center mb-4 gap-2">
     <div>
@@ -342,7 +345,6 @@ function startProgressPolling(feedId) {
 }
 [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')).map(el => new bootstrap.Tooltip(el));
 <?php
-$anyRunning = !empty(array_filter($timeline ?? [], fn($l) => $l['status'] === 'running'));
 $runningFeedIds = [];
 foreach ($feeds as $f) {
     foreach ($timeline ?? [] as $log) {
