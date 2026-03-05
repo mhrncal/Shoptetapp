@@ -170,7 +170,7 @@ $parameters = $product['parameters'] ? json_decode($product['parameters'], true)
             </div>
             <?php else: ?>
             <div class="card-body p-0">
-                <div class="nav nav-tabs px-3 pt-2 gap-1" id="productTabNav">
+                <div class="nav nav-tabs px-3 pt-2 gap-1 flex-nowrap overflow-auto" id="productTabNav" style="-webkit-overflow-scrolling:touch;">
                     <?php foreach ($tabs as $i => $tab): ?>
                     <button class="nav-link <?= $i === 0 ? 'active' : '' ?> <?= !$tab['is_active'] ? 'text-muted' : '' ?>"
                             data-bs-toggle="tab" data-bs-target="#ptab<?= $tab['id'] ?>">

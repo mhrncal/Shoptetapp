@@ -273,10 +273,10 @@ function openReuploadModal(photoId) {
                 <img id="lightboxImg" src="" class="img-fluid" style="max-height:80vh;">
             </div>
             <div class="modal-footer border-0 justify-content-between">
-                <button type="button" class="btn btn-outline-light" id="prevPhoto">
+                <button type="button" class="btn btn-outline-secondary" id="prevPhoto">
                     <i class="bi bi-chevron-left"></i> Předchozí
                 </button>
-                <button type="button" class="btn btn-outline-light" id="nextPhoto">
+                <button type="button" class="btn btn-outline-secondary" id="nextPhoto">
                     Další <i class="bi bi-chevron-right"></i>
                 </button>
             </div>
