@@ -4,7 +4,7 @@ namespace ShopCode\Controllers;
 
 use ShopCode\Core\{Database, Session, Response};
 use ShopCode\Models\{Review, Product};
-use ShopCode\Services\{ImageHandler, CsvGenerator};
+use ShopCode\Services\{ImageHandler, CsvGenerator, XmlFeedGenerator};
 
 class ReviewController extends BaseController
 {
@@ -139,7 +139,6 @@ class ReviewController extends BaseController
 
     public function exportCsv(): void
     {
-        $this->validateCsrf();
         $userId  = $this->user['id'];
         $reviews = Review::getPendingImport($userId);
 
@@ -158,6 +157,36 @@ class ReviewController extends BaseController
             header('Content-Length: ' . filesize($csvPath));
             readfile($csvPath);
             $gen->cleanup($csvPath);
+            exit;
+
+        } catch (\RuntimeException $e) {
+            Session::flash('error', $e->getMessage());
+            $this->redirect('/reviews');
+        }
+    }
+
+    /**
+     * Export schválených recenzí do XML (ke stažení)
+     */
+    public function exportXml(): void
+    {
+        $userId  = $this->user['id'];
+        $reviews = Review::getPendingImport($userId);
+
+        if (empty($reviews)) {
+            Session::flash('error', 'Žádné schválené neimportované recenze pro export.');
+            $this->redirect('/reviews');
+        }
+
+        try {
+            $gen     = new XmlFeedGenerator();
+            $xmlPath = $gen->generate($userId, $reviews);
+
+            header('Content-Type: application/xml; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="shoptet_photos_' . date('Ymd_His') . '.xml"');
+            header('Content-Length: ' . filesize($xmlPath));
+            readfile($xmlPath);
+            $gen->cleanup($xmlPath);
             exit;
 
         } catch (\RuntimeException $e) {
