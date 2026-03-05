@@ -37,7 +37,7 @@ class CsvGenerator
             if (!$sku) continue;
 
             foreach ($review['photos'] as $photo) {
-                $url = $this->appUrl . '/uploads/' . $photo['path'];
+                $url = $this->appUrl . '/public/uploads/' . $photo['path'];
                 $bySku[$sku][] = $url;
             }
         }
