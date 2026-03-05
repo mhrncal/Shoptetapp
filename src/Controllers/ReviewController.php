@@ -173,19 +173,19 @@ class ReviewController extends BaseController
      */
     public function changeStatus(): void
     {
-        $id = (int)($_POST['id'] ?? 0);
-        $newStatus = $_POST['status'] ?? '';
+        $this->validateCsrf();
+        $id = (int)$this->request->post('id', 0);
+        $newStatus = $this->request->post('status', '');
         
         if (!in_array($newStatus, ['approved', 'rejected'])) {
-            $_SESSION['flash'] = ['error' => 'Neplatný stav'];
-            header('Location: ' . APP_URL . '/reviews');
-            exit;
+            Session::flash('error', 'Neplatný stav');
+            $this->redirect('/reviews');
         }
         
         $db = Database::getInstance();
         
         // Admin note (pokud je zadaná)
-        $adminNote = $_POST['admin_note'] ?? null;
+        $adminNote = $this->request->post('admin_note', null);
         
         if ($adminNote) {
             $stmt = $db->prepare('UPDATE reviews SET status = ?, admin_note = ? WHERE id = ?');
@@ -197,13 +197,12 @@ class ReviewController extends BaseController
         
         if ($result) {
             $label = $newStatus === 'approved' ? 'schválena' : 'zamítnuta';
-            $_SESSION['flash'] = ['success' => "Recenze byla {$label}"];
+            Session::flash('success', "Recenze byla {$label}");
         } else {
-            $_SESSION['flash'] = ['error' => 'Chyba při změně stavu'];
+            Session::flash('error', 'Chyba při změně stavu');
         }
         
-        header('Location: ' . APP_URL . '/reviews');
-        exit;
+        $this->redirect('/reviews');
     }
 
     /**
@@ -211,12 +210,12 @@ class ReviewController extends BaseController
      */
     public function downloadZip(): void
     {
-        $ids = $_POST['ids'] ?? [];
+        $ids = (array)$this->request->post('ids', []);
+        $ids = array_filter(array_map('intval', $ids));
         
         if (empty($ids)) {
-            $_SESSION['flash'] = ['error' => 'Nevybrali jste žádné recenze'];
-            header('Location: ' . APP_URL . '/reviews');
-            exit;
+            Session::flash('error', 'Nevybrali jste žádné recenze');
+            $this->redirect('/reviews');
         }
         
         $db = Database::getInstance();
@@ -234,9 +233,8 @@ class ReviewController extends BaseController
         $photos = $stmt->fetchAll();
         
         if (empty($photos)) {
-            $_SESSION['flash'] = ['error' => 'Žádné fotky k stažení'];
-            header('Location: ' . APP_URL . '/reviews');
-            exit;
+            Session::flash('error', 'Žádné fotky k stažení');
+            $this->redirect('/reviews');
         }
         
         // Vytvoř ZIP
@@ -245,9 +243,8 @@ class ReviewController extends BaseController
         
         $zip = new \ZipArchive();
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
-            $_SESSION['flash'] = ['error' => 'Chyba při vytváření ZIP'];
-            header('Location: ' . APP_URL . '/reviews');
-            exit;
+            Session::flash('error', 'Chyba při vytváření ZIP');
+            $this->redirect('/reviews');
         }
         
         $counter = 1;
@@ -293,7 +290,7 @@ class ReviewController extends BaseController
     public function delete(): void
     {
         $this->validateCsrf();
-        $id = (int)($_POST['id'] ?? 0);
+        $id = (int)$this->request->post('id', 0);
         $userId = $this->user['id'];
         
         if (!$id) {
@@ -318,8 +315,8 @@ class ReviewController extends BaseController
     public function updateNote(): void
     {
         $this->validateCsrf();
-        $id = (int)($_POST['id'] ?? 0);
-        $adminNote = trim($_POST['admin_note'] ?? '');
+        $id = (int)$this->request->post('id', 0);
+        $adminNote = trim($this->request->post('admin_note', ''));
         $userId = $this->user['id'];
         
         if (!$id) {
