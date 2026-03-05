@@ -95,6 +95,22 @@ class FeedController extends BaseController
             $this->redirect('/feeds');
         }
 
+        // Zkontroluj jestli už nějaký sync pro tohoto uživatele běží
+        $db = Database::getInstance();
+        $runningStmt = $db->prepare('
+            SELECT l.id, f.name FROM feed_sync_log l
+            JOIN product_feeds f ON f.id = l.feed_id
+            WHERE f.user_id = ? AND l.status = "running"
+            LIMIT 1
+        ');
+        $runningStmt->execute([$userId]);
+        $alreadyRunning = $runningStmt->fetch();
+        if ($alreadyRunning) {
+            $this->redirect('/feeds');
+            fastcgi_finish_request();
+            return; // Tiše ignoruj — UI má tlačítko disabled
+        }
+
         // Progress soubor — čte ho syncProgress AJAX endpoint
         $progressFile = ROOT . '/tmp/feed_progress_' . $id . '.json';
         if (!is_dir(ROOT . '/tmp')) { @mkdir(ROOT . '/tmp', 0775, true); }

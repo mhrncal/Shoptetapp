@@ -139,7 +139,7 @@ if (!empty($latestCompleted)):
                             <form method="POST" action="/feeds/sync" class="sync-form">
                                 <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
                                 <input type="hidden" name="id" value="<?= $feed['id'] ?>">
-                                <button type="submit" class="btn btn-sm btn-outline-primary" <?= $isRunning ? 'disabled' : '' ?> title="Synchronizovat">
+                                <button type="submit" class="btn btn-sm btn-outline-primary" <?= ($isRunning || $anyRunning) ? 'disabled' : '' ?> title="<?= $anyRunning && !$isRunning ? 'Čeká na dokončení jiného importu' : 'Synchronizovat' ?>">
                                     <i class="bi bi-arrow-repeat"></i>
                                 </button>
                             </form>
@@ -342,6 +342,7 @@ function startProgressPolling(feedId) {
 }
 [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')).map(el => new bootstrap.Tooltip(el));
 <?php
+$anyRunning = !empty(array_filter($timeline ?? [], fn($l) => $l['status'] === 'running'));
 $runningFeedIds = [];
 foreach ($feeds as $f) {
     foreach ($timeline ?? [] as $log) {
