@@ -136,7 +136,7 @@ if (!empty($latestCompleted)):
                     </td>
                     <td>
                         <div class="d-flex gap-1">
-                            <form method="POST" action="/feeds/sync-background" class="sync-form">
+                            <form method="POST" action="/feeds/sync" class="sync-form">
                                 <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
                                 <input type="hidden" name="id" value="<?= $feed['id'] ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-primary" <?= $isRunning ? 'disabled' : '' ?> title="Synchronizovat">
@@ -196,7 +196,7 @@ if (!empty($latestCompleted)):
             </div>
             <?php endif; ?>
             <div class="d-flex gap-2">
-                <form method="POST" action="/feeds/sync-background" class="sync-form flex-grow-1">
+                <form method="POST" action="/feeds/sync" class="sync-form flex-grow-1">
                     <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
                     <input type="hidden" name="id" value="<?= $feed['id'] ?>">
                     <button type="submit" class="btn btn-sm btn-outline-primary w-100" <?= $isRunning ? 'disabled' : '' ?>>
@@ -301,12 +301,43 @@ let cd = 10;
 const cdEl = document.getElementById('countdown');
 setInterval(() => { cd--; if (cdEl) cdEl.textContent = cd; if (cd <= 0) location.reload(); }, 1000);
 <?php endif; ?>
-document.querySelectorAll('.sync-form').forEach(f => {
-    f.addEventListener('submit', () => {
+document.querySelectorAll('.sync-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const feedId = form.querySelector('input[name="id"]').value;
+        const btn    = form.querySelector('button[type="submit"]');
+        const progEl = document.getElementById('progress-' + feedId);
+
+        // Zobraz spinner
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
         document.getElementById('syncProgress').style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Odešli form přes AJAX
+        const fd = new FormData(form);
+        fetch(form.action, { method: 'POST', body: fd })
+            .then(r => { if (r.redirected || r.ok) location.reload(); })
+            .catch(() => location.reload());
+
+        // Spusť polling ihned
+        startProgressPolling(feedId);
     });
 });
+
+function startProgressPolling(feedId) {
+    const interval = setInterval(() => {
+        fetch('/feeds/sync-progress?feed_id=' + feedId)
+            .then(r => r.json())
+            .then(data => {
+                updateProgressUI(feedId, data);
+                if (data.status === 'done' || data.status === 'not_running') {
+                    clearInterval(interval);
+                    setTimeout(() => location.reload(), 1500);
+                }
+            })
+            .catch(() => {});
+    }, 2000);
+}
 [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')).map(el => new bootstrap.Tooltip(el));
 <?php
 $runningFeedIds = [];
@@ -317,69 +348,60 @@ foreach ($feeds as $f) {
 }
 if (!empty($runningFeedIds)):
 ?>
+function updateProgressUI(feedId, data) {
+    const el = document.getElementById('progress-' + feedId);
+    if (!el) return;
+    const textEl  = el.querySelector('.progress-text');
+    const barWrap = el.querySelector('.progress-bar-wrap');
+    if (data.message && textEl) textEl.textContent = data.message;
+    if (data.percent != null) {
+        if (!barWrap) {
+            const bar = document.createElement('div');
+            bar.className = 'progress progress-bar-wrap mt-1';
+            bar.style.height = '4px';
+            bar.innerHTML = '<div class="progress-bar bg-primary" style="width:' + data.percent + '%"></div>';
+            textEl && textEl.parentNode.appendChild(bar);
+        } else {
+            const inner = barWrap.querySelector('.progress-bar');
+            if (inner) inner.style.width = data.percent + '%';
+        }
+    }
+    let detail = '';
+    if (data.details) {
+        const d = data.details;
+        if (d.downloaded_mb) detail = d.downloaded_mb + (d.total_mb && d.total_mb !== '?' ? ' / ' + d.total_mb : '') + ' MB';
+        else if (d.done && d.total) detail = d.done.toLocaleString('cs') + ' / ' + d.total.toLocaleString('cs') + ' řádků';
+        if (d.inserted !== undefined) detail += (detail ? ' • ' : '') + d.inserted + ' nových, ' + d.updated + ' aktualizovaných';
+    }
+    const detailEl = el.querySelector('.progress-detail');
+    if (detailEl) detailEl.textContent = detail;
+    else if (detail && textEl) {
+        const span = document.createElement('span');
+        span.className = 'progress-detail text-muted d-block';
+        span.style.fontSize = '.75rem';
+        span.textContent = detail;
+        textEl.parentNode.insertBefore(span, textEl.nextSibling);
+    }
+    if (data.elapsed) {
+        const min = Math.floor(data.elapsed / 60), sec = data.elapsed % 60;
+        const timeStr = (min > 0 ? min + 'm ' : '') + sec + 's';
+        const timeEl = el.querySelector('.progress-elapsed');
+        if (timeEl) timeEl.textContent = timeStr;
+        else if (textEl) {
+            const span = document.createElement('span');
+            span.className = 'progress-elapsed text-muted ms-2';
+            span.style.fontSize = '.75rem';
+            span.textContent = timeStr;
+            textEl.after(span);
+        }
+    }
+    if (data.status === 'done' || data.status === 'not_running') {
+        setTimeout(() => location.reload(), 1500);
+    }
+}
 function updateProgress() {
     <?php foreach ($runningFeedIds as $fid): ?>
-    fetch('/feeds/sync-progress?feed_id=<?= $fid ?>').then(r=>r.json()).then(data => {
-        const el = document.getElementById('progress-<?= $fid ?>');
-        if (!el) return;
-
-        const textEl  = el.querySelector('.progress-text');
-        const barWrap = el.querySelector('.progress-bar-wrap');
-
-        if (data.message && textEl) textEl.textContent = data.message;
-
-        // Progress bar
-        if (data.percent !== null && data.percent !== undefined) {
-            if (!barWrap) {
-                const bar = document.createElement('div');
-                bar.className = 'progress progress-bar-wrap mt-1';
-                bar.style.height = '4px';
-                bar.innerHTML = '<div class="progress-bar bg-primary" style="width:' + data.percent + '%"></div>';
-                textEl && textEl.parentNode.appendChild(bar);
-            } else {
-                const inner = barWrap.querySelector('.progress-bar');
-                if (inner) inner.style.width = data.percent + '%';
-            }
-        }
-
-        // Detail řádek
-        let detail = '';
-        if (data.details) {
-            const d = data.details;
-            if (d.downloaded_mb) detail = d.downloaded_mb + (d.total_mb !== '?' ? ' / ' + d.total_mb : '') + ' MB';
-            else if (d.done && d.total) detail = d.done.toLocaleString('cs') + ' / ' + d.total.toLocaleString('cs') + ' řádků';
-            if (d.inserted !== undefined) detail += (detail ? ' • ' : '') + d.inserted + ' nových, ' + d.updated + ' aktualizovaných';
-        }
-        const detailEl = el.querySelector('.progress-detail');
-        if (detailEl) detailEl.textContent = detail;
-        else if (detail && textEl) {
-            const span = document.createElement('span');
-            span.className = 'progress-detail text-muted d-block';
-            span.style.fontSize = '.75rem';
-            span.textContent = detail;
-            textEl.parentNode.insertBefore(span, textEl.nextSibling);
-        }
-
-        // Elapsed
-        if (data.elapsed) {
-            const elapsed = data.elapsed;
-            const min = Math.floor(elapsed / 60), sec = elapsed % 60;
-            const timeStr = (min > 0 ? min + 'm ' : '') + sec + 's';
-            const timeEl = el.querySelector('.progress-elapsed');
-            if (timeEl) timeEl.textContent = timeStr;
-            else if (textEl) {
-                const span = document.createElement('span');
-                span.className = 'progress-elapsed text-muted ms-2';
-                span.style.fontSize = '.75rem';
-                span.textContent = timeStr;
-                textEl.after(span);
-            }
-        }
-
-        if (data.status === 'done' || data.status === 'not_running') {
-            setTimeout(() => location.reload(), 1500);
-        }
-    }).catch(()=>{});
+    fetch('/feeds/sync-progress?feed_id=<?= $fid ?>').then(r=>r.json()).then(d => updateProgressUI(<?= $fid ?>, d)).catch(()=>{});
     <?php endforeach; ?>
 }
 setInterval(updateProgress, 2000);

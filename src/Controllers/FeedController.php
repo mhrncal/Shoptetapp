@@ -82,19 +82,35 @@ class FeedController extends BaseController
      */
     public function sync(): void
     {
-        // Zvyš limity pro velké CSV
-        set_time_limit(600); // 10 minut
-        ini_set('memory_limit', '256M');
-        
+        set_time_limit(1800);
+        ini_set('memory_limit', '512M');
+
         $this->validateCsrf();
-        $id = (int)$this->request->post('id', 0);
+        $id     = (int)$this->request->post('id', 0);
         $userId = $this->user['id'];
-        
+
         $feed = ProductFeed::findById($id, $userId);
         if (!$feed) {
             Session::flash('error', 'Feed nenalezen');
             $this->redirect('/feeds');
         }
+
+        // Progress soubor — čte ho syncProgress AJAX endpoint
+        $progressFile = ROOT . '/tmp/feed_progress_' . $id . '.json';
+        if (!is_dir(ROOT . '/tmp')) { @mkdir(ROOT . '/tmp', 0775, true); }
+
+        $writeProgress = function(string $phase, string $msg, array $extra = []) use ($progressFile) {
+            static $start;
+            if (!$start) $start = microtime(true);
+            file_put_contents($progressFile, json_encode(array_merge([
+                'phase'   => $phase,
+                'message' => $msg,
+                'elapsed' => round(microtime(true) - $start),
+                'time'    => date('H:i:s'),
+            ], $extra), JSON_UNESCAPED_UNICODE));
+        };
+
+        $writeProgress('start', 'Spouštím synchronizaci...');
         
         $db = Database::getInstance();
         $startTime = microtime(true);
@@ -109,33 +125,47 @@ class FeedController extends BaseController
         
         try {
             $parser = new FeedParser();
-            
-            // Stáhni
+
+            // --- STAHOVÁNÍ ---
+            $writeProgress('download', '⬇️ Stahuji feed...');
             $filepath = $parser->downloadFeed($id, $feed['url']);
-            
-            if (!$filepath) {
-                throw new \RuntimeException("Chyba při stahování");
-            }
-            
-            // Parsuj
-            $stats = $parser->parseAndStore($id, $filepath, [
-                'user_id' => $userId,
-                'type' => $feed['type'],
-                'delimiter' => $feed['delimiter'],
-                'encoding' => $feed['encoding']
-            ]);
-            
+            if (!$filepath) throw new \RuntimeException("Chyba při stahování");
+
+            $sizeMb = round(filesize($filepath) / 1048576, 1);
+            $writeProgress('parse', "⚙️ Staženo {$sizeMb} MB, zpracovávám...", ['size_mb' => $sizeMb]);
+
+            // --- PARSOVÁNÍ ---
+            $lineCount = max(0, (int)shell_exec("wc -l < " . escapeshellarg($filepath)) - 1);
+            $stats = $parser->parseAndStoreWithProgress(
+                $id, $filepath,
+                ['user_id' => $userId, 'type' => $feed['type'],
+                 'delimiter' => $feed['delimiter'], 'encoding' => $feed['encoding']],
+                function(int $done, int $total, array $s) use ($writeProgress, $lineCount) {
+                    $t   = $lineCount > 0 ? $lineCount : $total;
+                    $pct = $t > 0 ? round($done / $t * 100) : null;
+                    $writeProgress('parse',
+                        "⚙️ Zpracováno " . number_format($done, 0, ',', ' ') .
+                        ($t > 0 ? " / " . number_format($t, 0, ',', ' ') : "") . " řádků" .
+                        ($pct !== null ? " ({$pct}%)" : ""),
+                        ['done' => $done, 'total' => $t, 'percent' => $pct,
+                         'inserted' => $s['inserted'], 'updated' => $s['updated']]
+                    );
+                }
+            );
+
             ProductFeed::updateFetchStatus($id, true);
-            
-            // Spáruj
+
+            // --- PÁROVÁNÍ ---
+            $writeProgress('match', '🔗 Páruju recenze s produkty...',
+                ['inserted' => $stats['inserted'], 'updated' => $stats['updated']]);
             $matchStats = ReviewMatcher::matchReviews($userId);
-            
-            // Vygeneruj exporty
+
+            // --- EXPORT ---
+            $writeProgress('export', '📄 Generuji exporty...');
             $reviews = ReviewMatcher::getExportableReviews($userId);
             if (!empty($reviews)) {
                 $xml = ExportGenerator::generateXML($reviews);
                 ExportGenerator::saveToFile($xml, "user_{$userId}_reviews_with_products.xml");
-                
                 $csv = ExportGenerator::generateCSV($reviews);
                 ExportGenerator::saveToFile($csv, "user_{$userId}_reviews_with_products.csv");
             }
@@ -164,12 +194,21 @@ class FeedController extends BaseController
                 $logId
             ]);
             
-            Session::flash('success', 
+            $duration = round(microtime(true) - $startTime);
+            $writeProgress('done', "✅ Hotovo! {$stats['total']} produktů, {$duration}s.", [
+                'inserted' => $stats['inserted'], 'updated' => $stats['updated'],
+                'total' => $stats['total'], 'matched' => $matchStats['matched'] ?? 0,
+            ]);
+            @unlink($progressFile);
+
+            Session::flash('success',
                 "Synchronizováno! Produktů: {$stats['inserted']} nových, {$stats['updated']} aktualizováno. " .
                 "Recenzí spárováno: {$matchStats['matched']}/{$matchStats['total']}"
             );
             
         } catch (\Exception $e) {
+            $writeProgress('error', '❌ Chyba: ' . $e->getMessage());
+            @unlink($progressFile);
             // Aktualizuj log - ERROR
             $duration = round(microtime(true) - $startTime);
             $updateStmt = $db->prepare('
