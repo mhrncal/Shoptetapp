@@ -119,7 +119,7 @@ class FeedParser
             }
         }
 
-        $batchSize = 100;
+        $batchSize = 500; // Batch upsert — bezpečné a rychlé
         $batch     = [];
         $lastProgress = 0;
 
@@ -215,7 +215,7 @@ class FeedParser
         }
         
         // Batch insert pro rychlost
-        $batchSize = 100; // Menší batch = méně timeout riziko
+        $batchSize = 500; // Batch upsert — bezpečné a rychlé
         $batch = [];
         
         while (($row = fgetcsv($handle, 0, $delimiter, '"', '')) !== false) {
@@ -276,61 +276,40 @@ class FeedParser
      */
     private function insertBatch(int $userId, array $batch, array &$stats): void
     {
+        if (empty($batch)) return;
         $db = Database::getInstance();
-        
+
+        // Batch UPSERT — 1 dotaz místo 2×N dotazů
+        $placeholders = implode(', ', array_fill(0, count($batch), '(?, ?, ?, ?, ?, NOW())'));
+        $sql = "INSERT INTO products (user_id, code, pair_code, name, images, created_at)
+                VALUES {$placeholders}
+                ON DUPLICATE KEY UPDATE
+                    pair_code  = VALUES(pair_code),
+                    name       = VALUES(name),
+                    images     = VALUES(images),
+                    updated_at = NOW()";
+
+        $params = [];
         foreach ($batch as $item) {
-            try {
-                // Zkontroluj jestli produkt existuje
-                $stmt = $db->prepare('
-                    SELECT id FROM products 
-                    WHERE user_id = ? AND code = ?
-                ');
-                $stmt->execute([$userId, $item['code']]);
-                $existing = $stmt->fetch();
-                
-                if ($existing) {
-                    // UPDATE
-                    $stmt = $db->prepare('
-                        UPDATE products 
-                        SET pair_code = ?,
-                            name = ?,
-                            images = ?,
-                            updated_at = NOW()
-                        WHERE id = ?
-                    ');
-                    
-                    $stmt->execute([
-                        $item['pair_code'],
-                        $item['name'],
-                        json_encode($item['images']),
-                        $existing['id']
-                    ]);
-                    
-                    $stats['updated']++;
-                } else {
-                    // INSERT
-                    $stmt = $db->prepare('
-                        INSERT INTO products 
-                        (user_id, code, pair_code, name, shoptet_id, images, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, NOW())
-                    ');
-                    
-                    $stmt->execute([
-                        $userId,
-                        $item['code'],
-                        $item['pair_code'],
-                        $item['name'],
-                        $item['code'], // shoptet_id = code jako fallback
-                        json_encode($item['images'])
-                    ]);
-                    
-                    $stats['inserted']++;
-                }
-                
-            } catch (\Exception $e) {
-                error_log("FeedParser insert error: " . $e->getMessage());
-                $stats['errors']++;
-            }
+            $params[] = $userId;
+            $params[] = $item['code'];
+            $params[] = $item['pair_code'];
+            $params[] = $item['name'];
+            $params[] = json_encode($item['images']);
+        }
+
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            // MySQL rowCount: 1 = insert, 2 = update
+            $affected = $stmt->rowCount();
+            $updated  = (int)floor($affected / 2);
+            $inserted = $affected - ($updated * 2);
+            $stats['inserted'] += max(0, $inserted);
+            $stats['updated']  += $updated;
+        } catch (\Exception $e) {
+            error_log("FeedParser insertBatch error: " . $e->getMessage());
+            $stats['errors'] += count($batch);
         }
     }
     
