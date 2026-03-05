@@ -88,25 +88,30 @@ class ReviewMatcher
         $stmt->execute([$userId]);
         $reviews = $stmt->fetchAll();
         
-        // Přidej fotky z review_photos
+        if (empty($reviews)) return [];
+
+        // Načti všechny fotky najednou (1 dotaz místo N)
+        $ids = implode(',', array_map('intval', array_column($reviews, 'id')));
+        $photoStmt = $db->query("
+            SELECT review_id, path FROM review_photos
+            WHERE review_id IN ($ids)
+            ORDER BY review_id, id
+        ");
+        $allPhotos = [];
+        foreach ($photoStmt->fetchAll() as $row) {
+            $allPhotos[$row['review_id']][] = $row['path'];
+        }
+
+        $appUrl = defined('APP_URL') && APP_URL ? APP_URL : '';
         foreach ($reviews as &$review) {
-            $photoStmt = $db->prepare('
-                SELECT path FROM review_photos 
-                WHERE review_id = ?
-            ');
-            $photoStmt->execute([$review['id']]);
-            $photos = $photoStmt->fetchAll(\PDO::FETCH_COLUMN);
-            
-            // Překonvertuj na absolutní URL
-            $review['review_photos'] = array_map(function($path) {
-                $appUrl = defined('APP_URL') && APP_URL ? APP_URL : '';
-                return $appUrl . '/public/uploads/' . $path;
-            }, $photos);
-            
-            // Dekóduj product images
+            $photos = $allPhotos[$review['id']] ?? [];
+            $review['review_photos'] = array_map(
+                fn($p) => $appUrl . '/public/uploads/' . $p,
+                $photos
+            );
             $review['product_images'] = json_decode($review['product_images'], true) ?? [];
         }
-        
+
         return $reviews;
     }
 }

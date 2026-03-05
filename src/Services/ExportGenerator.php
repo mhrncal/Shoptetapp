@@ -98,8 +98,9 @@ class ExportGenerator
         $csv = stream_get_contents($output);
         fclose($output);
         
-        // Konvertuj na windows-1250 pro Excel pomocí iconv
-        return iconv('UTF-8', 'windows-1250//TRANSLIT', $csv);
+        // Konvertuj na windows-1250 pro Excel pomocí iconv (s fallbackem)
+        $converted = iconv('UTF-8', 'windows-1250//TRANSLIT//IGNORE', $csv);
+        return $converted !== false ? $converted : $csv;
     }
     
     /**
