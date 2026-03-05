@@ -96,8 +96,8 @@ class FeedController extends BaseController
         }
 
         // Progress soubor — čte ho syncProgress AJAX endpoint
-        $progressFile = ROOT . '/tmp/feed_progress_' . $id . '.json';
-        if (!is_dir(ROOT . '/tmp')) { @mkdir(ROOT . '/tmp', 0775, true); }
+        $progressFile = ROOT . '/public/tmp/feed_progress_' . $id . '.json';
+        if (!is_dir(ROOT . '/public/tmp')) { @mkdir(ROOT . '/public/tmp', 0775, true); }
 
         // Log buffer — zapíše se do DB na konci + průběžně do progress souboru
         $logLines = [];
@@ -116,6 +116,14 @@ class FeedController extends BaseController
         };
 
         $writeProgress('start', 'Spouštím synchronizaci...');
+
+        // Odešli HTTP response okamžitě — PHP pokračuje na pozadí
+        if (function_exists('fastcgi_finish_request')) {
+            // Přesměruj browser na feeds stránku
+            header('Location: /feeds');
+            fastcgi_finish_request(); // Odešle response, PHP běží dál
+        }
+        ignore_user_abort(true); // Pokračuj i když browser odpojí
         
         $db = Database::getInstance();
         $startTime = microtime(true);
@@ -203,11 +211,7 @@ class FeedController extends BaseController
                 'total' => $stats['total'], 'matched' => $matchStats['matched'] ?? 0,
             ]);
             @unlink($progressFile);
-
-            Session::flash('success',
-                "Synchronizováno! Produktů: {$stats['inserted']} nových, {$stats['updated']} aktualizováno. " .
-                "Recenzí spárováno: {$matchStats['matched']}/{$matchStats['total']}"
-            );
+            // Session::flash není potřeba — browser byl přesměrován přes fastcgi_finish_request
             
         } catch (\Exception $e) {
             $writeProgress('error', '❌ Chyba: ' . $e->getMessage());
@@ -227,10 +231,8 @@ class FeedController extends BaseController
             $updateStmt->execute([$e->getMessage(), $duration, implode("\n", $logLines), $logId]);
             
             ProductFeed::updateFetchStatus($id, false, $e->getMessage());
-            Session::flash('error', 'Chyba: ' . $e->getMessage());
         }
-        
-        $this->redirect('/feeds');
+        // Response již odeslána přes fastcgi_finish_request
     }
 
     /**
@@ -333,7 +335,7 @@ class FeedController extends BaseController
         }
 
         // Přečti progress JSON soubor (zapisuje feed_sync_single.php)
-        $progressFile = ROOT . '/tmp/feed_progress_' . $feedId . '.json';
+        $progressFile = ROOT . '/public/tmp/feed_progress_' . $feedId . '.json';
 
         if (file_exists($progressFile)) {
             $data = @file_get_contents($progressFile);
