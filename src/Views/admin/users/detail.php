@@ -1,16 +1,14 @@
 <?php $pageTitle = 'Detail uživatele'; ?>
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_HTML5, 'UTF-8'); ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <a href="<?= APP_URL ?>/admin/users" class="btn btn-sm btn-outline-secondary me-2">
+<div class="mb-4">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <a href="<?= APP_URL ?>/admin/users" class="btn btn-sm btn-outline-secondary flex-shrink-0">
             <i class="bi bi-arrow-left"></i>
         </a>
-        <h4 class="fw-bold mb-0 d-inline">
-            <?= $e($targetUser['first_name'] . ' ' . $targetUser['last_name']) ?>
-        </h4>
+        <h4 class="fw-bold mb-0 text-truncate"><?= $e($targetUser['first_name'] . ' ' . $targetUser['last_name']) ?></h4>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 ps-1">
         <a href="<?= APP_URL ?>/admin/users/<?= $targetUser['id'] ?>/edit" class="btn btn-primary btn-sm">
             <i class="bi bi-pencil me-1"></i>Editovat
         </a>
@@ -18,7 +16,7 @@
         <form method="POST" action="<?= APP_URL ?>/admin/users/<?= $targetUser['id'] ?>/impersonate">
             <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
             <button class="btn btn-outline-info btn-sm">
-                <i class="bi bi-person-fill-gear me-1"></i>Impersonovat
+                <i class="bi bi-person-fill-gear me-1"></i><span class="d-none d-sm-inline">Impersonovat</span><span class="d-sm-none">Login</span>
             </button>
         </form>
         <?php endif; ?>
