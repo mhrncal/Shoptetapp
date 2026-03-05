@@ -95,20 +95,31 @@ class FeedController extends BaseController
             $this->redirect('/feeds');
         }
 
-        // Zkontroluj jestli už nějaký sync pro tohoto uživatele běží
         $db = Database::getInstance();
+
+        // Atomický mutex přes MySQL GET_LOCK — zabrání race condition při rychlém dvojkliku
+        $lockName = 'shopcode_sync_user_' . $userId;
+        $locked = $db->query("SELECT GET_LOCK('{$lockName}', 0)")->fetchColumn();
+        if (!$locked) {
+            // Jiný sync právě startuje — tiše ignoruj
+            $this->redirect('/feeds');
+            if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+            return;
+        }
+
+        // Zkontroluj jestli už nějaký sync běží
         $runningStmt = $db->prepare('
-            SELECT l.id, f.name FROM feed_sync_log l
+            SELECT l.id FROM feed_sync_log l
             JOIN product_feeds f ON f.id = l.feed_id
             WHERE f.user_id = ? AND l.status = "running"
             LIMIT 1
         ');
         $runningStmt->execute([$userId]);
-        $alreadyRunning = $runningStmt->fetch();
-        if ($alreadyRunning) {
+        if ($runningStmt->fetch()) {
+            $db->query("SELECT RELEASE_LOCK('{$lockName}')");
             $this->redirect('/feeds');
-            fastcgi_finish_request();
-            return; // Tiše ignoruj — UI má tlačítko disabled
+            if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+            return;
         }
 
         // Progress soubor — čte ho syncProgress AJAX endpoint
@@ -151,6 +162,9 @@ class FeedController extends BaseController
         ');
         $logStmt->execute([$id]);
         $logId = (int)$db->lastInsertId();
+
+        // Uvolni mutex — running záznam v DB teď chrání před dalším spuštěním
+        $db->query("SELECT RELEASE_LOCK('{$lockName}')");
         
         try {
             $parser = new FeedParser();
