@@ -82,7 +82,7 @@ class FeedController extends BaseController
      */
     public function sync(): void
     {
-        set_time_limit(1800);
+        set_time_limit(0); // bez limitu — Rosti.cz má 30s default
         ini_set('memory_limit', '512M');
 
         $this->validateCsrf();
@@ -197,8 +197,7 @@ class FeedController extends BaseController
                     products_total = ?,
                     reviews_matched = ?,
                     reviews_total = ?,
-                    duration_seconds = ?,
-                    log_text = ?
+                    duration_seconds = ?
                 WHERE id = ?
             ');
             $updateStmt->execute([
@@ -208,7 +207,6 @@ class FeedController extends BaseController
                 $matchStats['matched'] ?? 0,
                 $matchStats['total'] ?? 0,
                 $duration,
-                implode("\n", $logLines),
                 $logId
             ]);
             
@@ -231,11 +229,10 @@ class FeedController extends BaseController
                 SET finished_at = NOW(),
                     status = "error",
                     error_message = ?,
-                    duration_seconds = ?,
-                    log_text = ?
+                    duration_seconds = ?
                 WHERE id = ?
             ');
-            $updateStmt->execute([$e->getMessage(), $duration, implode("\n", $logLines), $logId]);
+            $updateStmt->execute([$e->getMessage(), $duration, $logId]);
             
             ProductFeed::updateFetchStatus($id, false, $e->getMessage());
         }
