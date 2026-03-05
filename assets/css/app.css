@@ -1005,3 +1005,32 @@ pre, code, .font-monospace {
     margin-left: calc(var(--bs-gutter-x) * -0.5);
     margin-right: calc(var(--bs-gutter-x) * -0.5);
 }
+
+/* === Kritické opravy mobilního overflow === */
+/* Bootstrap row negativní marginy přetékají z wrapperu */
+#page-content {
+    overflow-x: hidden;
+}
+#page-content .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+#page-content main {
+    overflow-x: hidden;
+}
+/* Tabulky — vždy scrollovatelné, ne přetékající */
+.table-responsive {
+    overflow-x: auto;
+    max-width: 100%;
+}
+/* Dlouhé texty, URL, kódy */
+td, th {
+    max-width: 0; /* nutí buňky dodržovat šířku tabulky */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Výjimka — td bez ořezu */
+td.td-no-truncate {
+    max-width: none;
+    overflow: visible;
+}

@@ -103,8 +103,8 @@ if (!empty($latestCompleted)):
                 <thead>
                     <tr>
                         <th>Název</th>
-                        <th>Typ</th>
-                        <th>Poslední sync</th>
+                        <th class="d-none d-md-table-cell">Typ</th>
+                        <th class="d-none d-md-table-cell">Poslední sync</th>
                         <th>Status</th>
                         <th>Akce</th>
                     </tr>
@@ -119,7 +119,7 @@ if (!empty($latestCompleted)):
                 <tr class="<?= $isRunning ? 'table-warning' : '' ?>">
                     <td>
                         <div class="fw-semibold"><?= $e($feed['name']) ?></div>
-                        <div class="text-muted font-monospace" style="font-size:.72rem;"><?= $e(substr($feed['url'], 0, 60)) ?>…</div>
+                        <div class="text-muted" style="font-size:.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;"><?= $e($feed['url']) ?></div>
                         <?php if ($isRunning): ?>
                         <span class="badge bg-warning text-dark mt-1" id="progress-<?= $feed['id'] ?>">
                             <span class="spinner-border spinner-border-sm"></span>
@@ -127,8 +127,8 @@ if (!empty($latestCompleted)):
                         </span>
                         <?php endif; ?>
                     </td>
-                    <td><span class="badge <?= $feed['type'] === 'csv_with_images' ? 'bg-info' : 'bg-secondary' ?>"><?= $feed['type'] === 'csv_with_images' ? 'S obrázky' : 'Základní' ?></span></td>
-                    <td class="small text-muted"><?= $feed['last_fetch_at'] ? date('d.m.Y H:i', strtotime($feed['last_fetch_at'])) : '—' ?></td>
+                    <td class="d-none d-md-table-cell"><span class="badge <?= $feed['type'] === 'csv_with_images' ? 'bg-info' : 'bg-secondary' ?>"><?= $feed['type'] === 'csv_with_images' ? 'S obrázky' : 'Základní' ?></span></td>
+                    <td class="small text-muted d-none d-md-table-cell"><?= $feed['last_fetch_at'] ? date('d.m.Y H:i', strtotime($feed['last_fetch_at'])) : '—' ?></td>
                     <td>
                         <?php if ($feed['last_fetch_status'] === 'success'): ?>
                             <span class="badge bg-success">OK</span>

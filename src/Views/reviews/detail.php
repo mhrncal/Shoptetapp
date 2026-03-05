@@ -15,7 +15,7 @@
     <?php endif; ?>
 </div>
 
-<div class="row g-4">
+<div class="row g-4" style="overflow-x:hidden;margin-left:0;margin-right:0;">
 
     <!-- Levý sloupec: fotky -->
     <div class="col-12 col-lg-7">
@@ -88,7 +88,7 @@
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">E-mail</td>
-                        <td><a href="mailto:<?= $e($review['author_email']) ?>"><?= $e($review['author_email']) ?></a></td>
+                        <td style="word-break:break-all;max-width:150px;"><a href="mailto:<?= $e($review['author_email']) ?>"><?= $e($review['author_email']) ?></a></td>
                     </tr>
                     <?php if ($review['rating']): ?>
                     <tr>

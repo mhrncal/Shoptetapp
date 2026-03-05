@@ -189,7 +189,7 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
     </nav>
 
     <!-- ── Hlavní obsah ──────────────────────────────────── -->
-    <div id="page-content">
+    <div id="page-content" style="overflow-x:hidden;max-width:100%;">
 
         <!-- Topbar -->
         <header class="topbar">

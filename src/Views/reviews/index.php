@@ -70,7 +70,7 @@
 </div>
 
 <!-- Status filtry — horizontální scroll -->
-<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -1rem;padding:0 1rem 0.5rem;">
+<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -0.75rem;padding:0 0.75rem 0.5rem;max-width:100vw;">
     <div class="d-flex gap-2 mb-3" style="flex-wrap:nowrap;min-width:max-content;">
         <?php $tabs = [
             [''        ,'Vše',       $counts['pending']+$counts['approved']+$counts['rejected'], 'secondary'],
