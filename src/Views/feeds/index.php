@@ -270,18 +270,17 @@ if (!empty($latestCompleted)):
                         <?php endif; ?>
                         <!-- Log detail -->
                         <div class="log-details d-none mt-3">
-                            <?php
-                            $logFiles = glob(ROOT . "/public/logs/feed_sync_{$log['feed_id']}_" . date('Y-m-d_H-i', strtotime($log['started_at'])) . "*.log");
-                            ?>
                             <div class="p-2 rounded" style="background:hsl(var(--muted));">
-                                <?php if (!empty($logFiles)): ?>
+                                <?php if (!empty($log['log_text'])): ?>
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="small fw-medium">Procesní log</span>
-                                    <a href="/logs/<?= basename(end($logFiles)) ?>" target="_blank" class="btn btn-xs btn-outline-secondary"><i class="bi bi-download me-1"></i>Stáhnout</a>
+                                    <span class="small fw-medium">Log synchronizace</span>
+                                    <span class="text-muted small"><?= count(explode("\n", trim($log['log_text']))) ?> řádků</span>
                                 </div>
-                                <pre class="mb-0" style="font-size:11px;max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;"><?= $e(implode("\n", array_slice(explode("\n", file_get_contents(end($logFiles))), -15))) ?></pre>
+                                <pre class="mb-0" style="font-size:11px;max-height:250px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;"><?= $e($log['log_text']) ?></pre>
+                                <?php elseif (!empty($log['error_message'])): ?>
+                                <p class="small text-danger mb-0"><i class="bi bi-exclamation-triangle me-1"></i><?= $e($log['error_message']) ?></p>
                                 <?php else: ?>
-                                <p class="small text-muted mb-0">Log soubor nenalezen</p>
+                                <p class="small text-muted mb-0">Log pro tuto synchronizaci není k dispozici</p>
                                 <?php endif; ?>
                             </div>
                         </div>

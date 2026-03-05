@@ -99,13 +99,18 @@ class FeedController extends BaseController
         $progressFile = ROOT . '/tmp/feed_progress_' . $id . '.json';
         if (!is_dir(ROOT . '/tmp')) { @mkdir(ROOT . '/tmp', 0775, true); }
 
-        $writeProgress = function(string $phase, string $msg, array $extra = []) use ($progressFile) {
-            static $start;
-            if (!$start) $start = microtime(true);
+        // Log buffer — zapíše se do DB na konci + průběžně do progress souboru
+        $logLines = [];
+        $syncStart = microtime(true);
+
+        $writeProgress = function(string $phase, string $msg, array $extra = []) use ($progressFile, &$logLines, $syncStart) {
+            $elapsed = round(microtime(true) - $syncStart);
+            $line = '[' . date('H:i:s') . '] ' . $msg;
+            $logLines[] = $line;
             file_put_contents($progressFile, json_encode(array_merge([
                 'phase'   => $phase,
                 'message' => $msg,
-                'elapsed' => round(microtime(true) - $start),
+                'elapsed' => $elapsed,
                 'time'    => date('H:i:s'),
             ], $extra), JSON_UNESCAPED_UNICODE));
         };
@@ -127,12 +132,12 @@ class FeedController extends BaseController
             $parser = new FeedParser();
 
             // --- STAHOVÁNÍ ---
-            $writeProgress('download', '⬇️ Stahuji feed...');
+            $writeProgress('download', '⬇️ Stahuji feed z: ' . $feed['url']);
             $filepath = $parser->downloadFeed($id, $feed['url']);
             if (!$filepath) throw new \RuntimeException("Chyba při stahování");
 
             $sizeMb = round(filesize($filepath) / 1048576, 1);
-            $writeProgress('parse', "⚙️ Staženo {$sizeMb} MB, zpracovávám...", ['size_mb' => $sizeMb]);
+            $writeProgress('parse', "✅ Staženo {$sizeMb} MB. Spouštím zpracování...", ['size_mb' => $sizeMb]);
 
             // --- PARSOVÁNÍ ---
             $lineCount = max(0, (int)shell_exec("wc -l < " . escapeshellarg($filepath)) - 1);
@@ -154,6 +159,8 @@ class FeedController extends BaseController
             );
 
             ProductFeed::updateFetchStatus($id, true);
+            $writeProgress('match', "✅ Zpracováno {$stats['total']} produktů ({$stats['inserted']} nových, {$stats['updated']} aktualizováno). Páruju recenze...",
+                ['inserted' => $stats['inserted'], 'updated' => $stats['updated'], 'total' => $stats['total']]);
 
             // --- PÁROVÁNÍ ---
             $writeProgress('match', '🔗 Páruju recenze s produkty...',
@@ -161,7 +168,9 @@ class FeedController extends BaseController
             $matchStats = ReviewMatcher::matchReviews($userId);
 
             // --- EXPORT ---
-            $writeProgress('export', '📄 Generuji exporty...');
+            $matchCount = $matchStats['matched'] ?? 0;
+            $matchTotal = $matchStats['total'] ?? 0;
+            $writeProgress('export', "✅ Spárováno {$matchCount}/{$matchTotal} recenzí. Generuji exporty...");
             $reviews = ReviewMatcher::getExportableReviews($userId);
             if (!empty($reviews)) {
                 $xml = ExportGenerator::generateXML($reviews);
@@ -181,7 +190,8 @@ class FeedController extends BaseController
                     products_total = ?,
                     reviews_matched = ?,
                     reviews_total = ?,
-                    duration_seconds = ?
+                    duration_seconds = ?,
+                    log_text = ?
                 WHERE id = ?
             ');
             $updateStmt->execute([
@@ -191,6 +201,7 @@ class FeedController extends BaseController
                 $matchStats['matched'] ?? 0,
                 $matchStats['total'] ?? 0,
                 $duration,
+                implode("\n", $logLines),
                 $logId
             ]);
             
@@ -211,15 +222,17 @@ class FeedController extends BaseController
             @unlink($progressFile);
             // Aktualizuj log - ERROR
             $duration = round(microtime(true) - $startTime);
+            $logLines[] = '[' . date('H:i:s') . '] ERROR: ' . $e->getMessage();
             $updateStmt = $db->prepare('
                 UPDATE feed_sync_log 
                 SET finished_at = NOW(),
                     status = "error",
                     error_message = ?,
-                    duration_seconds = ?
+                    duration_seconds = ?,
+                    log_text = ?
                 WHERE id = ?
             ');
-            $updateStmt->execute([$e->getMessage(), $duration, $logId]);
+            $updateStmt->execute([$e->getMessage(), $duration, implode("\n", $logLines), $logId]);
             
             ProductFeed::updateFetchStatus($id, false, $e->getMessage());
             Session::flash('error', 'Chyba: ' . $e->getMessage());
