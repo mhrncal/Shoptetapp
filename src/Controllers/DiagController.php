@@ -103,36 +103,6 @@ class DiagController extends BaseController
         echo "httpbin.org: HTTP $code " . ($err ? "ERROR: $err" : "OK") . "\n";
 
         echo "\n=== Konec diagnostiky ===\n";
-
-        // Spusť migraci pokud je požadována
-        if (isset($_GET['migrate'])) {
-            echo "\n=== Migrace ===\n";
-            try {
-                $pdo->exec("ALTER TABLE `product_videos` ADD COLUMN `autoplay` TINYINT(1) NOT NULL DEFAULT 0 AFTER `sort_order`");
-                echo "OK — sloupec autoplay přidán\n";
-            } catch (\Exception $ex) {
-                echo "INFO: " . $ex->getMessage() . "\n";
-            }
-        }
-
         exit;
     }
-    public function runMigration(): void
-    {
-        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
-            http_response_code(403); die('Forbidden');
-        }
-
-        header('Content-Type: text/plain; charset=utf-8');
-
-        try {
-            $pdo = \ShopCode\Core\Database::getInstance();
-            $pdo->exec("ALTER TABLE `product_videos` ADD COLUMN `autoplay` TINYINT(1) NOT NULL DEFAULT 0 AFTER `sort_order`");
-            echo "OK — sloupec autoplay přidán do product_videos";
-        } catch (\Exception $e) {
-            echo "INFO: " . $e->getMessage();
-        }
-        exit;
-    }
-
 }

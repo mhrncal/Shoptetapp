@@ -87,13 +87,10 @@ class ProductTabController extends BaseController
             'title'      => trim($this->request->post('title', '')),
             'url'        => $url,
             'sort_order' => (int)$this->request->post('sort_order', 0),
-            'autoplay'   => $this->request->post('autoplay'),
         ]);
 
-        // Redirect zpět — buď na /product-videos nebo na detail produktu
-        $referer = $this->request->post('_referer', '');
         Session::flash('success', 'Video přidáno.');
-        $this->redirect($referer === 'videos' ? '/product-videos' : '/products/' . $productId . '#videos');
+        $this->redirect('/products/' . $productId . '#videos');
     }
 
     public function videoDelete(): void
@@ -115,45 +112,18 @@ class ProductTabController extends BaseController
         $userId = $this->user['id'];
         $db     = \ShopCode\Core\Database::getInstance();
 
-        // Načti produkty seskupené podle pair_code
-        $stmt = $db->prepare('
-            SELECT id, name, code, pair_code
-            FROM products
-            WHERE user_id = ?
-            ORDER BY name ASC
-        ');
-        $stmt->execute([$userId]);
-        $allProducts = $stmt->fetchAll();
-
-        // Seskup podle pair_code — produkty se stejným pair_code patří k sobě
-        $groups = [];
-        foreach ($allProducts as $p) {
-            $key = $p['pair_code'] ?: ('__single_' . $p['id']);
-            $groups[$key][] = $p;
-        }
-
-        // Načti videa pro každý produkt
-        $videoStmt = $db->prepare('
-            SELECT pv.*, p.name as product_name, p.code as product_code
+        $videos = $db->prepare('
+            SELECT pv.*, p.name as product_name, p.id as product_id
             FROM product_videos pv
             JOIN products p ON p.id = pv.product_id
             WHERE p.user_id = ?
-            ORDER BY pv.sort_order ASC, pv.id ASC
+            ORDER BY pv.created_at DESC
         ');
-        $videoStmt->execute([$userId]);
-        $allVideos = $videoStmt->fetchAll();
-
-        // Index videí podle product_id
-        $videosByProduct = [];
-        foreach ($allVideos as $v) {
-            $videosByProduct[$v['product_id']][] = $v;
-        }
+        $videos->execute([$userId]);
 
         $this->view('product_videos/index', [
-            'pageTitle'       => 'Videa k produktům',
-            'groups'          => $groups,
-            'videosByProduct' => $videosByProduct,
-            'csrfToken'       => \ShopCode\Core\Session::getCsrfToken(),
+            'pageTitle' => 'Videa k produktům',
+            'videos'    => $videos->fetchAll(),
         ]);
     }
 
@@ -175,46 +145,6 @@ class ProductTabController extends BaseController
             'pageTitle' => 'Vlastní záložky',
             'tabs'      => $tabs->fetchAll(),
         ]);
-    }
-
-    /**
-     * Toggle autoplay videa (AJAX)
-     */
-    public function videoToggleAutoplay(): void
-    {
-        $this->validateCsrf();
-        $userId  = $this->user['id'];
-        $videoId = (int)$this->request->param('id');
-        $video   = ProductVideo::findById($videoId, $userId);
-        if (!$video) Response::notFound();
-
-        $newVal = (int)!$video['autoplay'];
-        ProductVideo::update($videoId, $userId, [
-            'title'      => $video['title'],
-            'url'        => $video['url'],
-            'sort_order' => $video['sort_order'],
-            'autoplay'   => $newVal,
-        ]);
-
-        header('Content-Type: application/json');
-        echo json_encode(['autoplay' => $newVal]);
-        exit;
-    }
-
-    /**
-     * Smaž video — redirect zpět na /product-videos
-     */
-    public function videoDeleteFromIndex(): void
-    {
-        $this->validateCsrf();
-        $userId  = $this->user['id'];
-        $videoId = (int)$this->request->param('id');
-        $video   = ProductVideo::findById($videoId, $userId);
-        if (!$video) Response::notFound();
-
-        ProductVideo::delete($videoId, $userId);
-        Session::flash('success', 'Video smazáno.');
-        $this->redirect('/product-videos');
     }
 
 }

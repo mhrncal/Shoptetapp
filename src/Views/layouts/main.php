@@ -166,7 +166,17 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
             <li class="sidebar-section-title">Administrace</li>
             <li>
                 <a href="<?= APP_URL ?>/admin" class="nav-link <?= $active('/admin') ?>">
-                    <i class="bi bi-shield-check"></i> Admin panel
+                    <i class="bi bi-shield-check"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="<?= APP_URL ?>/admin/users" class="nav-link <?= $active('/admin/users') ?>">
+                    <i class="bi bi-people"></i> Uživatelé
+                </a>
+            </li>
+            <li>
+                <a href="<?= APP_URL ?>/admin/users/create" class="nav-link <?= $active('/admin/users/create') ?>">
+                    <i class="bi bi-person-plus"></i> Přidat uživatele
                 </a>
             </li>
             <?php endif; ?>
