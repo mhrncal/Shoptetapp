@@ -221,7 +221,7 @@ class FeedController extends BaseController
             @unlink($progressFile);
 
             // Smaž staré logy z DB (starší 30 dní)
-            $db->prepare('DELETE FROM feed_sync_log WHERE started_at < DATE_SUB(NOW(), INTERVAL 30 DAY) AND feed_id IN (SELECT id FROM product_feeds WHERE user_id = ?)')
+            $db->prepare('DELETE FROM feed_sync_log WHERE started_at < DATE_SUB(NOW(), INTERVAL 3 DAY) AND feed_id IN (SELECT id FROM product_feeds WHERE user_id = ?)')
                ->execute([$userId]);
 
         } catch (\Exception $e) {
@@ -414,7 +414,7 @@ class FeedController extends BaseController
      */
     public function downloadLog(): void
     {
-        $id     = (int)($this->params['id'] ?? 0);
+        $id     = (int)($this->request->params['id'] ?? 0);
         $userId = $this->user['id'];
         $db     = Database::getInstance();
 
