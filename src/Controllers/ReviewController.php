@@ -121,9 +121,7 @@ class ReviewController extends BaseController
                 break;
 
             case 'download_zip':
-                // Redirect na downloadZip metodu
-                $_POST['ids'] = $ids;
-                $this->downloadZip();
+                $this->downloadZip($ids);
                 return;
                 
             case 'delete':
@@ -208,10 +206,11 @@ class ReviewController extends BaseController
     /**
      * Hromadné stažení fotek jako ZIP
      */
-    public function downloadZip(): void
+    public function downloadZip(?array $ids = null): void
     {
-        $ids = (array)$this->request->post('ids', []);
-        $ids = array_filter(array_map('intval', $ids));
+        if ($ids === null) {
+            $ids = array_filter(array_map('intval', (array)$this->request->post('ids', [])));
+        }
         
         if (empty($ids)) {
             Session::flash('error', 'Nevybrali jste žádné recenze');

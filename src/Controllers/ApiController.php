@@ -47,13 +47,13 @@ class ApiController
         $this->requirePermission('products:read');
 
         $userId  = ApiAuthMiddleware::userId();
-        $page    = max(1, (int)($_GET['page'] ?? 1));
-        $perPage = min(self::MAX_PER_PAGE, max(1, (int)($_GET['per_page'] ?? self::DEFAULT_PER_PAGE)));
+        $page    = max(1, (int)($this->request->get('page', 1)));
+        $perPage = min(self::MAX_PER_PAGE, max(1, (int)($this->request->get('per_page') ?? self::DEFAULT_PER_PAGE)));
         $filters = array_filter([
-            'search'   => $_GET['search']   ?? '',
-            'category' => $_GET['category'] ?? '',
-            'brand'    => $_GET['brand']    ?? '',
-            'sort'     => $_GET['sort']     ?? '',
+            'search'   => $this->request->get('search')   ?? '',
+            'category' => $this->request->get('category', ''),
+            'brand'    => $this->request->get('brand')    ?? '',
+            'sort'     => $this->request->get('sort')     ?? '',
         ]);
 
         $items = Product::all($userId, $filters, $page, $perPage);
@@ -100,9 +100,9 @@ class ApiController
     {
         $this->requirePermission('faq:read');
         $userId    = ApiAuthMiddleware::userId();
-        $productId = isset($_GET['product_id']) ? (int)$_GET['product_id'] : null;
+        $productId = ($this->request->get('product_id') !== null) ? (int)\$this->request->get('product_id', 0) : null;
 
-        $filters = ['search' => $_GET['search'] ?? ''];
+        $filters = ['search' => $this->request->get('search', '')];
         if ($productId) $filters['product_id'] = $productId;
 
         $items = Faq::allForUser($userId, $filters);
@@ -147,8 +147,8 @@ class ApiController
         $this->requirePermission('events:read');
         $userId  = ApiAuthMiddleware::userId();
         $filters = ['is_active' => 1];
-        if (!empty($_GET['upcoming'])) $filters['upcoming'] = true;
-        if (!empty($_GET['past']))     $filters['past']     = true;
+        if ((bool)\$this->request->get('upcoming')) $filters['upcoming'] = true;
+        if ((bool)\$this->request->get('past'))     $filters['past']     = true;
 
         $items = Event::allForUser($userId, $filters);
         $this->json(['data' => $items, 'total' => count($items)]);
