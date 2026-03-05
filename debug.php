@@ -1,4 +1,9 @@
 <?php
+// PRODUCTION GUARD — smaž nebo zakomentuj pro produkci
+if (!isset($_GET['dev_key']) || $_GET['dev_key'] !== (defined('APP_DEBUG_KEY') ? APP_DEBUG_KEY : '')) {
+    http_response_code(404);
+    die('Not found');
+}
 /**
  * Debug skript - zjisti proč je prázdná stránka
  * Otevři: https://aplikace.shopcode.cz/debug.php
