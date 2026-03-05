@@ -74,53 +74,50 @@
         <div class="card border-0">
             <div class="card-header"><h6 class="mb-0 fw-semibold"><i class="bi bi-clock me-2 text-muted"></i>Otevírací doby</h6></div>
             <div class="card-body p-0">
-                <div class="table-responsive"><table class="table table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th style="width:50px;">Den</th>
-                            <th style="width:70px;" class="text-center">Zavřeno</th>
-                            <th>Od</th>
-                            <th>Do</th>
-                            <th>Poznámka</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($days as $d => $dayName):
-                        $dayH = $h[$d] ?? [];
-                        $closed = !empty($dayH['is_closed']);
-                    ?>
-                    <tr class="hour-row" data-day="<?= $d ?>">
-                        <td class="fw-semibold small"><?= $dayName ?></td>
-                        <td class="text-center">
-                            <div class="form-check d-flex justify-content-center mb-0">
-                                <input class="form-check-input closed-toggle" type="checkbox"
-                                       name="hours[<?= $d ?>][is_closed]" value="1"
-                                       <?= $closed ? 'checked' : '' ?>>
-                            </div>
-                        </td>
-                        <td>
+                <!-- Mobil: každý den jako řádek, bez tabulky -->
+                <div class="d-flex flex-column">
+                <?php foreach ($days as $d => $dayName):
+                    $dayH   = $h[$d] ?? [];
+                    $closed = !empty($dayH['is_closed']);
+                ?>
+                <div class="hour-row border-bottom px-3 py-2" data-day="<?= $d ?>">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fw-semibold small" style="min-width:40px;"><?= $dayName ?></span>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+                            <input class="form-check-input closed-toggle" type="checkbox"
+                                   role="switch"
+                                   name="hours[<?= $d ?>][is_closed]" value="1"
+                                   id="closed_<?= $d ?>"
+                                   <?= $closed ? 'checked' : '' ?>>
+                            <label class="form-check-label small text-muted" for="closed_<?= $d ?>">Zavřeno</label>
+                        </div>
+                    </div>
+                    <div class="row g-2 <?= $closed ? 'opacity-50' : '' ?> time-fields">
+                        <div class="col-5">
+                            <label class="form-label form-label-sm text-muted mb-1" style="font-size:.72rem;">Od</label>
                             <input type="time" name="hours[<?= $d ?>][open_from]"
                                    class="form-control form-control-sm time-input"
                                    value="<?= $e(substr($dayH['open_from'] ?? '09:00',0,5)) ?>"
                                    <?= $closed ? 'disabled' : '' ?>>
-                        </td>
-                        <td>
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label form-label-sm text-muted mb-1" style="font-size:.72rem;">Do</label>
                             <input type="time" name="hours[<?= $d ?>][open_to]"
                                    class="form-control form-control-sm time-input"
                                    value="<?= $e(substr($dayH['open_to'] ?? '17:00',0,5)) ?>"
                                    <?= $closed ? 'disabled' : '' ?>>
-                        </td>
-                        <td>
+                        </div>
+                        <div class="col-12">
                             <input type="text" name="hours[<?= $d ?>][note]"
                                    class="form-control form-control-sm"
-                                   placeholder="Polední pauza..."
+                                   placeholder="Poznámka (polední pauza...)"
                                    value="<?= $e($dayH['note'] ?? '') ?>"
                                    <?= $closed ? 'disabled' : '' ?>>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table></div>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                </div>
 
                 <!-- Rychlé akce -->
                 <div class="p-3 border-top">
@@ -144,10 +141,10 @@
 <script>
 // Toggle zavřeno → disable vstupů
 $(document).on('change', '.closed-toggle', function() {
-    var row = $(this).closest('tr');
+    var row = $(this).closest('.hour-row');
     var closed = $(this).is(':checked');
+    row.find('.time-fields').toggleClass('opacity-50', closed);
     row.find('.time-input, input[type=text]').prop('disabled', closed);
-    row.toggleClass('text-muted', closed);
 });
 
 function setWeekdays() {
