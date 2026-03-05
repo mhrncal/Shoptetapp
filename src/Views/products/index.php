@@ -134,7 +134,23 @@ if (!empty($productIds)) {
     <?php if ($total > $perPage): ?>
     <div class="card-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
         <small class="text-muted"><?= (($page-1)*$perPage)+1 ?>–<?= min($page*$perPage, $total) ?> z <?= number_format($total) ?></small>
-        <nav><ul class="pagination pagination-sm mb-0"><?php $pages = (int)ceil($total / $perPage); $start = max(1, $page - 2); $end = min($pages, $page + 2); $qs = http_build_query(array_merge($filters, ['page' => 0])); ?><?php if ($page > 1): ?><li class="page-item"><a class="page-link" href="?<?= str_replace('page=0','page='.($page-1),$qs) ?>"><?php include '_pagination.php'; ?>#8249;</a></li><?php endif; ?><?php for ($i = $start; $i <= $end; $i++): ?><li class="page-item <?= $i === $page ? 'active' : '' ?>"><a class="page-link" href="?<?= str_replace('page=0','page='.($i),$qs) ?>"><?= $i ?></a></li><?php endfor; ?><?php if ($page < $pages): ?><li class="page-item"><a class="page-link" href="?<?= str_replace('page=0','page='.($page+1),$qs) ?>"><?php include '_pagination.php'; ?>#8250;</a></li><?php endif; ?></ul></nav>
+        <nav><ul class="pagination pagination-sm mb-0">
+<?php
+$pages = (int)ceil($total / $perPage);
+$start = max(1, $page - 2);
+$end   = min($pages, $page + 2);
+$qs    = http_build_query(array_merge($filters, ['page' => 0]));
+?>
+<?php if ($page > 1): ?>
+<li class="page-item"><a class="page-link" href="?<?= str_replace('page=0','page='.($page-1),$qs) ?>">&#8249;</a></li>
+<?php endif; ?>
+<?php for ($i = $start; $i <= $end; $i++): ?>
+<li class="page-item <?= $i === $page ? 'active' : '' ?>"><a class="page-link" href="?<?= str_replace('page=0','page='.$i,$qs) ?>"><?= $i ?></a></li>
+<?php endfor; ?>
+<?php if ($page < $pages): ?>
+<li class="page-item"><a class="page-link" href="?<?= str_replace('page=0','page='.($page+1),$qs) ?>">&#8250;</a></li>
+<?php endif; ?>
+</ul></nav>
     </div>
     <?php endif; ?>
 </div>
