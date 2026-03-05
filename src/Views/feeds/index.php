@@ -301,58 +301,7 @@ if (!empty($latestCompleted)):
 <?php endif; ?>
 
 <script>
-<?php if (!empty($runningFeeds)): ?>
-let cd = 10;
-const cdEl = document.getElementById('countdown');
-setInterval(() => { cd--; if (cdEl) cdEl.textContent = cd; if (cd <= 0) location.reload(); }, 1000);
-<?php endif; ?>
-document.querySelectorAll('.sync-form').forEach(form => {
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const feedId = form.querySelector('input[name="id"]').value;
-        const btn    = form.querySelector('button[type="submit"]');
-        const progEl = document.getElementById('progress-' + feedId);
-
-        // Zobraz spinner
-        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
-        document.getElementById('syncProgress').style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // Odešli form přes AJAX
-        const fd = new FormData(form);
-        fetch(form.action, { method: 'POST', body: fd })
-            .then(r => { if (r.redirected || r.ok) location.reload(); })
-            .catch(() => location.reload());
-
-        // Spusť polling ihned
-        startProgressPolling(feedId);
-    });
-});
-
-function startProgressPolling(feedId) {
-    const interval = setInterval(() => {
-        fetch('/feeds/sync-progress?feed_id=' + feedId)
-            .then(r => r.json())
-            .then(data => {
-                updateProgressUI(feedId, data);
-                if (data.status === 'done' || data.status === 'not_running') {
-                    clearInterval(interval);
-                    setTimeout(() => location.reload(), 1500);
-                }
-            })
-            .catch(() => {});
-    }, 2000);
-}
-[].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')).map(el => new bootstrap.Tooltip(el));
-<?php
-$runningFeedIds = [];
-foreach ($feeds as $f) {
-    foreach ($timeline ?? [] as $log) {
-        if ($log['feed_id'] == $f['id'] && $log['status'] === 'running') { $runningFeedIds[] = $f['id']; break; }
-    }
-}
-if (!empty($runningFeedIds)):
-?>
+// ── updateProgressUI — vždy definovaná ──────────────────────────
 function updateProgressUI(feedId, data) {
     const el = document.getElementById('progress-' + feedId);
     if (!el) return;
@@ -400,16 +349,61 @@ function updateProgressUI(feedId, data) {
             textEl.after(span);
         }
     }
-    if (data.status === 'done' || data.status === 'not_running') {
-        setTimeout(() => location.reload(), 1500);
+}
+
+// ── Polling konkrétního feedu ────────────────────────────────────
+function startProgressPolling(feedId) {
+    const interval = setInterval(() => {
+        fetch('/feeds/sync-progress?feed_id=' + feedId)
+            .then(r => r.json())
+            .then(data => {
+                updateProgressUI(feedId, data);
+                if (data.status === 'done' || data.status === 'not_running') {
+                    clearInterval(interval);
+                    setTimeout(() => location.reload(), 1500);
+                }
+            })
+            .catch(() => {});
+    }, 2000);
+}
+
+// ── Submit formulářů ─────────────────────────────────────────────
+document.querySelectorAll('.sync-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const feedId = form.querySelector('input[name="id"]').value;
+        const btn    = form.querySelector('button[type="submit"]');
+        // Disabled všechna sync tlačítka
+        document.querySelectorAll('.sync-form button[type="submit"]').forEach(b => {
+            b.disabled = true;
+            if (b === btn) b.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        });
+        document.getElementById('syncProgress').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const fd = new FormData(form);
+        fetch(form.action, { method: 'POST', body: fd })
+            .catch(() => {});
+        startProgressPolling(feedId);
+    });
+});
+
+// ── Pokud něco už běží při načtení stránky ───────────────────────
+<?php
+$runningFeedIds = [];
+foreach ($feeds as $f) {
+    foreach ($timeline ?? [] as $log) {
+        if ($log['feed_id'] == $f['id'] && $log['status'] === 'running') { $runningFeedIds[] = (int)$f['id']; break; }
     }
 }
-function updateProgress() {
-    <?php foreach ($runningFeedIds as $fid): ?>
-    fetch('/feeds/sync-progress?feed_id=<?= $fid ?>').then(r=>r.json()).then(d => updateProgressUI(<?= $fid ?>, d)).catch(()=>{});
-    <?php endforeach; ?>
-}
-setInterval(updateProgress, 2000);
-updateProgress();
+if (!empty($runningFeedIds)):
+?>
+<?php foreach ($runningFeedIds as $fid): ?>
+startProgressPolling(<?= $fid ?>);
+<?php endforeach; ?>
+let cd = 10;
+const cdEl = document.getElementById('countdown');
+setInterval(() => { cd--; if (cdEl) cdEl.textContent = cd; if (cd <= 0) location.reload(); }, 1000);
 <?php endif; ?>
+
+[].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')).map(el => new bootstrap.Tooltip(el));
 </script>

@@ -15,9 +15,10 @@ class BranchController extends BaseController
             $b['hours'] = Branch::getHours($b['id']);
         }
         $this->view('branches/index', [
-            'pageTitle' => 'Pobočky',
-            'branches'  => $branches,
-            'days'      => Branch::DAYS,
+            'pageTitle'  => 'Pobočky',
+            'branches'   => $branches,
+            'days'       => Branch::DAYS,
+            'csrfToken'  => \ShopCode\Core\Session::getCsrfToken(),
         ]);
     }
 
@@ -44,14 +45,27 @@ class BranchController extends BaseController
     {
         $id     = (int)$this->request->param('id');
         $userId = $this->user['id'];
+
+        if ($id === 0) {
+            // Nová pobočka
+            $this->view('branches/edit', [
+                'pageTitle'  => 'Nová pobočka',
+                'branch'     => null,
+                'days'       => Branch::DAYS,
+                'csrfToken'  => \ShopCode\Core\Session::getCsrfToken(),
+            ]);
+            return;
+        }
+
         $branch = Branch::findById($id, $userId);
         if (!$branch) Response::notFound();
 
         $branch['hours'] = Branch::getHours($id);
         $this->view('branches/edit', [
-            'pageTitle' => 'Upravit pobočku',
-            'branch'    => $branch,
-            'days'      => Branch::DAYS,
+            'pageTitle'  => 'Upravit pobočku',
+            'branch'     => $branch,
+            'days'       => Branch::DAYS,
+            'csrfToken'  => \ShopCode\Core\Session::getCsrfToken(),
         ]);
     }
 

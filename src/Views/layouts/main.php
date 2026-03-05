@@ -115,7 +115,7 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
 
             <?php if ($hasModule('product_videos')): ?>
             <li>
-                <a href="<?= APP_URL ?>/products" class="nav-link">
+                <a href="<?= APP_URL ?>/product-videos" class="nav-link <?= $active('/product-videos') ?>">
                     <i class="bi bi-play-circle"></i> Videa k produktům
                 </a>
             </li>
@@ -123,7 +123,7 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
 
             <?php if ($hasModule('product_tabs')): ?>
             <li>
-                <a href="<?= APP_URL ?>/products" class="nav-link">
+                <a href="<?= APP_URL ?>/product-tabs" class="nav-link <?= $active('/product-tabs') ?>">
                     <i class="bi bi-bookmark"></i> Vlastní záložky
                 </a>
             </li>
@@ -226,7 +226,7 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
         <?php endif; ?>
 
         <!-- Obsah stránky -->
-        <main class="p-4 animate-fade-in">
+        <main class="p-3 p-md-4 animate-fade-in">
             <?= $content ?>
         </main>
     </div>

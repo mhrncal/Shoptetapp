@@ -108,6 +108,9 @@ return [
     ['GET', '/api/v1/products',      'ApiController@products', []],
     ['GET', '/api/v1/products/{id}', 'ApiController@product',  []],
     ['GET', '/api/v1/faq',           'ApiController@faq',      []],
+    ['GET',    '/product-videos',  'ProductTabController@videosIndex',  ['auth','approved','module:product_videos']],
+    ['GET',    '/product-tabs',    'ProductTabController@tabsIndex',    ['auth','approved','module:product_tabs']],
+
     ['GET', '/api/v1/branches',      'ApiController@branches', []],
     ['GET', '/api/v1/events',        'ApiController@events',   []],
 

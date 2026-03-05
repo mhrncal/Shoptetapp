@@ -105,4 +105,46 @@ class ProductTabController extends BaseController
         Session::flash('success', 'Video smazáno.');
         $this->redirect('/products/' . $video['product_id'] . '#videos');
     }
+    // ── Přehledové stránky ──────────────────────────────────────────
+
+    public function videosIndex(): void
+    {
+        $userId = $this->user['id'];
+        $db     = \ShopCode\Core\Database::getInstance();
+
+        $videos = $db->prepare('
+            SELECT pv.*, p.name as product_name, p.id as product_id
+            FROM product_videos pv
+            JOIN products p ON p.id = pv.product_id
+            WHERE p.user_id = ?
+            ORDER BY pv.created_at DESC
+        ');
+        $videos->execute([$userId]);
+
+        $this->view('product_videos/index', [
+            'pageTitle' => 'Videa k produktům',
+            'videos'    => $videos->fetchAll(),
+        ]);
+    }
+
+    public function tabsIndex(): void
+    {
+        $userId = $this->user['id'];
+        $db     = \ShopCode\Core\Database::getInstance();
+
+        $tabs = $db->prepare('
+            SELECT pt.*, p.name as product_name, p.id as product_id
+            FROM product_tabs pt
+            JOIN products p ON p.id = pt.product_id
+            WHERE p.user_id = ?
+            ORDER BY p.name, pt.sort_order
+        ');
+        $tabs->execute([$userId]);
+
+        $this->view('product_tabs/index', [
+            'pageTitle' => 'Vlastní záložky',
+            'tabs'      => $tabs->fetchAll(),
+        ]);
+    }
+
 }
