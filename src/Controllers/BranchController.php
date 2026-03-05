@@ -33,11 +33,14 @@ class BranchController extends BaseController
             $this->redirect('/branches');
         }
 
-        $id    = Branch::create($userId, $data);
-        $hours = $this->extractHours();
-        Branch::saveHours($id, $hours);
-
-        Session::flash('success', 'Pobočka byla přidána.');
+        try {
+            $id    = Branch::create($userId, $data);
+            $hours = $this->extractHours();
+            Branch::saveHours($id, $hours);
+            Session::flash('success', 'Pobočka byla přidána.');
+        } catch (\Exception $e) {
+            Session::flash('error', 'Chyba při ukládání: ' . $e->getMessage());
+        }
         $this->redirect('/branches');
     }
 
