@@ -38,6 +38,7 @@ return [
     ['GET', '/products',          'ProductController@index',  ['auth', 'approved']],
     ['GET', '/product-videos',    'ProductTabController@videosIndex',  ['auth','approved','module:product_videos']],
     ['GET', '/product-tabs',      'ProductTabController@tabsIndex',    ['auth','approved','module:product_tabs']],
+    ['GET', '/products/search',   'ProductController@search', ['auth', 'approved']],
     ['GET', '/products/{id}',     'ProductController@detail', ['auth', 'approved']],
 
     // ---- FAQ ------------------------------------------------
@@ -109,7 +110,6 @@ return [
     // REST API v1 (Bearer token auth)
     // ============================================================
     ['GET', '/api/v1/products',      'ApiController@products', []],
-    ['GET', '/products/search',         'ProductController@search', ['auth', 'approved']],
     ['GET', '/api/v1/products/{id}', 'ApiController@product',  []],
     ['GET', '/api/v1/faq',           'ApiController@faq',      []],
 
