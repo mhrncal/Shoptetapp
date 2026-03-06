@@ -171,9 +171,10 @@ class ProductTabController extends BaseController
         }
 
         // Načti produkty pro tyto skupiny
-        $pairCodes  = array_filter($groupKeys, fn($k) => !str_starts_with($k, '__single_'));
+        $groupKeys  = array_filter($groupKeys, fn($k) => $k !== null);
+        $pairCodes  = array_values(array_filter($groupKeys, fn($k) => !str_starts_with((string)$k, '__single_')));
         $singleIds  = array_map(fn($k) => (int)substr($k, 9),
-                          array_filter($groupKeys, fn($k) => str_starts_with($k, '__single_')));
+                          array_filter($groupKeys, fn($k) => str_starts_with((string)$k, '__single_')));
 
         $products = [];
         if (!empty($pairCodes)) {
