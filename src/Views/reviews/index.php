@@ -18,7 +18,7 @@
     $alertType = $daysLeft <= 7 ? 'danger' : ($daysLeft <= 14 ? 'warning' : 'info');
     $icon      = $daysLeft <= 7 ? 'exclamation-triangle-fill' : 'clock-history';
 ?>
-<div class="alert alert-<?= $alertType ?> d-flex align-items-center gap-3 mb-4">
+<div class="alert alert-<?= $alertType ?> d-flex align-items-center gap-3 mb-3">
     <i class="bi bi-<?= $icon ?> fs-4 flex-shrink-0"></i>
     <div class="flex-grow-1">
         <?php if ($daysLeft <= 7): ?>
@@ -35,6 +35,11 @@
         <i class="bi bi-download me-1"></i>Stáhnout zálohu
     </a>
 </div>
+<?php else: ?>
+<div class="alert alert-info d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-info-circle flex-shrink-0"></i>
+    <span class="small">Záloha fotek: fotky se automaticky mažou po 30 dnech od posledního exportu. Stáhněte zálohu pravidelně.</span>
+</div>
 <?php endif; ?>
 
 <?php if (!empty($expiry['blocked'])): ?>
@@ -44,73 +49,41 @@
 </div></div>
 <?php else: ?>
 
-<!-- Hlavička — nadpis a export odděleně na mobilu -->
-<div class="mb-3">
-    <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-        <div>
-            <h4 class="fw-bold mb-0"><i class="bi bi-camera me-2"></i>Fotorecenze</h4>
-            <p class="text-muted small mb-0">Celkem: <strong><?= $total ?></strong></p>
-        </div>
-        <!-- Export: dropdown na mobilu, řádek na desktopu -->
-        <div class="d-flex gap-2 flex-shrink-0">
-            <!-- Mobil: jeden dropdown pro export -->
-            <div class="d-sm-none">
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-download me-1"></i>Export
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/reviews/export/csv"><i class="bi bi-file-earmark-spreadsheet me-2 text-primary"></i>Stáhnout CSV</a></li>
-                        <li><a class="dropdown-item" href="/reviews/export/xml"><i class="bi bi-file-earmark-code me-2 text-success"></i>Stáhnout XML</a></li>
-                        <?php if (!empty($xmlFeedUrl)): ?>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <div class="px-3 py-1">
-                                <div class="small text-muted mb-1"><i class="bi bi-clock me-1"></i>XML Feed (denně 18:00)</div>
-                                <div class="input-group input-group-sm">
-                                    <input type="text" class="form-control font-monospace" value="<?= $e($xmlFeedUrl) ?>" readonly id="feedUrlMobile">
-                                    <button class="btn btn-outline-secondary" type="button"
-                                            onclick="navigator.clipboard.writeText(document.getElementById('feedUrlMobile').value);this.innerHTML='<i class=\'bi bi-check\'></i>'">
-                                        <i class="bi bi-clipboard"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </li>
-                        <?php endif; ?>
-                    </ul>
-                </div>
+<!-- Hlavička -->
+<div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-camera me-2"></i>Fotorecenze</h4>
+        <p class="text-muted small mb-0">Celkem: <strong><?= $total ?></strong></p>
+    </div>
+    <a href="<?= APP_URL ?>/reviews/export/xml" class="btn btn-sm btn-outline-success flex-shrink-0">
+        <i class="bi bi-download me-1"></i>Stáhnout XML
+    </a>
+</div>
+
+<!-- XML Feed URL -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="small text-muted flex-shrink-0"><i class="bi bi-link-45deg me-1"></i>URL XML feedu:</span>
+            <div class="input-group input-group-sm flex-grow-1">
+                <input type="text" class="form-control font-monospace small" value="<?= $e($xmlFeedUrl) ?>" readonly id="feedUrl">
+                <button class="btn btn-outline-secondary" type="button" id="copyFeedUrl">
+                    <i class="bi bi-clipboard"></i>
+                </button>
             </div>
-            <!-- Desktop: klasická tlačítka -->
-            <div class="d-none d-sm-flex gap-2">
-                <a href="/reviews/export/csv" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV
-                </a>
-                <a href="/reviews/export/xml" class="btn btn-sm btn-outline-success">
-                    <i class="bi bi-file-earmark-code me-1"></i>XML
-                </a>
-                <?php if (!empty($xmlFeedUrl)): ?>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-link-45deg me-1"></i>Feed
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" style="min-width:320px;">
-                        <li class="px-3 py-2">
-                            <small class="text-muted d-block mb-2"><i class="bi bi-clock me-1"></i>Automaticky generováno denně v 18:00</small>
-                            <div class="input-group input-group-sm">
-                                <input type="text" class="form-control font-monospace" value="<?= $e($xmlFeedUrl) ?>" readonly id="feedUrl">
-                                <button class="btn btn-outline-secondary" type="button"
-                                        onclick="navigator.clipboard.writeText(document.getElementById('feedUrl').value);this.innerHTML='<i class=\'bi bi-check\'></i>'">
-                                    <i class="bi bi-clipboard"></i>
-                                </button>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-                <?php endif; ?>
-            </div>
+            <?php if (!($xmlFeedExists ?? false)): ?>
+            <span class="badge bg-warning text-dark flex-shrink-0">Zatím nevygenerováno</span>
+            <?php endif; ?>
         </div>
     </div>
 </div>
+<script>
+document.getElementById('copyFeedUrl')?.addEventListener('click', function() {
+    navigator.clipboard.writeText(document.getElementById('feedUrl').value);
+    this.innerHTML = '<i class="bi bi-check"></i>';
+    setTimeout(() => this.innerHTML = '<i class="bi bi-clipboard"></i>', 2000);
+});
+</script>
 
 <!-- Status filtry — horizontální scroll -->
 <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -0.75rem;padding:0 0.75rem 0.5rem;max-width:100vw;">

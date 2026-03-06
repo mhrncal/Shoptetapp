@@ -238,6 +238,28 @@ class Review
     /**
      * Vrátí schválené, neimportované recenze pro CSV export
      */
+    public static function allApproved(int $userId): array
+    {
+        $db   = Database::getInstance();
+        $stmt = $db->prepare("
+            SELECT r.*, GROUP_CONCAT(rp.path) as photo_paths
+            FROM reviews r
+            LEFT JOIN review_photos rp ON rp.review_id = r.id AND rp.path IS NOT NULL
+            WHERE r.user_id = ? AND r.status = 'approved'
+            GROUP BY r.id
+            ORDER BY r.created_at ASC
+        ");
+        $stmt->execute([$userId]);
+        $rows = $stmt->fetchAll();
+        foreach ($rows as &$r) {
+            // Kombinuj JSON photos + review_photos tabulku
+            $jsonPhotos = $r['photos'] ? json_decode($r['photos'], true) : [];
+            $tablePaths = $r['photo_paths'] ? array_map(fn(\$p) => ['path' => \$p], explode(',', $r['photo_paths'])) : [];
+            $r['photos'] = !empty($tablePaths) ? $tablePaths : $jsonPhotos;
+        }
+        return $rows;
+    }
+
     public static function getPendingImport(int $userId): array
     {
         $db   = Database::getInstance();

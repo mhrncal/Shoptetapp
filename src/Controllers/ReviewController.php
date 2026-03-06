@@ -20,15 +20,11 @@ class ReviewController extends BaseController
         $total   = Review::count($userId, $filters);
         $counts  = Review::countByStatus($userId);
         
-        // URL k automaticky generovanému XML feedu
-        $appUrl = defined('APP_URL') ? APP_URL : '';
+        // XML feed URL — vždy stejný název
+        $appUrl     = defined('APP_URL') ? APP_URL : '';
+        $feedPath   = ROOT . '/public/feeds/user_' . $userId . '_reviews.xml';
         $xmlFeedUrl = $appUrl . '/feeds/user_' . $userId . '_reviews.xml';
-        
-        // Zkontroluj jestli feed existuje
-        $feedPath = ROOT . '/public/feeds/user_' . $userId . '_reviews.xml';
-        if (!file_exists($feedPath)) {
-            $xmlFeedUrl = null;
-        }
+        $xmlFeedExists = file_exists($feedPath);
 
         $expiry = self::photoExpiryStatus($userId);
 
@@ -42,7 +38,8 @@ class ReviewController extends BaseController
             'counts'    => $counts,
             'status'    => $status,
             'search'    => $search,
-            'xmlFeedUrl' => $xmlFeedUrl,
+            'xmlFeedUrl'    => $xmlFeedUrl,
+            'xmlFeedExists' => $xmlFeedExists ?? false,
             // csrfToken je automaticky dostupný z View::render()
         ]);
     }
@@ -169,28 +166,32 @@ class ReviewController extends BaseController
     }
 
     /**
-     * Export schválených recenzí do XML (ke stažení)
+     * Export schválených recenzí do XML — uloží trvalý feed + nabídne stažení
      */
     public function exportXml(): void
     {
         $userId  = $this->user['id'];
-        $reviews = Review::getPendingImport($userId);
-
-        if (empty($reviews)) {
-            Session::flash('error', 'Žádné schválené neimportované recenze pro export.');
-            $this->redirect('/reviews');
-        }
+        $reviews = Review::allApproved($userId);
 
         try {
             $gen     = new XmlFeedGenerator();
-            $xmlPath = $gen->generate($userId, $reviews);
+            // Vždy přegeneruj trvalý feed se stejným názvem
+            $feedUrl = $gen->generatePermanentFeed($userId, $reviews ?: []);
 
-            header('Content-Type: application/xml; charset=UTF-8');
-            header('Content-Disposition: attachment; filename="shoptet_photos_' . date('Ymd_His') . '.xml"');
-            header('Content-Length: ' . filesize($xmlPath));
-            readfile($xmlPath);
-            $gen->cleanup($xmlPath);
-            exit;
+            // Cesta k souboru pro stažení
+            $filename = 'user_' . $userId . '_reviews.xml';
+            $filepath = ROOT . '/public/feeds/' . $filename;
+
+            if (file_exists($filepath)) {
+                header('Content-Type: application/xml; charset=UTF-8');
+                header('Content-Disposition: attachment; filename="reviews.xml"');
+                header('Content-Length: ' . filesize($filepath));
+                readfile($filepath);
+                exit;
+            }
+
+            Session::flash('success', 'XML feed byl vygenerován.');
+            $this->redirect('/reviews');
 
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
