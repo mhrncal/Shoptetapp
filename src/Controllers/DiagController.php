@@ -138,6 +138,25 @@ class DiagController extends BaseController
             }
         }
 
+        // Syntax check klíčových souborů
+        echo "\n=== Syntax check ===\n";
+        $checkFiles = [
+            'src/Services/Mailer.php',
+            'src/Controllers/ReviewController.php',
+            'src/Models/Review.php',
+        ];
+        foreach ($checkFiles as $rel) {
+            $path = ROOT . '/' . $rel;
+            if (!file_exists($path)) { echo "  CHYBÍ: $rel\n"; continue; }
+            $content = file_get_contents($path);
+            // Zkontroluj use PHPMailer
+            if (strpos($content, 'use PHPMailer') !== false) {
+                echo "  PROBLÉM (use PHPMailer): $rel\n";
+            } else {
+                echo "  OK: $rel (" . strlen($content) . " bytů)\n";
+            }
+        }
+
         echo "\n=== Konec diagnostiky ===\n";
         exit;
     }
