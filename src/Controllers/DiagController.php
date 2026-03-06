@@ -120,6 +120,24 @@ class DiagController extends BaseController
         }
         if (empty($photos)) echo "  Žádné fotky v DB\n";
 
+        // Hledej soubory kdekoliv na serveru
+        echo "\n=== Hledám uploads složky ===\n";
+        $dirs = [
+            ROOT . '/public/uploads',
+            '/srv/app/public/uploads',
+            '/var/www/uploads',
+        ];
+        foreach ($dirs as $d) {
+            echo "  " . $d . ": " . (is_dir($d) ? "EXISTS" : "ne") . "\n";
+            if (is_dir($d)) {
+                $items = scandir($d);
+                foreach ($items as $item) {
+                    if ($item === '.' || $item === '..') continue;
+                    echo "    - " . $item . "\n";
+                }
+            }
+        }
+
         echo "\n=== Konec diagnostiky ===\n";
         exit;
     }
