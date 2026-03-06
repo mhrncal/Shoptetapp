@@ -140,6 +140,28 @@ class DiagController extends BaseController
 
         // Syntax check klíčových souborů
         echo "\n=== Syntax check ===\n";
+        // Načti všechny závislosti ReviewControlleru a najdi problém
+        $deps = [
+            'src/Core/Database.php',
+            'src/Core/Session.php',
+            'src/Core/Response.php',
+            'src/Core/View.php',
+            'src/Core/Mailer.php',
+            'src/Models/Review.php',
+            'src/Models/Product.php',
+            'src/Services/ImageHandler.php',
+            'src/Services/CsvGenerator.php',
+            'src/Services/XmlFeedGenerator.php',
+            'src/Services/Mailer.php',
+            'src/Models/WatermarkSettings.php',
+        ];
+        foreach ($deps as $rel) {
+            $path = ROOT . '/' . $rel;
+            if (!file_exists($path)) { echo "  CHYBÍ: $rel\n"; continue; }
+            $out = shell_exec('php -l ' . escapeshellarg($path) . ' 2>&1');
+            $ok  = strpos($out, 'No syntax errors') !== false;
+            echo ($ok ? '  OK: ' : '  SYNTAX ERR: ') . $rel . (!$ok ? " => $out" : '') . "\n";
+        }
         $checkFiles = [
             'src/Services/Mailer.php',
             'src/Controllers/ReviewController.php',
