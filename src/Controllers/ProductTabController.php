@@ -77,20 +77,42 @@ class ProductTabController extends BaseController
 
         if (!Product::findById($productId, $userId)) Response::notFound();
 
-        $url = trim($this->request->post('url', ''));
-        if (!ProductVideo::embedUrl($url)) {
-            Session::flash('error', 'Zadejte platnou YouTube nebo Vimeo URL.');
-            $this->redirect('/products/' . $productId . '#videos');
+        $referer   = $this->request->post('_referer', '');
+        $title     = trim($this->request->post('title', ''));
+        $autoplay  = $this->request->post('autoplay');
+        $url       = trim($this->request->post('url', ''));
+        $filePath  = null;
+
+        // Upload souboru nebo URL
+        $hasUpload = !empty($_FILES['video_file']['name']);
+        if ($hasUpload) {
+            $result = ProductVideo::handleUpload($_FILES['video_file'], $userId);
+            if (isset($result['error'])) {
+                Session::flash('error', $result['error']);
+                $this->redirect($referer === 'videos' ? '/product-videos' : '/products/' . $productId . '#videos');
+            }
+            $filePath = $result['file_path'];
+            $url      = null;
+        } elseif ($url) {
+            if (!ProductVideo::embedUrl($url)) {
+                Session::flash('error', 'Zadejte platnou YouTube nebo Vimeo URL.');
+                $this->redirect($referer === 'videos' ? '/product-videos' : '/products/' . $productId . '#videos');
+            }
+        } else {
+            Session::flash('error', 'Nahrajte video nebo zadejte URL.');
+            $this->redirect($referer === 'videos' ? '/product-videos' : '/products/' . $productId . '#videos');
         }
 
         ProductVideo::create($userId, $productId, [
-            'title'      => trim($this->request->post('title', '')),
+            'title'      => $title,
             'url'        => $url,
+            'file_path'  => $filePath,
             'sort_order' => (int)$this->request->post('sort_order', 0),
+            'autoplay'   => $autoplay,
         ]);
 
         Session::flash('success', 'Video přidáno.');
-        $this->redirect('/products/' . $productId . '#videos');
+        $this->redirect($referer === 'videos' ? '/product-videos' : '/products/' . $productId . '#videos');
     }
 
     public function videoDelete(): void
@@ -112,18 +134,36 @@ class ProductTabController extends BaseController
         $userId = $this->user['id'];
         $db     = \ShopCode\Core\Database::getInstance();
 
-        $videos = $db->prepare('
-            SELECT pv.*, p.name as product_name, p.id as product_id
+        // Produkty seskupené podle pair_code
+        $stmt = $db->prepare('SELECT id, name, code, pair_code FROM products WHERE user_id = ? ORDER BY name ASC');
+        $stmt->execute([$userId]);
+        $allProducts = $stmt->fetchAll();
+
+        $groups = [];
+        foreach ($allProducts as $p) {
+            $key = $p['pair_code'] ?: ('__single_' . $p['id']);
+            $groups[$key][] = $p;
+        }
+
+        // Videa indexovaná podle product_id
+        $videoStmt = $db->prepare('
+            SELECT pv.*, p.name as product_name, p.code as product_code
             FROM product_videos pv
             JOIN products p ON p.id = pv.product_id
             WHERE p.user_id = ?
-            ORDER BY pv.created_at DESC
+            ORDER BY pv.sort_order ASC, pv.id ASC
         ');
-        $videos->execute([$userId]);
+        $videoStmt->execute([$userId]);
+        $videosByProduct = [];
+        foreach ($videoStmt->fetchAll() as $v) {
+            $videosByProduct[$v['product_id']][] = $v;
+        }
 
         $this->view('product_videos/index', [
-            'pageTitle' => 'Videa k produktům',
-            'videos'    => $videos->fetchAll(),
+            'pageTitle'       => 'Videa k produktům',
+            'groups'          => $groups,
+            'videosByProduct' => $videosByProduct,
+            'csrfToken'       => \ShopCode\Core\Session::getCsrfToken(),
         ]);
     }
 
@@ -145,6 +185,38 @@ class ProductTabController extends BaseController
             'pageTitle' => 'Vlastní záložky',
             'tabs'      => $tabs->fetchAll(),
         ]);
+    }
+
+    public function videoToggleAutoplay(): void
+    {
+        $this->validateCsrf();
+        $userId  = $this->user['id'];
+        $videoId = (int)$this->request->param('id');
+        $video   = ProductVideo::findById($videoId, $userId);
+        if (!$video) Response::notFound();
+
+        $newVal = (int)!$video['autoplay'];
+        ProductVideo::update($videoId, $userId, [
+            'title'    => $video['title'],
+            'autoplay' => $newVal,
+        ]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['autoplay' => $newVal]);
+        exit;
+    }
+
+    public function videoDeleteFromIndex(): void
+    {
+        $this->validateCsrf();
+        $userId  = $this->user['id'];
+        $videoId = (int)$this->request->param('id');
+        $video   = ProductVideo::findById($videoId, $userId);
+        if (!$video) Response::notFound();
+
+        ProductVideo::delete($videoId, $userId);
+        Session::flash('success', 'Video smazáno.');
+        $this->redirect('/product-videos');
     }
 
 }
