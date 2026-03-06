@@ -81,53 +81,49 @@
         <div class="card border-0 mb-4">
             <div class="card-header"><h6 class="mb-0 fw-semibold">Informace</h6></div>
             <div class="card-body p-0">
-                <div class="table-responsive"><table class="table table-borderless mb-0">
-                    <tr>
-                        <td class="text-muted ps-3" style="width:110px;">Autor</td>
-                        <td><strong><?= $e($review['author_name']) ?></strong></td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">E-mail</td>
-                        <td style="word-break:break-all;max-width:150px;"><a href="mailto:<?= $e($review['author_email']) ?>"><?= $e($review['author_email']) ?></a></td>
-                    </tr>
-                    <?php if ($review['rating']): ?>
-                    <tr>
-                        <td class="text-muted ps-3">Hodnocení</td>
-                        <td>
-                            <?php for ($i = 1; $i <= 5; $i++): ?>
-                            <i class="bi bi-star<?= $i <= $review['rating'] ? '-fill text-warning' : ' text-muted' ?>"></i>
-                            <?php endfor; ?>
-                            (<?= $review['rating'] ?>/5)
-                        </td>
-                    </tr>
-                    <?php endif; ?>
-                    <?php if (($review['product_name'] ?? null)): ?>
-                    <tr>
-                        <td class="text-muted ps-3">Produkt</td>
-                        <td>
-                            <a href="<?= APP_URL ?>/products/<?= $review['product_id'] ?>">
-                                <?= $e(($review['product_name'] ?? null)) ?>
-                            </a>
-                        </td>
-                    </tr>
-                    <?php endif; ?>
-                    <?php if ($review['sku']): ?>
-                    <tr>
-                        <td class="text-muted ps-3">SKU</td>
-                        <td><code><?= $e($review['sku']) ?></code></td>
-                    </tr>
-                    <?php endif; ?>
-                    <tr>
-                        <td class="text-muted ps-3">Datum</td>
-                        <td><?= date('d.m.Y H:i', strtotime($review['created_at'])) ?></td>
-                    </tr>
-                    <?php if ($review['reviewed_at']): ?>
-                    <tr>
-                        <td class="text-muted ps-3">Schváleno</td>
-                        <td><?= date('d.m.Y H:i', strtotime($review['reviewed_at'])) ?></td>
-                    </tr>
-                    <?php endif; ?>
-                </table></div>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="text-muted small">Autor</span>
+                    <strong><?= $e($review['author_name']) ?></strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom gap-2">
+                    <span class="text-muted small flex-shrink-0">E-mail</span>
+                    <a href="mailto:<?= $e($review['author_email']) ?>" class="text-truncate small"><?= $e($review['author_email']) ?></a>
+                </div>
+                <?php if ($review['rating']): ?>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="text-muted small">Hodnocení</span>
+                    <div>
+                        <?php for ($i = 1; $i <= 5; $i++): ?>
+                        <i class="bi bi-star<?= $i <= $review['rating'] ? '-fill text-warning' : ' text-muted' ?>"></i>
+                        <?php endfor; ?>
+                        <span class="small ms-1">(<?= $review['rating'] ?>/5)</span>
+                    </div>
+                </div>
+                <?php endif; ?>
+                <?php if (($review['product_name'] ?? null)): ?>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom gap-2">
+                    <span class="text-muted small flex-shrink-0">Produkt</span>
+                    <a href="<?= APP_URL ?>/products/<?= $review['product_id'] ?>" class="text-truncate small">
+                        <?= $e($review['product_name'] ?? '') ?>
+                    </a>
+                </div>
+                <?php endif; ?>
+                <?php if ($review['sku']): ?>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="text-muted small">SKU</span>
+                    <code class="small"><?= $e($review['sku']) ?></code>
+                </div>
+                <?php endif; ?>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="text-muted small">Datum</span>
+                    <span class="small"><?= date('d.m.Y H:i', strtotime($review['created_at'])) ?></span>
+                </div>
+                <?php if ($review['reviewed_at']): ?>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="text-muted small">Schváleno</span>
+                    <span class="small"><?= date('d.m.Y H:i', strtotime($review['reviewed_at'])) ?></span>
+                </div>
+                <?php endif; ?>
                 <?php if ($review['comment']): ?>
                 <div class="px-3 pb-3">
                     <div class="text-muted small mb-1">Komentář zákazníka:</div>
