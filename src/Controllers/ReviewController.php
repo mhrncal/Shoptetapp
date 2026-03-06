@@ -376,6 +376,7 @@ class ReviewController extends BaseController
      */
     public static function photoExpiryStatus(int $userId): array
     {
+        try {
         $db = \ShopCode\Core\Database::getInstance();
 
         // Datum posledního exportu
@@ -403,6 +404,9 @@ class ReviewController extends BaseController
             'days_left'   => max(0, $daysLeft),
             'last_export' => $lastExport,
         ];
+        } catch (\Exception $e) {
+            return ['blocked' => false, 'days_left' => null, 'last_export' => null];
+        }
     }
 
     /**
