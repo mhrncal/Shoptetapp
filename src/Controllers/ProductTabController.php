@@ -219,4 +219,63 @@ class ProductTabController extends BaseController
         $this->redirect('/product-videos');
     }
 
+    /**
+     * Upload lokálního videa (max 50MB)
+     */
+    public function videoUpload(): void
+    {
+        $this->validateCsrf();
+        $userId    = $this->user['id'];
+        $productId = (int)$this->request->param('product_id');
+
+        if (!Product::findById($productId, $userId)) Response::notFound();
+
+        $file = $_FILES['video_file'] ?? null;
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            $this->jsonError('Soubor se nepodařilo nahrát.');
+        }
+
+        $maxBytes = 50 * 1024 * 1024; // 50MB
+        if ($file['size'] > $maxBytes) {
+            $this->jsonError('Video je příliš velké. Maximum je 50 MB.');
+        }
+
+        $mime = mime_content_type($file['tmp_name']);
+        if (!in_array($mime, ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/mpeg'])) {
+            $this->jsonError('Nepodporovaný formát. Použijte MP4, WebM nebo MOV.');
+        }
+
+        $uploadDir = ROOT . '/public/uploads/videos/' . $userId . '/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+
+        $ext      = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'mp4';
+        $filename = uniqid('vid_', true) . '.' . strtolower($ext);
+        $destPath = $uploadDir . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+            $this->jsonError('Nepodařilo se uložit soubor.');
+        }
+
+        $filePath = 'videos/' . $userId . '/' . $filename;
+
+        $id = ProductVideo::create($userId, $productId, [
+            'title'     => trim($this->request->post('title', '')) ?: pathinfo($file['name'], PATHINFO_FILENAME),
+            'url'       => null,
+            'file_path' => $filePath,
+            'sort_order'=> 0,
+        ]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => true, 'id' => $id, 'file_path' => $filePath]);
+        exit;
+    }
+
+    private function jsonError(string $msg): never
+    {
+        header('Content-Type: application/json');
+        http_response_code(422);
+        echo json_encode(['ok' => false, 'error' => $msg]);
+        exit;
+    }
+
 }

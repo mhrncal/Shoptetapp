@@ -57,22 +57,30 @@
     <?php else: ?>
     <div class="list-group list-group-flush">
         <?php foreach ($groupVideos as $v):
-            $thumb = \ShopCode\Models\ProductVideo::thumbnail($v['url'] ?? '');
+            $isFile  = !empty($v['file_path']);
+            $thumb   = !$isFile ? \ShopCode\Models\ProductVideo::thumbnail($v['url'] ?? '') : null;
         ?>
         <div class="list-group-item px-3 py-2">
             <div class="d-flex align-items-center gap-3">
+                <!-- Thumb -->
                 <div class="flex-shrink-0 rounded overflow-hidden bg-dark d-flex align-items-center justify-content-center"
                      style="width:56px;height:40px;">
                     <?php if ($thumb): ?>
                     <img src="<?= $e($thumb) ?>" style="width:56px;height:40px;object-fit:cover;" alt="">
                     <?php else: ?>
-                    <i class="bi bi-play-fill text-white"></i>
+                    <i class="bi bi-<?= $isFile ? 'file-earmark-play' : 'play-fill' ?> text-white"></i>
                     <?php endif; ?>
                 </div>
+                <!-- Info -->
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-medium small text-truncate"><?= $e($v['title'] ?? 'Video') ?></div>
+                    <?php if ($isFile): ?>
+                    <span class="badge bg-secondary" style="font-size:.65rem;"><i class="bi bi-hdd me-1"></i>Lokální soubor</span>
+                    <?php else: ?>
                     <div class="text-muted text-truncate" style="font-size:.72rem;"><?= $e($v['url']) ?></div>
+                    <?php endif; ?>
                 </div>
+                <!-- Smazat -->
                 <form method="POST" action="<?= APP_URL ?>/products/videos/<?= $v['id'] ?>"
                       onsubmit="return confirm('Smazat video?')" class="flex-shrink-0">
                     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
@@ -96,39 +104,163 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Přidat video</h5>
+                <div>
+                    <h5 class="modal-title mb-0">Přidat video</h5>
+                    <small class="text-muted" id="addVideoProductName"></small>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" id="addVideoForm">
-                <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-                <input type="hidden" name="_referer" value="videos">
-                <div class="modal-body">
-                    <p class="text-muted small mb-3" id="addVideoProductName"></p>
+            <div class="modal-body pb-0">
+                <!-- Záložky -->
+                <ul class="nav nav-tabs mb-3" id="videoTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active" id="tab-url-btn" onclick="switchTab('url')">
+                            <i class="bi bi-link-45deg me-1"></i>YouTube / Vimeo
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="tab-upload-btn" onclick="switchTab('upload')">
+                            <i class="bi bi-upload me-1"></i>Nahrát soubor
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- URL panel -->
+                <div id="panel-url">
+                    <form method="POST" id="addVideoForm">
+                        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+                        <input type="hidden" name="_referer" value="videos">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">URL <span class="text-danger">*</span></label>
+                            <input type="url" name="url" id="urlInput" class="form-control" required
+                                   placeholder="https://www.youtube.com/watch?v=...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Název <span class="text-muted small">(nepovinné)</span></label>
+                            <input type="text" name="title" class="form-control" placeholder="Ukázka produktu">
+                        </div>
+                        <div class="modal-footer px-0">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-plus me-1"></i>Přidat</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Upload panel -->
+                <div id="panel-upload" style="display:none;">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">YouTube nebo Vimeo URL <span class="text-danger">*</span></label>
-                        <input type="url" name="url" class="form-control" required
-                               placeholder="https://www.youtube.com/watch?v=...">
+                        <label class="form-label fw-semibold">Název <span class="text-muted small">(nepovinné)</span></label>
+                        <input type="text" id="uploadTitle" class="form-control" placeholder="Ukázka produktu">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Název videa <span class="text-muted small">(nepovinné)</span></label>
-                        <input type="text" name="title" class="form-control" placeholder="Ukázka produktu">
+                        <label class="form-label fw-semibold">Soubor <span class="text-danger">*</span></label>
+                        <input type="file" id="videoFileInput" class="form-control"
+                               accept="video/mp4,video/webm,video/quicktime,video/x-msvideo">
+                        <div class="form-text">MP4, WebM, MOV — max 50 MB</div>
+                    </div>
+                    <!-- Progress bar -->
+                    <div id="uploadProgress" style="display:none;" class="mb-3">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Nahrávám...</span>
+                            <span id="uploadPercent">0%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                 id="uploadBar" style="width:0%"></div>
+                        </div>
+                    </div>
+                    <div id="uploadError" class="alert alert-danger py-2 small" style="display:none;"></div>
+                    <div class="modal-footer px-0">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
+                        <button type="button" class="btn btn-primary" id="uploadBtn" onclick="startUpload()">
+                            <i class="bi bi-upload me-1"></i>Nahrát
+                        </button>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-plus me-1"></i>Přidat</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
+var _currentProductId = null;
+var _csrf = '<?= $e($csrfToken) ?>';
+
 function openAddVideo(productId, productName) {
-    document.getElementById('addVideoProductName').textContent = 'Produkt: ' + productName;
+    _currentProductId = productId;
+    document.getElementById('addVideoProductName').textContent = productName;
     document.getElementById('addVideoForm').action = '<?= APP_URL ?>/products/' + productId + '/videos';
-    document.getElementById('addVideoForm').querySelector('input[name="url"]').value = '';
+    document.getElementById('urlInput').value = '';
     document.getElementById('addVideoForm').querySelector('input[name="title"]').value = '';
+    document.getElementById('videoFileInput').value = '';
+    document.getElementById('uploadTitle').value = '';
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('uploadError').style.display = 'none';
+    switchTab('url');
     new bootstrap.Modal(document.getElementById('addVideoModal')).show();
+}
+
+function switchTab(tab) {
+    document.getElementById('panel-url').style.display    = tab === 'url'    ? '' : 'none';
+    document.getElementById('panel-upload').style.display = tab === 'upload' ? '' : 'none';
+    document.getElementById('tab-url-btn').classList.toggle('active',    tab === 'url');
+    document.getElementById('tab-upload-btn').classList.toggle('active', tab === 'upload');
+}
+
+function startUpload() {
+    var file = document.getElementById('videoFileInput').files[0];
+    if (!file) { showUploadError('Vyberte soubor.'); return; }
+    if (file.size > 50 * 1024 * 1024) { showUploadError('Soubor je větší než 50 MB.'); return; }
+
+    var fd = new FormData();
+    fd.append('_csrf', _csrf);
+    fd.append('video_file', file);
+    fd.append('title', document.getElementById('uploadTitle').value);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '<?= APP_URL ?>/products/' + _currentProductId + '/videos/upload');
+
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+            var pct = Math.round(e.loaded / e.total * 100);
+            document.getElementById('uploadBar').style.width = pct + '%';
+            document.getElementById('uploadPercent').textContent = pct + '%';
+        }
+    };
+
+    xhr.onloadstart = function() {
+        document.getElementById('uploadProgress').style.display = '';
+        document.getElementById('uploadError').style.display = 'none';
+        document.getElementById('uploadBtn').disabled = true;
+    };
+
+    xhr.onload = function() {
+        document.getElementById('uploadBtn').disabled = false;
+        try {
+            var resp = JSON.parse(xhr.responseText);
+            if (resp.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('addVideoModal')).hide();
+                location.reload();
+            } else {
+                showUploadError(resp.error || 'Chyba při nahrávání.');
+            }
+        } catch(e) {
+            showUploadError('Neočekávaná chyba.');
+        }
+    };
+
+    xhr.onerror = function() {
+        document.getElementById('uploadBtn').disabled = false;
+        showUploadError('Chyba sítě.');
+    };
+
+    xhr.send(fd);
+}
+
+function showUploadError(msg) {
+    var el = document.getElementById('uploadError');
+    el.textContent = msg;
+    el.style.display = '';
+    document.getElementById('uploadProgress').style.display = 'none';
 }
 </script>
