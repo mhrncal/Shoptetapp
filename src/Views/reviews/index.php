@@ -1,6 +1,37 @@
 <?php $pageTitle = 'Fotorecenze'; ?>
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); ?>
 
+<?php if (!empty($expiry['blocked'])): ?>
+<div class="alert alert-danger d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-lock-fill fs-4 flex-shrink-0"></i>
+    <div class="flex-grow-1">
+        <strong>Fotorecenze jsou zablokovány</strong> — vaše fotky expiraly.
+        Stáhněte zálohu pro obnovení přístupu.
+    </div>
+    <a href="<?= APP_URL ?>/reviews/export-photos" class="btn btn-danger flex-shrink-0">
+        <i class="bi bi-download me-1"></i>Stáhnout zálohu
+    </a>
+</div>
+<?php elseif (!empty($expiry['days_left']) && $expiry['days_left'] <= 7): ?>
+<div class="alert alert-warning d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-exclamation-triangle-fill fs-4 flex-shrink-0"></i>
+    <div class="flex-grow-1">
+        <strong>Fotky expirují za <?= (int)$expiry['days_left'] ?> dní.</strong>
+        Stáhněte zálohu — po stažení se lhůta resetuje na 30 dní.
+    </div>
+    <a href="<?= APP_URL ?>/reviews/export-photos" class="btn btn-warning flex-shrink-0">
+        <i class="bi bi-download me-1"></i>Stáhnout zálohu
+    </a>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($expiry['blocked'])): ?>
+<div class="card"><div class="card-body text-center py-5 text-muted">
+    <i class="bi bi-lock fs-1 d-block mb-3"></i>
+    <p>Přístup k fotorecenzím je zablokován. Stáhněte zálohu fotek pro obnovení.</p>
+</div></div>
+<?php else: ?>
+
 <!-- Hlavička — nadpis a export odděleně na mobilu -->
 <div class="mb-3">
     <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
@@ -318,6 +349,8 @@
         <?php endif; ?>
     </ul>
 </nav>
+<?php endif; ?>
+
 <?php endif; ?>
 
 <?php endif; ?>

@@ -30,8 +30,11 @@ class ReviewController extends BaseController
             $xmlFeedUrl = null;
         }
 
+        $expiry = self::photoExpiryStatus($userId);
+
         $this->view('reviews/index', [
             'pageTitle' => 'Fotorecenze',
+            'expiry'    => $expiry,
             'reviews'   => $reviews,
             'total'     => $total,
             'page'      => $page,
@@ -367,4 +370,93 @@ class ReviewController extends BaseController
         
         $this->redirect('/reviews/' . $id);
     }
+    /**
+     * Stav expirace fotek pro aktuálního uživatele
+     * Vrátí: ['blocked' => bool, 'days_left' => int|null, 'last_export' => string|null]
+     */
+    public static function photoExpiryStatus(int $userId): array
+    {
+        $db = \ShopCode\Core\Database::getInstance();
+
+        // Datum posledního exportu
+        $stmt = $db->prepare("SELECT MAX(exported_at) FROM photo_export_log WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $lastExport = $stmt->fetchColumn();
+
+        // Nejstarší fotka
+        $stmt2 = $db->prepare("
+            SELECT MIN(rp.created_at) FROM review_photos rp
+            JOIN reviews r ON r.id = rp.review_id
+            WHERE r.user_id = ? AND rp.path IS NOT NULL
+        ");
+        $stmt2->execute([$userId]);
+        $oldestPhoto = $stmt2->fetchColumn();
+
+        if (!$oldestPhoto) return ['blocked' => false, 'days_left' => null, 'last_export' => $lastExport];
+
+        $refDate  = $lastExport ?: $oldestPhoto;
+        $daysOld  = (int)(new \DateTime())->diff(new \DateTime($refDate))->days;
+        $daysLeft = 30 - $daysOld;
+
+        return [
+            'blocked'     => $daysLeft <= 0,
+            'days_left'   => max(0, $daysLeft),
+            'last_export' => $lastExport,
+        ];
+    }
+
+    /**
+     * ZIP export fotek + reset 30denního timeru
+     */
+    public function exportPhotosZip(): void
+    {
+        $userId = $this->user['id'];
+        $db     = \ShopCode\Core\Database::getInstance();
+
+        $stmt = $db->prepare("
+            SELECT rp.path, rp.thumb, r.author_name, rp.id
+            FROM review_photos rp
+            JOIN reviews r ON r.id = rp.review_id
+            WHERE r.user_id = ? AND rp.path IS NOT NULL
+            ORDER BY rp.created_at DESC
+        ");
+        $stmt->execute([$userId]);
+        $photos = $stmt->fetchAll();
+
+        if (empty($photos)) {
+            \ShopCode\Core\Session::flash('error', 'Žádné fotky k exportu.');
+            $this->redirect('/reviews');
+        }
+
+        $zipFile = sys_get_temp_dir() . '/shopcode_photos_' . $userId . '_' . time() . '.zip';
+        $zip     = new \ZipArchive();
+        if ($zip->open($zipFile, \ZipArchive::CREATE) !== true) {
+            \ShopCode\Core\Session::flash('error', 'Nepodařilo se vytvořit ZIP.');
+            $this->redirect('/reviews');
+        }
+
+        $count = 0;
+        foreach ($photos as $photo) {
+            $abs = ROOT . '/public/uploads/' . ltrim($photo['path'], '/');
+            if (file_exists($abs)) {
+                $zip->addFile($abs, 'foto_' . $photo['id'] . '_' . basename($abs));
+                $count++;
+            }
+        }
+        $zip->close();
+
+        // Zaznamenej export → reset timeru
+        $db->prepare("INSERT INTO photo_export_log (user_id, photo_count) VALUES (?, ?)")
+           ->execute([$userId, $count]);
+
+        // Pošli soubor
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="fotorecenze_' . date('Y-m-d') . '.zip"');
+        header('Content-Length: ' . filesize($zipFile));
+        header('Cache-Control: no-cache');
+        readfile($zipFile);
+        unlink($zipFile);
+        exit;
+    }
+
 }

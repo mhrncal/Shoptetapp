@@ -116,3 +116,11 @@ if (defined('APP_ENV') && APP_ENV === 'production') {
     error_reporting(E_ALL);
     ini_set('display_errors', '1');
 }
+
+// Mail
+if (!defined('MAIL_HOST'))      define('MAIL_HOST',      getenv('MAIL_HOST')      ?: '');
+if (!defined('MAIL_PORT'))      define('MAIL_PORT',      (int)(getenv('MAIL_PORT') ?: 587));
+if (!defined('MAIL_USER'))      define('MAIL_USER',      getenv('MAIL_USER')      ?: '');
+if (!defined('MAIL_PASS'))      define('MAIL_PASS',      getenv('MAIL_PASS')      ?: '');
+if (!defined('MAIL_FROM'))      define('MAIL_FROM',      getenv('MAIL_FROM')      ?: '');
+if (!defined('MAIL_FROM_NAME')) define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'ShopCode');
