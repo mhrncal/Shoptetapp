@@ -42,4 +42,32 @@ class ProductController extends BaseController
             'videos'    => $videos,
         ]);
     }
+    public function search(): void
+    {
+        $userId = $this->user['id'];
+        $q      = trim($this->request->get('search', ''));
+        $limit  = min(20, max(1, (int)$this->request->get('limit', 10)));
+
+        if (strlen($q) < 2) {
+            header('Content-Type: application/json');
+            echo json_encode(['products' => []]);
+            exit;
+        }
+
+        $db   = \ShopCode\Core\Database::getInstance();
+        $stmt = $db->prepare("
+            SELECT id, name, code, pair_code
+            FROM products
+            WHERE user_id = ? AND (name LIKE ? OR code LIKE ?)
+            ORDER BY name ASC
+            LIMIT ?
+        ");
+        $like = '%' . $q . '%';
+        $stmt->execute([$userId, $like, $like, $limit]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['products' => $stmt->fetchAll()]);
+        exit;
+    }
+
 }

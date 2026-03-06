@@ -134,29 +134,55 @@ class ProductTabController extends BaseController
         $userId = $this->user['id'];
         $db     = \ShopCode\Core\Database::getInstance();
 
-        // Produkty seskupené podle pair_code
-        $stmt = $db->prepare('SELECT id, name, code, pair_code FROM products WHERE user_id = ? ORDER BY name ASC');
-        $stmt->execute([$userId]);
-        $allProducts = $stmt->fetchAll();
-
-        $groups = [];
-        foreach ($allProducts as $p) {
-            $key = $p['pair_code'] ?: ('__single_' . $p['id']);
-            $groups[$key][] = $p;
-        }
-
-        // Videa indexovaná podle product_id
+        // Načti POUZE produkty které už mají video — plus jejich pair_code skupiny
         $videoStmt = $db->prepare('
-            SELECT pv.*, p.name as product_name, p.code as product_code
+            SELECT pv.*, p.name as product_name, p.code as product_code,
+                   p.pair_code, p.id as pid
             FROM product_videos pv
             JOIN products p ON p.id = pv.product_id
             WHERE p.user_id = ?
-            ORDER BY pv.sort_order ASC, pv.id ASC
+            ORDER BY p.name ASC, pv.sort_order ASC, pv.id ASC
         ');
         $videoStmt->execute([$userId]);
+        $allVideos = $videoStmt->fetchAll();
+
+        // Seskup videa podle produktu
         $videosByProduct = [];
-        foreach ($videoStmt->fetchAll() as $v) {
+        $productIds = [];
+        foreach ($allVideos as $v) {
             $videosByProduct[$v['product_id']][] = $v;
+            $productIds[$v['product_id']] = true;
+        }
+
+        // Načti skupiny jen pro produkty s videi (+ jejich pair_code sourozence)
+        $groups = [];
+        if (!empty($productIds)) {
+            $pairCodes = [];
+            foreach ($allVideos as $v) {
+                if ($v['pair_code']) $pairCodes[] = $v['pair_code'];
+            }
+            $pairCodes = array_unique($pairCodes);
+
+            // Načti produkty — buď mají video nebo sdílejí pair_code s produktem s videem
+            if (!empty($pairCodes)) {
+                $ph   = implode(',', array_fill(0, count($pairCodes), '?'));
+                $pidPh = implode(',', array_fill(0, count($productIds), '?'));
+                $stmt = $db->prepare("
+                    SELECT id, name, code, pair_code FROM products
+                    WHERE user_id = ? AND (id IN ($pidPh) OR pair_code IN ($ph))
+                    ORDER BY name ASC
+                ");
+                $stmt->execute(array_merge([$userId], array_keys($productIds), $pairCodes));
+            } else {
+                $pidPh = implode(',', array_fill(0, count($productIds), '?'));
+                $stmt  = $db->prepare("SELECT id, name, code, pair_code FROM products WHERE user_id = ? AND id IN ($pidPh) ORDER BY name ASC");
+                $stmt->execute(array_merge([$userId], array_keys($productIds)));
+            }
+
+            foreach ($stmt->fetchAll() as $p) {
+                $key = $p['pair_code'] ?: ('__single_' . $p['id']);
+                $groups[$key][] = $p;
+            }
         }
 
         $this->view('product_videos/index', [

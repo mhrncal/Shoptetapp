@@ -7,14 +7,17 @@
     </div>
 </div>
 
+<div class="mb-3">
+    <button class="btn btn-primary btn-sm" onclick="openSearchModal()">
+        <i class="bi bi-plus me-1"></i>Přidat video k produktu
+    </button>
+</div>
+
 <?php if (empty($groups)): ?>
 <div class="card">
-    <div class="card-body text-center py-5 text-muted">
-        <i class="bi bi-play-circle fs-1 d-block mb-3"></i>
-        <p>Nejdřív naimportujte produkty přes feeds.</p>
-        <a href="<?= APP_URL ?>/feeds" class="btn btn-primary btn-sm">
-            <i class="bi bi-cloud-download me-1"></i>Importy
-        </a>
+    <div class="card-body text-center py-3 text-muted">
+        <i class="bi bi-play-circle fs-2 d-block mb-2"></i>
+        <p class="mb-0">Zatím žádná videa. Klikněte na tlačítko výše.</p>
     </div>
 </div>
 <?php else: ?>
@@ -98,6 +101,25 @@
 <?php endforeach; ?>
 </div>
 <?php endif; ?>
+
+<!-- Modal: Vyhledat produkt -->
+<div class="modal fade" id="searchProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Vybrat produkt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="productSearch" class="form-control mb-3"
+                       placeholder="Hledat název nebo kód..." oninput="searchProducts(this.value)">
+                <div id="searchResults" class="d-flex flex-column gap-1" style="max-height:300px;overflow-y:auto;">
+                    <div class="text-muted small text-center py-3">Začněte psát pro vyhledání...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Modal: Přidat video -->
 <div class="modal fade" id="addVideoModal" tabindex="-1">
@@ -262,5 +284,42 @@ function showUploadError(msg) {
     el.textContent = msg;
     el.style.display = '';
     document.getElementById('uploadProgress').style.display = 'none';
+}
+
+function openSearchModal() {
+    document.getElementById('productSearch').value = '';
+    document.getElementById('searchResults').innerHTML = '<div class="text-muted small text-center py-3">Začněte psát pro vyhledání...</div>';
+    new bootstrap.Modal(document.getElementById('searchProductModal')).show();
+}
+
+var _searchTimer = null;
+function searchProducts(q) {
+    clearTimeout(_searchTimer);
+    if (q.length < 2) {
+        document.getElementById('searchResults').innerHTML = '<div class="text-muted small text-center py-3">Zadejte alespoň 2 znaky...</div>';
+        return;
+    }
+    _searchTimer = setTimeout(function() {
+        fetch('<?= APP_URL ?>/products/search?search=' + encodeURIComponent(q) + '&limit=10')
+            .then(r => r.json())
+            .then(data => {
+                var el = document.getElementById('searchResults');
+                if (!data.products || !data.products.length) {
+                    el.innerHTML = '<div class="text-muted small text-center py-3">Žádné výsledky.</div>';
+                    return;
+                }
+                el.innerHTML = data.products.map(p =>
+                    '<button class="btn btn-outline-secondary text-start w-100 py-2" onclick="selectProduct(' + p.id + ', \''+p.name.replace(/\'/g,\'\\\'\')+'\')">' +
+                    '<div class="fw-medium small">' + p.name + '</div>' +
+                    '<code class="text-muted" style="font-size:.72rem;">' + (p.code || '') + '</code>' +
+                    '</button>'
+                ).join('');
+            });
+    }, 300);
+}
+
+function selectProduct(productId, productName) {
+    bootstrap.Modal.getInstance(document.getElementById('searchProductModal')).hide();
+    setTimeout(function() { openAddVideo(productId, productName); }, 300);
 }
 </script>
