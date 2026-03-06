@@ -329,9 +329,9 @@ document.getElementById('productSearch').addEventListener('input', function() {
                     return;
                 }
                 el.innerHTML = data.products.map(function(p) {
+                    var codes = p.code ? ' &ndash; <code style="font-size:.72rem;">' + p.code + '</code>' : '';
                     return '<button class="btn btn-outline-secondary text-start w-100 py-2 mb-1" data-id="' + p.id + '" data-name="' + (p.name || '').replace(/"/g, '&quot;') + '">' +
-                        '<div class="fw-medium small">' + (p.name || '') + '</div>' +
-                        '<code class="text-muted" style="font-size:.72rem;">' + (p.code || '') + '</code>' +
+                        '<span class="small">' + (p.name || '') + codes + '</span>' +
                         '</button>';
                 }).join('');
                 el.querySelectorAll('button[data-id]').forEach(function(btn) {

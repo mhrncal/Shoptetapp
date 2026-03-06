@@ -55,6 +55,9 @@ class ProductController extends BaseController
         }
 
         $db   = \ShopCode\Core\Database::getInstance();
+        $like = '%' . $q . '%';
+
+        // Najdi matchující produkty
         $stmt = $db->prepare("
             SELECT id, name, code, pair_code
             FROM products
@@ -62,11 +65,60 @@ class ProductController extends BaseController
             ORDER BY name ASC
             LIMIT ?
         ");
-        $like = '%' . $q . '%';
         $stmt->execute([$userId, $like, $like, $limit]);
+        $matched = $stmt->fetchAll();
+
+        if (empty($matched)) {
+            header('Content-Type: application/json');
+            echo json_encode(['products' => []]);
+            exit;
+        }
+
+        // Seber pair_codes pro načtení sourozenců
+        $pairCodes = array_filter(array_unique(array_column($matched, 'pair_code')));
+        $allProducts = $matched;
+
+        if (!empty($pairCodes)) {
+            $ph   = implode(',', array_fill(0, count($pairCodes), '?'));
+            $stmt2 = $db->prepare("
+                SELECT id, name, code, pair_code
+                FROM products
+                WHERE user_id = ? AND pair_code IN ($ph)
+            ");
+            $stmt2->execute(array_merge([$userId], $pairCodes));
+            // Slouč — deduplikuj podle id
+            $extra = $stmt2->fetchAll();
+            $seen  = array_flip(array_column($matched, 'id'));
+            foreach ($extra as $p) {
+                if (!isset($seen[$p['id']])) $allProducts[] = $p;
+            }
+        }
+
+        // Seskup podle pair_code (nebo id pro jednotlivce)
+        $groups = [];
+        foreach ($allProducts as $p) {
+            $key = $p['pair_code'] ?: ('__' . $p['id']);
+            $groups[$key][] = $p;
+        }
+
+        // Sestav výsledky — jeden záznam na skupinu
+        $results = [];
+        foreach ($groups as $prods) {
+            $main  = $prods[0];
+            $codes = array_values(array_unique(array_filter(array_column($prods, 'code'))));
+            $results[] = [
+                'id'       => $main['id'],
+                'name'     => $main['name'],
+                'code'     => implode(', ', $codes),
+                'pair_code'=> $main['pair_code'],
+            ];
+        }
+
+        // Seřaď podle jména
+        usort($results, fn($a, $b) => strcmp($a['name'], $b['name']));
 
         header('Content-Type: application/json');
-        echo json_encode(['products' => $stmt->fetchAll()]);
+        echo json_encode(['products' => array_slice($results, 0, $limit)]);
         exit;
     }
 
