@@ -1,48 +1,39 @@
 <?php $pageTitle = 'Fotorecenze'; ?>
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); ?>
 
-<?php if (!empty($expiry['blocked'])): ?>
-<div class="alert alert-danger d-flex align-items-center gap-3 mb-4">
-    <i class="bi bi-lock-fill fs-4 flex-shrink-0"></i>
-    <div class="flex-grow-1">
-        <strong>Fotorecenze jsou zablokovány</strong> — vaše fotky expiraly.
-        Stáhněte zálohu pro obnovení přístupu.
-    </div>
-    <a href="<?= APP_URL ?>/reviews/export-photos" class="btn btn-danger flex-shrink-0">
-        <i class="bi bi-download me-1"></i>Stáhnout zálohu
-    </a>
-</div>
-<?php elseif (isset($expiry['days_left']) && $expiry['days_left'] !== null): ?>
 <?php
-    $daysLeft  = (int)$expiry['days_left'];
-    $alertType = $daysLeft <= 7 ? 'danger' : ($daysLeft <= 14 ? 'warning' : 'info');
-    $icon      = $daysLeft <= 7 ? 'exclamation-triangle-fill' : 'clock-history';
+$daysLeft  = (int)($expiry['days_left'] ?? 30);
+$blocked   = !empty($expiry['blocked']);
+$noPhotos  = !empty($expiry['no_photos']);
+$alertType = $blocked ? 'danger' : ($daysLeft <= 7 ? 'danger' : ($daysLeft <= 14 ? 'warning' : 'info'));
+$icon      = $blocked ? 'lock-fill' : ($daysLeft <= 7 ? 'exclamation-triangle-fill' : 'clock-history');
+$dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
 ?>
+
+<!-- Banner zálohy fotek — vždy viditelný -->
 <div class="alert alert-<?= $alertType ?> d-flex align-items-center gap-3 mb-3">
-    <i class="bi bi-<?= $icon ?> fs-4 flex-shrink-0"></i>
-    <div class="flex-grow-1">
-        <?php if ($daysLeft <= 7): ?>
-            <strong>Fotky expirují za <?= $daysLeft ?> <?= $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní') ?>!</strong>
-            Po expiraci bude přístup zablokován.
+    <i class="bi bi-<?= $icon ?> fs-5 flex-shrink-0"></i>
+    <div class="flex-grow-1 small">
+        <?php if ($blocked): ?>
+            <strong>Přístup zablokován</strong> — fotky expirovaly. Stáhněte zálohu pro obnovení.
+        <?php elseif ($noPhotos): ?>
+            Záloha fotek: <strong><?= $daysLeft ?> <?= $dayWord ?></strong> do expirace.
+            Fotky se mažou 30 dní po posledním exportu.
+        <?php elseif ($daysLeft <= 7): ?>
+            <strong>Fotky expirují za <?= $daysLeft ?> <?= $dayWord ?>!</strong> Po expiraci bude přístup zablokován.
         <?php else: ?>
-            Záloha fotek expiruje za <strong><?= $daysLeft ?> dní</strong>.
-            <?php if ($expiry['last_export']): ?>
+            Záloha fotek vyprší za <strong><?= $daysLeft ?> <?= $dayWord ?></strong>.
+            <?php if (!empty($expiry['last_export'])): ?>
             Poslední export: <?= date('d.m.Y', strtotime($expiry['last_export'])) ?>.
             <?php endif; ?>
         <?php endif; ?>
     </div>
-    <a href="<?= APP_URL ?>/reviews/export-photos" class="btn btn-<?= $alertType ?> flex-shrink-0">
-        <i class="bi bi-download me-1"></i>Stáhnout zálohu
+    <a href="<?= APP_URL ?>/reviews/export-photos" class="btn btn-sm btn-<?= $alertType ?> flex-shrink-0">
+        <i class="bi bi-download me-1"></i><span class="d-none d-sm-inline">Stáhnout zálohu</span>
     </a>
 </div>
-<?php else: ?>
-<div class="alert alert-info d-flex align-items-center gap-2 mb-3">
-    <i class="bi bi-info-circle flex-shrink-0"></i>
-    <span class="small">Záloha fotek: fotky se automaticky mažou po 30 dnech od posledního exportu. Stáhněte zálohu pravidelně.</span>
-</div>
-<?php endif; ?>
 
-<?php if (!empty($expiry['blocked'])): ?>
+<?php if ($blocked): ?>
 <div class="card"><div class="card-body text-center py-5 text-muted">
     <i class="bi bi-lock fs-1 d-block mb-3"></i>
     <p>Přístup k fotorecenzím je zablokován. Stáhněte zálohu fotek pro obnovení.</p>
@@ -56,23 +47,27 @@
         <p class="text-muted small mb-0">Celkem: <strong><?= $total ?></strong></p>
     </div>
     <a href="<?= APP_URL ?>/reviews/export/xml" class="btn btn-sm btn-outline-success flex-shrink-0">
-        <i class="bi bi-download me-1"></i>Stáhnout XML
+        <i class="bi bi-file-earmark-code me-1"></i>Generovat XML
     </a>
 </div>
 
-<!-- XML Feed URL -->
+<!-- XML Feed karta -->
 <div class="card mb-3">
     <div class="card-body py-2">
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <span class="small text-muted flex-shrink-0"><i class="bi bi-link-45deg me-1"></i>URL XML feedu:</span>
+            <span class="small fw-semibold flex-shrink-0"><i class="bi bi-rss me-1 text-warning"></i>XML feed:</span>
+            <?php if ($xmlFeedExists ?? false): ?>
             <div class="input-group input-group-sm flex-grow-1">
-                <input type="text" class="form-control font-monospace small" value="<?= $e($xmlFeedUrl) ?>" readonly id="feedUrl">
-                <button class="btn btn-outline-secondary" type="button" id="copyFeedUrl">
+                <input type="text" class="form-control form-control-sm font-monospace" value="<?= $e($xmlFeedUrl) ?>" readonly id="feedUrl">
+                <button class="btn btn-outline-secondary" type="button" id="copyFeedUrl" title="Kopírovat URL">
                     <i class="bi bi-clipboard"></i>
                 </button>
+                <a href="<?= $e($xmlFeedUrl) ?>" target="_blank" class="btn btn-outline-secondary" title="Otevřít">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                </a>
             </div>
-            <?php if (!($xmlFeedExists ?? false)): ?>
-            <span class="badge bg-warning text-dark flex-shrink-0">Zatím nevygenerováno</span>
+            <?php else: ?>
+            <span class="text-muted small">Zatím nevygenerováno — klikněte Generovat XML.</span>
             <?php endif; ?>
         </div>
     </div>

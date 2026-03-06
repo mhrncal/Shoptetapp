@@ -394,7 +394,12 @@ class ReviewController extends BaseController
         $stmt2->execute([$userId]);
         $oldestPhoto = $stmt2->fetchColumn();
 
-        if (!$oldestPhoto) return ['blocked' => false, 'days_left' => null, 'last_export' => $lastExport];
+        if (!$oldestPhoto) {
+            // Žádné fotky — zobraz info s plnou lhůtou od posledního exportu nebo 30 dní
+            $refDate  = $lastExport ?: null;
+            $daysLeft = $refDate ? max(0, 30 - (int)(new \DateTime())->diff(new \DateTime($refDate))->days) : 30;
+            return ['blocked' => false, 'days_left' => $daysLeft, 'last_export' => $lastExport, 'no_photos' => true];
+        }
 
         $refDate  = $lastExport ?: $oldestPhoto;
         $daysOld  = (int)(new \DateTime())->diff(new \DateTime($refDate))->days;
