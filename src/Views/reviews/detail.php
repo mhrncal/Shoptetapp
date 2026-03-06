@@ -34,7 +34,7 @@
                                  class="img-fluid rounded"
                                  style="width:100%;height:auto;"
                                  alt="Foto <?= $i+1 ?>"
-                                 onerror="this.src='<?= APP_URL ?>/public/uploads/<?= $e($photo['path']) ?>'">
+                                 onerror="this.parentElement.style.display='none';">
                             <div class="position-absolute top-0 end-0 m-1">
                                 <span class="badge bg-secondary"><?= $i+1 ?></span>
                             </div>
