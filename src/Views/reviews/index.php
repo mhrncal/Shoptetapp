@@ -12,14 +12,26 @@
         <i class="bi bi-download me-1"></i>Stáhnout zálohu
     </a>
 </div>
-<?php elseif (!empty($expiry['days_left']) && $expiry['days_left'] <= 7): ?>
-<div class="alert alert-warning d-flex align-items-center gap-3 mb-4">
-    <i class="bi bi-exclamation-triangle-fill fs-4 flex-shrink-0"></i>
+<?php elseif (isset($expiry['days_left']) && $expiry['days_left'] !== null): ?>
+<?php
+    $daysLeft  = (int)$expiry['days_left'];
+    $alertType = $daysLeft <= 7 ? 'danger' : ($daysLeft <= 14 ? 'warning' : 'info');
+    $icon      = $daysLeft <= 7 ? 'exclamation-triangle-fill' : 'clock-history';
+?>
+<div class="alert alert-<?= $alertType ?> d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-<?= $icon ?> fs-4 flex-shrink-0"></i>
     <div class="flex-grow-1">
-        <strong>Fotky expirují za <?= (int)$expiry['days_left'] ?> dní.</strong>
-        Stáhněte zálohu — po stažení se lhůta resetuje na 30 dní.
+        <?php if ($daysLeft <= 7): ?>
+            <strong>Fotky expirují za <?= $daysLeft ?> <?= $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní') ?>!</strong>
+            Po expiraci bude přístup zablokován.
+        <?php else: ?>
+            Záloha fotek expiruje za <strong><?= $daysLeft ?> dní</strong>.
+            <?php if ($expiry['last_export']): ?>
+            Poslední export: <?= date('d.m.Y', strtotime($expiry['last_export'])) ?>.
+            <?php endif; ?>
+        <?php endif; ?>
     </div>
-    <a href="<?= APP_URL ?>/reviews/export-photos" class="btn btn-warning flex-shrink-0">
+    <a href="<?= APP_URL ?>/reviews/export-photos" class="btn btn-<?= $alertType ?> flex-shrink-0">
         <i class="bi bi-download me-1"></i>Stáhnout zálohu
     </a>
 </div>
