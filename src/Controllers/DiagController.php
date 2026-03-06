@@ -109,6 +109,17 @@ class DiagController extends BaseController
             echo $idx['Key_name'] . ' -> ' . $idx['Column_name'] . "\n";
         }
 
+        // Photo paths check
+        echo "\n=== Foto cesty ===\n";
+        $photos = $pdo->query("SELECT id, review_id, path, thumb FROM review_photos WHERE path IS NOT NULL LIMIT 5")->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($photos as $p) {
+            $abs = ROOT . '/public/uploads/' . ltrim($p['path'], '/');
+            $exists = file_exists($abs) ? 'OK' : 'CHYBÍ';
+            echo "  [{$exists}] {$p['path']}\n";
+            echo "         => {$abs}\n";
+        }
+        if (empty($photos)) echo "  Žádné fotky v DB\n";
+
         echo "\n=== Konec diagnostiky ===\n";
         exit;
     }
