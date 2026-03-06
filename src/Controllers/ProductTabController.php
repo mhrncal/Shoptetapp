@@ -131,57 +131,79 @@ class ProductTabController extends BaseController
 
     public function videosIndex(): void
     {
-        $userId = $this->user['id'];
-        $db     = \ShopCode\Core\Database::getInstance();
+        $userId  = $this->user['id'];
+        $db      = \ShopCode\Core\Database::getInstance();
+        $perPage = 20;
+        $page    = max(1, (int)($_GET['page'] ?? 1));
+        $offset  = ($page - 1) * $perPage;
 
-        // Načti POUZE produkty které už mají video — plus jejich pair_code skupiny
-        $videoStmt = $db->prepare('
-            SELECT pv.*, p.name as product_name, p.code as product_code,
-                   p.pair_code, p.id as pid
+        // Celkový počet unikátních produktových skupin s videi
+        $totalStmt = $db->prepare('
+            SELECT COUNT(DISTINCT COALESCE(p.pair_code, p.id))
             FROM product_videos pv
             JOIN products p ON p.id = pv.product_id
             WHERE p.user_id = ?
-            ORDER BY p.name ASC, pv.sort_order ASC, pv.id ASC
         ');
-        $videoStmt->execute([$userId]);
-        $allVideos = $videoStmt->fetchAll();
+        $totalStmt->execute([$userId]);
+        $total = (int)$totalStmt->fetchColumn();
 
-        // Seskup videa podle produktu
-        $videosByProduct = [];
-        $productIds = [];
-        foreach ($allVideos as $v) {
-            $videosByProduct[$v['product_id']][] = $v;
-            $productIds[$v['product_id']] = true;
+        // Načti stránkované skupiny (pair_code nebo product_id)
+        $groupKeyStmt = $db->prepare('
+            SELECT DISTINCT COALESCE(p.pair_code, CONCAT("__single_", p.id)) as grp_key
+            FROM product_videos pv
+            JOIN products p ON p.id = pv.product_id
+            WHERE p.user_id = ?
+            ORDER BY MIN(p.name) ASC
+            LIMIT ? OFFSET ?
+        ');
+        $groupKeyStmt->execute([$userId, $perPage, $offset]);
+        $groupKeys = $groupKeyStmt->fetchAll(\PDO::FETCH_COLUMN);
+
+        if (empty($groupKeys)) {
+            $this->view('product_videos/index', [
+                'pageTitle' => 'Videa k produktům',
+                'groups'    => [],
+                'videosByProduct' => [],
+                'csrfToken' => \ShopCode\Core\Session::getCsrfToken(),
+                'page' => $page, 'perPage' => $perPage, 'total' => $total,
+            ]);
+            return;
         }
 
-        // Načti skupiny jen pro produkty s videi (+ jejich pair_code sourozence)
+        // Načti produkty pro tyto skupiny
+        $pairCodes  = array_filter($groupKeys, fn($k) => !str_starts_with($k, '__single_'));
+        $singleIds  = array_map(fn($k) => (int)substr($k, 9),
+                          array_filter($groupKeys, fn($k) => str_starts_with($k, '__single_')));
+
+        $products = [];
+        if (!empty($pairCodes)) {
+            $ph   = implode(',', array_fill(0, count($pairCodes), '?'));
+            $stmt = $db->prepare("SELECT id, name, code, pair_code FROM products WHERE user_id = ? AND pair_code IN ($ph) ORDER BY name ASC");
+            $stmt->execute(array_merge([$userId], $pairCodes));
+            $products = array_merge($products, $stmt->fetchAll());
+        }
+        if (!empty($singleIds)) {
+            $ph   = implode(',', array_fill(0, count($singleIds), '?'));
+            $stmt = $db->prepare("SELECT id, name, code, pair_code FROM products WHERE user_id = ? AND id IN ($ph) ORDER BY name ASC");
+            $stmt->execute(array_merge([$userId], $singleIds));
+            $products = array_merge($products, $stmt->fetchAll());
+        }
+
         $groups = [];
-        if (!empty($productIds)) {
-            $pairCodes = [];
-            foreach ($allVideos as $v) {
-                if ($v['pair_code']) $pairCodes[] = $v['pair_code'];
-            }
-            $pairCodes = array_unique($pairCodes);
+        foreach ($products as $p) {
+            $key = $p['pair_code'] ?: ('__single_' . $p['id']);
+            $groups[$key][] = $p;
+        }
 
-            // Načti produkty — buď mají video nebo sdílejí pair_code s produktem s videem
-            if (!empty($pairCodes)) {
-                $ph   = implode(',', array_fill(0, count($pairCodes), '?'));
-                $pidPh = implode(',', array_fill(0, count($productIds), '?'));
-                $stmt = $db->prepare("
-                    SELECT id, name, code, pair_code FROM products
-                    WHERE user_id = ? AND (id IN ($pidPh) OR pair_code IN ($ph))
-                    ORDER BY name ASC
-                ");
-                $stmt->execute(array_merge([$userId], array_keys($productIds), $pairCodes));
-            } else {
-                $pidPh = implode(',', array_fill(0, count($productIds), '?'));
-                $stmt  = $db->prepare("SELECT id, name, code, pair_code FROM products WHERE user_id = ? AND id IN ($pidPh) ORDER BY name ASC");
-                $stmt->execute(array_merge([$userId], array_keys($productIds)));
-            }
-
-            foreach ($stmt->fetchAll() as $p) {
-                $key = $p['pair_code'] ?: ('__single_' . $p['id']);
-                $groups[$key][] = $p;
+        // Videa pro tyto produkty
+        $allPids = array_column($products, 'id');
+        $videosByProduct = [];
+        if (!empty($allPids)) {
+            $ph   = implode(',', array_fill(0, count($allPids), '?'));
+            $stmt = $db->prepare("SELECT * FROM product_videos WHERE product_id IN ($ph) ORDER BY sort_order ASC, id ASC");
+            $stmt->execute($allPids);
+            foreach ($stmt->fetchAll() as $v) {
+                $videosByProduct[$v['product_id']][] = $v;
             }
         }
 
@@ -190,6 +212,9 @@ class ProductTabController extends BaseController
             'groups'          => $groups,
             'videosByProduct' => $videosByProduct,
             'csrfToken'       => \ShopCode\Core\Session::getCsrfToken(),
+            'page'            => $page,
+            'perPage'         => $perPage,
+            'total'           => $total,
         ]);
     }
 

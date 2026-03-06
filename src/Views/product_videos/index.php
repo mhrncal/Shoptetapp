@@ -100,6 +100,22 @@
 </div>
 <?php endforeach; ?>
 </div>
+
+<?php if (($total ?? 0) > ($perPage ?? 20)): ?>
+<?php $pages = (int)ceil($total / $perPage); ?>
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <small class="text-muted"><?= (($page-1)*$perPage)+1 ?>–<?= min($page*$perPage, $total) ?> z <?= $total ?> skupin</small>
+    <div class="d-flex gap-2">
+        <?php if ($page > 1): ?>
+        <a href="?page=<?= $page-1 ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-left"></i> Zpět</a>
+        <?php endif; ?>
+        <?php if ($page < $pages): ?>
+        <a href="?page=<?= $page+1 ?>" class="btn btn-sm btn-outline-secondary">Další <i class="bi bi-chevron-right"></i></a>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php endif; ?>
 
 <!-- Modal: Vyhledat produkt -->

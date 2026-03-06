@@ -103,7 +103,7 @@ class DiagController extends BaseController
         echo "httpbin.org: HTTP $code " . ($err ? "ERROR: $err" : "OK") . "\n";
 
         // Index check
-        $idxCheck = $pdo->query("SHOW INDEX FROM product_videos")->fetchAll(PDO::FETCH_ASSOC);
+        $idxCheck = $pdo->query("SHOW INDEX FROM product_videos")->fetchAll(\PDO::FETCH_ASSOC);
         echo "\n=== Indexy product_videos ===\n";
         foreach ($idxCheck as $idx) {
             echo $idx['Key_name'] . ' -> ' . $idx['Column_name'] . "\n";
