@@ -69,7 +69,7 @@
                 <div class="flex-shrink-0 rounded overflow-hidden bg-dark d-flex align-items-center justify-content-center"
                      style="width:56px;height:40px;">
                     <?php if ($thumb): ?>
-                    <img src="<?= $e($thumb) ?>" style="width:56px;height:40px;object-fit:cover;" alt="">
+                    <img src="<?= $e($thumb) ?>" style="width:56px;height:40px;object-fit:cover;" loading="lazy" alt="">
                     <?php else: ?>
                     <i class="bi bi-<?= $isFile ? 'file-earmark-play' : 'play-fill' ?> text-white"></i>
                     <?php endif; ?>
