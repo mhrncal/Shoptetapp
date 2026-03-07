@@ -23,7 +23,7 @@ class ReviewController extends BaseController
         // XML feed URL — vždy stejný název
         $appUrl     = defined('APP_URL') ? APP_URL : '';
         $feedPath   = ROOT . '/public/feeds/user_' . $userId . '_reviews.xml';
-        $xmlFeedUrl = $appUrl . '/feeds/user_' . $userId . '_reviews.xml';
+        $xmlFeedUrl = $appUrl . '/public/feeds/user_' . $userId . '_reviews.xml';
         $xmlFeedExists = file_exists($feedPath);
 
         $expiry = self::photoExpiryStatus($userId);

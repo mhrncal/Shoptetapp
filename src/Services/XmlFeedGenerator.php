@@ -132,7 +132,7 @@ class XmlFeedGenerator
         $dom->save($filepath);
 
         // Vrátíme veřejnou URL
-        return $this->appUrl . '/feeds/' . $filename;
+        return $this->appUrl . '/public/feeds/' . $filename;
     }
 
     /**
