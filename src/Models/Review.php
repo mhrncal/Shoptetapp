@@ -254,7 +254,7 @@ class Review
         foreach ($rows as &$r) {
             // Kombinuj JSON photos + review_photos tabulku
             $jsonPhotos = $r['photos'] ? json_decode($r['photos'], true) : [];
-            $tablePaths = $r['photo_paths'] ? array_map(fn(\$p) => ['path' => \$p], explode(',', $r['photo_paths'])) : [];
+            $tablePaths = $r['photo_paths'] ? array_map(fn($p) => ['path' => $p], explode(',', $r['photo_paths'])) : [];
             $r['photos'] = !empty($tablePaths) ? $tablePaths : $jsonPhotos;
         }
         return $rows;
