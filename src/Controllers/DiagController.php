@@ -183,7 +183,12 @@ class DiagController extends BaseController
             }
         }
 
-        echo "\n=== Feeds složka ===\n";
+        echo "\n=== Feeds & URL debug ===\n";
+        echo "  DOCUMENT_ROOT: " . ($_SERVER['DOCUMENT_ROOT'] ?? 'N/A') . "\n";
+        echo "  ROOT konstanta: " . ROOT . "\n";
+        echo "  Script: " . __FILE__ . "\n";
+        // Zkus vytvořit testovací soubor a zjistit jeho URL
+        $feedsDir = ROOT . '/public/feeds';
         $feedsDir = ROOT . '/public/feeds';
         echo "  Path: $feedsDir\n";
         echo "  Exists: " . (is_dir($feedsDir) ? 'ANO' : 'NE') . "\n";
