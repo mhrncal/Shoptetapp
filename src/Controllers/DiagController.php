@@ -10,6 +10,24 @@ class DiagController extends BaseController
             http_response_code(403); die('Forbidden');
         }
 
+        // Spustit migrace
+        if (($_GET['migrate'] ?? '') === '1') {
+            header('Content-Type: text/plain; charset=utf-8');
+            $db = \ShopCode\Core\Database::getInstance();
+            $sqls = [
+                "ALTER TABLE reviews ADD COLUMN IF NOT EXISTS xml_exported_at DATETIME DEFAULT NULL",
+                "ALTER TABLE review_photos ADD COLUMN IF NOT EXISTS shoptet_url VARCHAR(1000) DEFAULT NULL",
+                "CREATE TABLE IF NOT EXISTS photo_export_log (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, exported_at DATETIME NOT NULL, photo_count INT DEFAULT 0, INDEX idx_pel_user (user_id))",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_warning_sent_at DATETIME DEFAULT NULL",
+            ];
+            foreach ($sqls as $sql) {
+                try { $db->exec($sql); echo "OK: " . substr($sql, 0, 60) . "...\n"; }
+                catch (\Exception $e) { echo "ERR: " . $e->getMessage() . "\n"; }
+            }
+            echo "Hotovo.\n";
+            exit;
+        }
+
         header('Content-Type: text/plain; charset=utf-8');
 
         echo "=== ShopCode Diagnostika " . date('Y-m-d H:i:s') . " ===\n\n";

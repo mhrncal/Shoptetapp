@@ -260,6 +260,17 @@ class Review
         return $rows;
     }
 
+    public static function markAsXmlExported(int $userId): int
+    {
+        $db   = Database::getInstance();
+        $stmt = $db->prepare("
+            UPDATE reviews SET xml_exported_at = NOW()
+            WHERE user_id = ? AND status = 'approved'
+        ");
+        $stmt->execute([$userId]);
+        return $stmt->rowCount();
+    }
+
     public static function getPendingImport(int $userId): array
     {
         $db   = Database::getInstance();

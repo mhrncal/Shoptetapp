@@ -124,6 +124,12 @@
                     <span class="small"><?= date('d.m.Y H:i', strtotime($review['reviewed_at'])) ?></span>
                 </div>
                 <?php endif; ?>
+                <?php if (!empty($review['xml_exported_at'])): ?>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="text-muted small">XML export</span>
+                    <span class="badge bg-info"><?= date('d.m.Y H:i', strtotime($review['xml_exported_at'])) ?></span>
+                </div>
+                <?php endif; ?>
                 <?php if ($review['comment']): ?>
                 <div class="px-3 pb-3">
                     <div class="text-muted small mb-1">Komentář zákazníka:</div>

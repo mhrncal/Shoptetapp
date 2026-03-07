@@ -178,6 +178,7 @@ class ReviewController extends BaseController
             error_log("[exportXml] userId=$userId reviews=" . count($reviews ?? []));
             // Vždy přegeneruj trvalý feed se stejným názvem
             $gen->generatePermanentFeed($userId, $reviews ?: []);
+            Review::markAsXmlExported($userId);
 
             Session::flash('success', 'XML feed byl vygenerován. Použijte URL níže pro import do Shoptetu.');
             $this->redirect('/reviews');

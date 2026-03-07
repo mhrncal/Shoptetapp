@@ -185,7 +185,12 @@ document.getElementById('copyFeedUrl')?.addEventListener('click', function() {
                         <td><?= $r['sku'] ? '<code class="text-primary">'.$e($r['sku']).'</code>' : '<span class="text-muted">—</span>' ?></td>
                         <td><?= $r['photo_count'] > 0 ? '<span class="badge bg-primary">'.$r['photo_count'].'</span>' : '<span class="text-muted">0</span>' ?></td>
                         <td class="small text-muted"><?= date('d.m.Y H:i', strtotime($r['created_at'])) ?></td>
-                        <td><span class="badge bg-<?= $st['color'] ?>"><?= $st['label'] ?></span></td>
+                        <td>
+                            <span class="badge bg-<?= $st['color'] ?>"><?= $st['label'] ?></span>
+                            <?php if (!empty($r['xml_exported_at'])): ?>
+                            <span class="badge bg-info ms-1" title="Exportováno <?= date('d.m.Y H:i', strtotime($r['xml_exported_at'])) ?>"><i class="bi bi-filetype-xml"></i></span>
+                            <?php endif; ?>
+                        </td>
                         <td>
                             <?php if ($r['imported']): ?>
                             <form method="POST" action="/reviews/bulk" style="display:inline;">
@@ -262,6 +267,9 @@ document.getElementById('copyFeedUrl')?.addEventListener('click', function() {
                     <span class="text-muted"><i class="bi bi-clock me-1"></i><?= date('d.m.Y', strtotime($r['created_at'])) ?></span>
                     <?php if ($r['imported']): ?>
                     <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Import.</span>
+                    <?php endif; ?>
+                    <?php if (!empty($r['xml_exported_at'])): ?>
+                    <span class="text-info"><i class="bi bi-filetype-xml me-1"></i><?= date('d.m.Y', strtotime($r['xml_exported_at'])) ?></span>
                     <?php endif; ?>
                 </div>
 
