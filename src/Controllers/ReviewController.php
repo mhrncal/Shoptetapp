@@ -177,21 +177,9 @@ class ReviewController extends BaseController
             $gen     = new XmlFeedGenerator();
             error_log("[exportXml] userId=$userId reviews=" . count($reviews ?? []));
             // Vždy přegeneruj trvalý feed se stejným názvem
-            $feedUrl = $gen->generatePermanentFeed($userId, $reviews ?: []);
+            $gen->generatePermanentFeed($userId, $reviews ?: []);
 
-            // Cesta k souboru pro stažení
-            $filename = 'user_' . $userId . '_reviews.xml';
-            $filepath = ROOT . '/public/feeds/' . $filename;
-
-            if (file_exists($filepath)) {
-                header('Content-Type: application/xml; charset=UTF-8');
-                header('Content-Disposition: attachment; filename="reviews.xml"');
-                header('Content-Length: ' . filesize($filepath));
-                readfile($filepath);
-                exit;
-            }
-
-            Session::flash('success', 'XML feed byl vygenerován.');
+            Session::flash('success', 'XML feed byl vygenerován. Použijte URL níže pro import do Shoptetu.');
             $this->redirect('/reviews');
 
         } catch (\Throwable $e) {

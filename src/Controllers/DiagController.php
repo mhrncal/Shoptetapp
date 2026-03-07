@@ -183,6 +183,18 @@ class DiagController extends BaseController
             }
         }
 
+        echo "\n=== Feeds složka ===\n";
+        $feedsDir = ROOT . '/public/feeds';
+        echo "  Path: $feedsDir\n";
+        echo "  Exists: " . (is_dir($feedsDir) ? 'ANO' : 'NE') . "\n";
+        echo "  Writable: " . (is_writable($feedsDir) ? 'ANO' : 'NE') . "\n";
+        if (is_dir($feedsDir)) {
+            $files = glob($feedsDir . '/*.xml');
+            echo "  XML soubory: " . count($files) . "\n";
+            foreach ($files as $f) {
+                echo "    - " . basename($f) . " (" . filesize($f) . "b) " . date('Y-m-d H:i', filemtime($f)) . "\n";
+            }
+        }
         echo "\n=== Konec diagnostiky ===\n";
         exit;
     }
