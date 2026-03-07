@@ -140,7 +140,7 @@ class DiagController extends BaseController
 
         // Syntax check klíčových souborů
         echo "\n=== Syntax check ===\n";
-        // Načti všechny závislosti ReviewControlleru a najdi problém
+        // Načti závislosti přes token_get_all — najde syntax error
         $deps = [
             'src/Core/Database.php',
             'src/Core/Session.php',
@@ -158,9 +158,13 @@ class DiagController extends BaseController
         foreach ($deps as $rel) {
             $path = ROOT . '/' . $rel;
             if (!file_exists($path)) { echo "  CHYBÍ: $rel\n"; continue; }
-            $out = shell_exec('php -l ' . escapeshellarg($path) . ' 2>&1');
-            $ok  = strpos($out, 'No syntax errors') !== false;
-            echo ($ok ? '  OK: ' : '  SYNTAX ERR: ') . $rel . (!$ok ? " => $out" : '') . "\n";
+            $src = file_get_contents($path);
+            try {
+                $tokens = @token_get_all($src, TOKEN_PARSE);
+                echo "  OK: $rel (" . strlen($src) . "b)\n";
+            } catch (\ParseError $ex) {
+                echo "  SYNTAX ERR: $rel => " . $ex->getMessage() . " (line " . $ex->getLine() . ")\n";
+            }
         }
         $checkFiles = [
             'src/Services/Mailer.php',
