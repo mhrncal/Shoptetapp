@@ -40,7 +40,7 @@ jobs:
       
       - name: Copy code to server
         run: |
-          rsync -avz --delete-after --exclude=.git --exclude=.env -e "ssh -p $PORT" ./ $USER@$HOST:/srv/app/
+          rsync -avz --delete-after --exclude=.git --exclude=.env --exclude=public/feeds/ --exclude=public/uploads/ --exclude=public/logs/ -e "ssh -p $PORT" ./ $USER@$HOST:/srv/app/
       
       - name: Create necessary directories
         run: |
