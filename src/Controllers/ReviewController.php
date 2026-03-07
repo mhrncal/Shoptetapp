@@ -175,6 +175,7 @@ class ReviewController extends BaseController
 
         try {
             $gen     = new XmlFeedGenerator();
+            error_log("[exportXml] userId=$userId reviews=" . count($reviews ?? []));
             // Vždy přegeneruj trvalý feed se stejným názvem
             $feedUrl = $gen->generatePermanentFeed($userId, $reviews ?: []);
 
@@ -193,7 +194,8 @@ class ReviewController extends BaseController
             Session::flash('success', 'XML feed byl vygenerován.');
             $this->redirect('/reviews');
 
-        } catch (\RuntimeException $e) {
+        } catch (\Throwable $e) {
+            error_log('[exportXml] ERR: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
             Session::flash('error', $e->getMessage());
             $this->redirect('/reviews');
         }
