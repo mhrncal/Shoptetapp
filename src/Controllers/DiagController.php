@@ -302,6 +302,42 @@ class DiagController extends BaseController
             if ($cnt > 0) echo "  .$cls: $cnt výskytů\n";
         }
 
+        // TrustedShops pagination debug
+        echo "\n--- TrustedShops pagination debug ---\n";
+        if (preg_match('/([\d\.]+)\s*Bewertungen\s*insgesamt/i', $html, $pm)) {
+            echo "Regex 'insgesamt' match: " . $pm[0] . "\n";
+        } else {
+            echo "Regex 'insgesamt': NENALEZENO\n";
+            // Hledej okolí slova insgesamt
+            $pos = stripos($html, 'insgesamt');
+            if ($pos !== false) {
+                echo "Raw HTML okolí: " . htmlspecialchars(substr($html, max(0,$pos-50), 120)) . "\n";
+            }
+        }
+        // Zkus alternativní pattern
+        if (preg_match('/>(\d+)<\/\w+>\s*Bewertungen/i', $html, $pm2)) {
+            echo "Alt regex match: " . $pm2[0] . "\n";
+        }
+        // Zkus page=3 URL
+        $testUrl = preg_replace('/[?&]page=\d+/', '', $url) . (str_contains($url,'?') ? '&' : '?') . 'page=3';
+        $testHtml = (function($u) {
+            $ch = curl_init($u);
+            curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_TIMEOUT=>15,
+                CURLOPT_USERAGENT=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
+                CURLOPT_ENCODING=>'',CURLOPT_SSL_VERIFYPEER=>false]);
+            $r = curl_exec($ch); $code = curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
+            return ($r && $code===200) ? $r : null;
+        })($testUrl);
+        echo "page=3 fetch: " . ($testHtml ? strlen($testHtml)." bytů" : "FAILED") . "\n";
+        if ($testHtml) {
+            preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si', $testHtml, $pm3);
+            echo "page=3 JSON-LD bloků: " . count($pm3[1]) . "\n";
+            foreach ($pm3[1] as $json) {
+                $d = @json_decode(trim($json),true);
+                if (isset($d['review'])) echo "page=3 recenzí v JSON-LD: " . count($d['review']) . "\n";
+            }
+        }
+
         // Scraper
         echo "\n--- Scraper výsledek ---\n";
         try {
