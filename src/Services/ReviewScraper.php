@@ -29,19 +29,33 @@ class ReviewScraper
 
     private static function fetch(string $url): ?string
     {
+        $parsed  = parse_url($url);
+        $referer = ($parsed['scheme'] ?? 'https') . '://' . ($parsed['host'] ?? '');
+
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS      => 5,
             CURLOPT_TIMEOUT        => self::$timeout,
-            CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
             CURLOPT_HTTPHEADER     => [
-                'Accept: text/html,application/xhtml+xml',
-                'Accept-Language: cs-CZ,cs;q=0.9,en;q=0.8',
+                'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language: cs-CZ,cs;q=0.9,sk;q=0.8,en-US;q=0.7,en;q=0.6',
                 'Accept-Encoding: gzip, deflate, br',
+                'Cache-Control: no-cache',
+                'Pragma: no-cache',
+                'Sec-Fetch-Dest: document',
+                'Sec-Fetch-Mode: navigate',
+                'Sec-Fetch-Site: none',
+                'Sec-Fetch-User: ?1',
+                'Upgrade-Insecure-Requests: 1',
+                'Referer: ' . $referer,
             ],
             CURLOPT_ENCODING       => '',
             CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_COOKIEFILE     => '',  // prázdný cookie jar — akceptuje cookies
+            CURLOPT_COOKIEJAR      => '',
         ]);
         $html = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
