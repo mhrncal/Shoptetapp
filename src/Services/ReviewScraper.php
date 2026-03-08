@@ -117,39 +117,45 @@ class ReviewScraper
     // ---------------------------------------------------------------
     private static function scrapeTrustedShops(string $html, string $url): array
     {
-        // Zjisti celkový počet recenzí z první stránky
+        // Zjisti celkový počet z JSON-LD AggregateRating nebo HTML
         $allReviews = self::extractJsonLd($html, $url);
         $total      = 0;
 
-        // Hledej celkový počet v HTML (např. "170 Bewertungen insgesamt")
-        if (preg_match('/([\d\.]+)\s*Bewertungen\s*insgesamt/i', $html, $m)) {
-            $total = (int)str_replace('.', '', $m[1]);
-        }
-        // Alternativně: reviewCount z JSON-LD AggregateRating
-        if (!$total) {
-            preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si', $html, $scripts);
-            foreach ($scripts[1] as $json) {
-                $data = @json_decode(trim($json), true);
-                if (isset($data['aggregateRating']['reviewCount'])) {
-                    $total = (int)$data['aggregateRating']['reviewCount'];
-                    break;
-                }
+        preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si', $html, $scripts);
+        foreach ($scripts[1] as $json) {
+            $data = @json_decode(trim($json), true);
+            if (isset($data['aggregateRating']['reviewCount'])) {
+                $total = (int)$data['aggregateRating']['reviewCount'];
+                break;
             }
         }
 
-        // Stránkování — každá stránka má 20 recenzí
-        $perPage  = 20;
-        $pages    = $total > 0 ? (int)ceil($total / $perPage) : 1;
-        $pages    = min($pages, 25); // max 500 recenzí
-        $baseUrl  = preg_replace('/[?&]page=\d+/', '', $url);
-        $sep      = str_contains($baseUrl, '?') ? '&' : '?';
+        // HTML je React SSR — číslo je HTML-escaped, hledej v raw HTML jako číslo před &lt;!-- --&gt;
+        if (!$total) {
+            // Dekóduj HTML entity a hledej
+            $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if (preg_match('/(\d+)\s*Bewertungen\s*insgesamt/i', $decoded, $m)) {
+                $total = (int)str_replace('.', '', $m[1]);
+            }
+        }
+
+        // Stránkování — každá stránka má 20 recenzí, jedeme dokud přicházejí data
+        $perPage = 20;
+        $pages   = $total > 0 ? min((int)ceil($total / $perPage), 50) : 50;
+        $baseUrl = preg_replace('/[?&]page=\d+/', '', $url);
+        $sep     = str_contains($baseUrl, '?') ? '&' : '?';
+        $seen    = md5(implode('', array_column($allReviews, 'external_id')));
 
         for ($page = 2; $page <= $pages; $page++) {
-            usleep(300000); // 300ms pauza
+            usleep(300000);
             $pageHtml = self::fetch($baseUrl . $sep . 'page=' . $page);
             if (!$pageHtml) break;
             $pageReviews = self::extractJsonLd($pageHtml, $url);
             if (empty($pageReviews)) break;
+            // Detekuj duplikáty — stejná stránka = konec
+            $newSeen = md5(implode('', array_column($pageReviews, 'external_id')));
+            if ($newSeen === $seen) break;
+            $seen = $newSeen;
             $allReviews = array_merge($allReviews, $pageReviews);
         }
 
