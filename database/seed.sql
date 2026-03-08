@@ -18,7 +18,9 @@ INSERT INTO `modules` (`name`, `label`, `description`, `icon`, `version`, `is_sy
 ('api_access',      'API přístup',        'API tokeny a přístup k datům přes REST API',    'key',                     '1.0.0', 1),
 ('webhooks',        'Webhooky',           'Webhooky pro externí integrace',                'broadcast',               '1.0.0', 1),
 ('statistics',      'Statistiky',         'Přehledy a reporty aktivity',                   'bar-chart-line',          '1.0.0', 1),
-('settings',        'Nastavení',          'Nastavení systému a profilu',                   'gear',                    '1.0.0', 1)
+('settings',        'Nastavení',          'Nastavení systému a profilu',                   'gear',                    '1.0.0', 1),
+('reviews',         'Fotorecenze',        'Sběr a správa fotorecenzí zákazníků',           'camera',                  '1.0.0', 1),
+('scraped_reviews', 'Scrapované recenze', 'Automatický sběr recenzí z Heureka, Trusted Shops a Shoptet', 'search', '1.0.0', 1)
 ON DUPLICATE KEY UPDATE `label` = VALUES(`label`);
 
 -- ============================================================
