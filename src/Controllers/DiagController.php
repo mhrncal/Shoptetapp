@@ -466,7 +466,7 @@ class DiagController extends BaseController
                     $d=@json_decode(trim($json),true);
                     foreach($d['review']??[]as $r){
                         $c2=$r['reviewBody']??$r['description']??null;
-                        if(!$c2){$skip++;if($debug)echo "  SKIP keys: ".implode(',',array_keys($r))."\n";continue;}
+                        if(!$c2){$skip++;if($debug)echo "  SKIP reviewBody='".($r['reviewBody']??"NULL")."'\n";continue;}
                         $out[]=['author'=>(is_string($r['author']['name']??null)?$r['author']['name']:'Anon'),'content'=>trim($c2),'rating'=>(int)($r['reviewRating']['ratingValue']??0)];
                     }
                 }
