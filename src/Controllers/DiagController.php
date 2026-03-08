@@ -396,6 +396,42 @@ class DiagController extends BaseController
             $allIds = array_merge($allIds, $pgIds);
         }
 
+        // Přímý scraper debug — kolik stránek projde
+        echo "\n--- Scraper interní debug ---\n";
+        $allR2 = [];
+        $dbHtml = (function($u) {
+            $ch = curl_init($u);
+            curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_TIMEOUT=>15,
+                CURLOPT_USERAGENT=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
+                CURLOPT_ENCODING=>'',CURLOPT_SSL_VERIFYPEER=>false]);
+            $r=curl_exec($ch);$c2=curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);
+            return($r&&$c2===200)?$r:null;
+        });
+        // Zjisti total a pages stejně jako scraper
+        $dbScripts=[]; preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si',$html,$dbScripts);
+        $dbTotal=0;
+        foreach($dbScripts[1] as $j){$d=@json_decode(trim($j),true);if(isset($d['aggregateRating']['reviewCount'])){$dbTotal=(int)$d['aggregateRating']['reviewCount'];break;}}
+        if(!$dbTotal){
+            $dec=html_entity_decode(html_entity_decode($html,ENT_QUOTES|ENT_HTML5,'UTF-8'),ENT_QUOTES|ENT_HTML5,'UTF-8');
+            if(preg_match('/(\d+)\s*Bewertungen\s*insgesamt/i',$dec,$dm))$dbTotal=(int)str_replace('.','',$dm[1]);
+        }
+        $dbPages=$dbTotal>0?min((int)ceil($dbTotal/20),50):50;
+        echo "total=$dbTotal, pages=$dbPages\n";
+        $baseDb=preg_replace('/[?&]page=\d+/','',$url);
+        $sepDb=str_contains($baseDb,'?')?'&':'?';
+        $p1r=[];preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si',$html,$p1m);
+        foreach($p1m[1] as $j){$d=@json_decode(trim($j),true);foreach($d['review']??[]as $r)$p1r[]=$r;}
+        echo "page=1: ".count($p1r)." recenzí\n";
+        for($pg=2;$pg<=min($dbPages,5);$pg++){
+            usleep(200000);
+            $pgH=$dbHtml($baseDb.$sepDb.'page='.$pg);
+            if(!$pgH){echo "page=$pg: FAILED\n";break;}
+            $pgR=[];preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si',$pgH,$pgM);
+            foreach($pgM[1] as $j){$d=@json_decode(trim($j),true);foreach($d['review']??[]as $r)$pgR[]=$r;}
+            echo "page=$pg: ".count($pgR)." recenzí\n";
+            if(empty($pgR))break;
+        }
+
         // Scraper
         echo "\n--- Scraper výsledek ---\n";
         try {

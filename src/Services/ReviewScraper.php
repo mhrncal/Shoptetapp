@@ -143,17 +143,12 @@ class ReviewScraper
         $pages   = $total > 0 ? min((int)ceil($total / $perPage), 50) : 50;
         $baseUrl = preg_replace('/[?&]page=\d+/', '', $url);
         $sep     = str_contains($baseUrl, '?') ? '&' : '?';
-        $seenIds = array_flip(array_column($allReviews, 'external_id'));
-
         for ($page = 2; $page <= $pages; $page++) {
             usleep(300000);
             $pageHtml = self::fetch($baseUrl . $sep . 'page=' . $page);
             if (!$pageHtml) break;
             $pageReviews = self::extractJsonLd($pageHtml, $url);
             if (empty($pageReviews)) break;
-            // Detekuj duplikáty — pokud první recenze už existuje, jsme na konci
-            if (isset($seenIds[$pageReviews[0]['external_id']])) break;
-            foreach ($pageReviews as $r) $seenIds[$r['external_id']] = true;
             $allReviews = array_merge($allReviews, $pageReviews);
         }
 
