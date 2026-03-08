@@ -117,21 +117,54 @@ class ReviewScraper
     // ---------------------------------------------------------------
     private static function scrapeTrustedShops(string $html, string $url): array
     {
-        $reviews = self::extractJsonLd($html, $url);
-        if (!empty($reviews)) return $reviews;
+        // Zjisti celkový počet recenzí z první stránky
+        $allReviews = self::extractJsonLd($html, $url);
+        $total      = 0;
 
+        // Hledej celkový počet v HTML (např. "170 Bewertungen insgesamt")
+        if (preg_match('/([\d\.]+)\s*Bewertungen\s*insgesamt/i', $html, $m)) {
+            $total = (int)str_replace('.', '', $m[1]);
+        }
+        // Alternativně: reviewCount z JSON-LD AggregateRating
+        if (!$total) {
+            preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si', $html, $scripts);
+            foreach ($scripts[1] as $json) {
+                $data = @json_decode(trim($json), true);
+                if (isset($data['aggregateRating']['reviewCount'])) {
+                    $total = (int)$data['aggregateRating']['reviewCount'];
+                    break;
+                }
+            }
+        }
+
+        // Stránkování — každá stránka má 20 recenzí
+        $perPage  = 20;
+        $pages    = $total > 0 ? (int)ceil($total / $perPage) : 1;
+        $pages    = min($pages, 25); // max 500 recenzí
+        $baseUrl  = preg_replace('/[?&]page=\d+/', '', $url);
+        $sep      = str_contains($baseUrl, '?') ? '&' : '?';
+
+        for ($page = 2; $page <= $pages; $page++) {
+            usleep(300000); // 300ms pauza
+            $pageHtml = self::fetch($baseUrl . $sep . 'page=' . $page);
+            if (!$pageHtml) break;
+            $pageReviews = self::extractJsonLd($pageHtml, $url);
+            if (empty($pageReviews)) break;
+            $allReviews = array_merge($allReviews, $pageReviews);
+        }
+
+        if (!empty($allReviews)) return $allReviews;
+
+        // CSS fallback
         $doc = new \DOMDocument();
         @$doc->loadHTML('<?xml encoding="UTF-8">' . $html);
-        $xpath = new \DOMXPath($doc);
-
-        $nodes = $xpath->query('//*[contains(@class,"review") or contains(@class,"Review")]');
+        $xpath  = new \DOMXPath($doc);
+        $nodes  = $xpath->query('//*[contains(@class,"review") or contains(@class,"Review")]');
         $result = [];
-
         foreach ($nodes as $i => $node) {
             $content = self::xpathText($xpath, './/*[contains(@class,"comment") or contains(@class,"text") or contains(@class,"body")]', $node);
             $author  = self::xpathText($xpath, './/*[contains(@class,"author") or contains(@class,"name") or contains(@class,"buyer")]', $node) ?: 'Anonymní';
             $dateRaw = self::xpathText($xpath, './/*[contains(@class,"date") or @itemprop="datePublished"]', $node);
-
             if (!$content) continue;
             $result[] = [
                 'external_id' => md5($url . $i . $content),
