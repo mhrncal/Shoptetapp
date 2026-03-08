@@ -8,6 +8,15 @@ use ShopCode\Services\{ReviewScraper, DeepLTranslator};
 
 class ScrapedReviewController extends BaseController
 {
+    private function getGoogleApiKey(): ?string
+    {
+        $db   = \ShopCode\Core\Database::getInstance();
+        $stmt = $db->prepare("SELECT google_places_api_key FROM users WHERE id = ?");
+        $stmt->execute([$this->user['id']]);
+        $key  = $stmt->fetchColumn();
+        return $key ?: null;
+    }
+
     private function getDeeplKey(): ?string
     {
         $db   = \ShopCode\Core\Database::getInstance();
@@ -51,7 +60,8 @@ class ScrapedReviewController extends BaseController
             'sourceFilter' => $sourceId,
             'userLangs'  => $userLangs,
             'allLangs'   => DeepLTranslator::LANGUAGES,
-            'hasDeepL'   => $this->hasDeepL(),
+            'hasDeepL'       => $this->hasDeepL(),
+            'hasGoogleKey'   => (bool)$this->getGoogleApiKey(),
             'deeplKey'   => !empty($this->user['deepl_api_key']),
         ]);
     }
@@ -104,7 +114,16 @@ class ScrapedReviewController extends BaseController
             $this->redirect('/scraped-reviews');
         }
 
-        $scraped = ReviewScraper::scrape($source['url'], $source['platform']);
+        if ($source['platform'] === 'google') {
+            $googleKey = $this->getGoogleApiKey();
+            if (!$googleKey) {
+                Session::flash('error', 'Google Places API klíč není nastaven.');
+                $this->redirect('/scraped-reviews');
+            }
+            $scraped = ReviewScraper::scrapeGooglePlaces($source['url'], $googleKey);
+        } else {
+            $scraped = ReviewScraper::scrape($source['url'], $source['platform']);
+        }
         $new = 0;
         foreach ($scraped as $r) {
             $inserted = ScrapedReview::insertReview(
@@ -221,6 +240,21 @@ class ScrapedReviewController extends BaseController
            ->execute([$key ?: null, $userId]);
 
         Session::flash('success', $key ? 'DeepL API klíč uložen.' : 'DeepL API klíč odstraněn.');
+        $this->redirect('/scraped-reviews');
+    }
+
+    // Uložit Google Places API klíč
+    public function saveGoogleApiKey(): void
+    {
+        $this->validateCsrf();
+        $userId = $this->user['id'];
+        $key    = trim($this->request->post('google_places_api_key', ''));
+
+        $db = \ShopCode\Core\Database::getInstance();
+        $db->prepare("UPDATE users SET google_places_api_key = ? WHERE id = ?")
+           ->execute([$key ?: null, $userId]);
+
+        Session::flash('success', $key ? 'Google Places API klíč uložen.' : 'Google Places API klíč odstraněn.');
         $this->redirect('/scraped-reviews');
     }
 }

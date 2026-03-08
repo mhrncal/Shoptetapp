@@ -98,6 +98,7 @@ return [
     ['GET',  '/admin/xml-queue',          'Admin\XmlQueueController@index', ['auth', 'approved', 'superadmin']],
 
     // Systém
+    ['POST', '/admin/system/run-scrape', 'Admin\\SystemController@runScrape', ['auth','superadmin']],
     ['GET',  '/admin/system',             'Admin\SystemController@index',   ['auth', 'approved', 'superadmin']],
     ['GET',  '/admin/audit-log',          'Admin\SystemController@auditLog',['auth', 'approved', 'superadmin']],
 
@@ -133,6 +134,7 @@ return [
     ['POST',   '/scraped-reviews/scrape',              'ScrapedReviewController@scrapeSource',  ['auth','approved','module:scraped_reviews']],
     ['POST',   '/scraped-reviews/save-langs',          'ScrapedReviewController@saveLangs',     ['auth','approved','module:scraped_reviews']],
     ['POST',   '/scraped-reviews/translate',           'ScrapedReviewController@translatePending', ['auth','approved','module:scraped_reviews']],
+    ['POST',   '/scraped-reviews/save-google-api-key',      'ScrapedReviewController@saveGoogleApiKey', ['auth','approved','module:scraped_reviews']],
     ['POST',   '/scraped-reviews/save-api-key',          'ScrapedReviewController@saveApiKey',    ['auth','approved','module:scraped_reviews']],
     ['GET',    '/scraped-reviews/{id}',                'ScrapedReviewController@detail',        ['auth','approved','module:scraped_reviews']],
 

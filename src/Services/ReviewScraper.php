@@ -166,52 +166,50 @@ class ReviewScraper
     }
 
     // ---------------------------------------------------------------
-    // Google Business / Maps
+    // Google Places API
+    // $url = Place ID (např. ChIJN1t_tDeuEmsRUsoyG83frY4)
     // ---------------------------------------------------------------
-    private static function scrapeGoogle(string $html, string $url): array
+    public static function scrapeGooglePlaces(string $placeId, string $apiKey): array
     {
-        // Google Maps recenze jsou načítané JavaScriptem — JSON-LD fallback
-        $reviews = self::extractJsonLd($html, $url);
-        if (!empty($reviews)) return $reviews;
+        $endpoint = 'https://maps.googleapis.com/maps/api/place/details/json?'
+            . http_build_query([
+                'place_id' => $placeId,
+                'fields'   => 'reviews',
+                'language' => 'cs',
+                'key'      => $apiKey,
+            ]);
 
-        // Zkus strukturovaná data z HTML
-        $doc = new \DOMDocument();
-        @$doc->loadHTML('<?xml encoding="UTF-8">' . $html);
-        $xpath = new \DOMXPath($doc);
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+        $response = curl_exec($ch);
+        curl_close($ch);
 
-        // Google Maps vkládá recenze do data-review-id elementů
-        $nodes = $xpath->query('//*[@data-review-id or contains(@class,"review-full-text") or contains(@class,"MyEned")]');
+        if (!$response) return [];
+        $data = @json_decode($response, true);
+        if (($data['status'] ?? '') !== 'OK') return [];
+
         $result = [];
-
-        foreach ($nodes as $i => $node) {
-            $content = trim($node->nodeValue);
-            if (strlen($content) < 10) continue;
+        foreach ($data['result']['reviews'] ?? [] as $r) {
+            if (empty($r['text'])) continue;
             $result[] = [
-                'external_id' => md5($url . $i . $content),
-                'author'      => 'Google recenze',
-                'rating'      => null,
-                'content'     => $content,
-                'date'        => null,
+                'external_id' => md5($placeId . $r['author_name'] . $r['time']),
+                'author'      => $r['author_name'] ?? 'Anonymní',
+                'rating'      => isset($r['rating']) ? (int)$r['rating'] : null,
+                'content'     => $r['text'],
+                'date'        => isset($r['time']) ? date('Y-m-d', $r['time']) : null,
             ];
         }
+        return $result;
+    }
 
-        // Fallback: hledej JSON v <script> tazích (Google vkládá data jako JS objekty)
-        if (empty($result)) {
-            preg_match_all('/\"text\":\"([^\"]{20,500})\"/', $html, $m);
-            foreach (array_unique($m[1] ?? []) as $i => $text) {
-                $text = stripslashes($text);
-                if (strlen($text) < 20) continue;
-                $result[] = [
-                    'external_id' => md5($url . $i . $text),
-                    'author'      => 'Google recenze',
-                    'rating'      => null,
-                    'content'     => $text,
-                    'date'        => null,
-                ];
-            }
-        }
-
-        return array_slice($result, 0, 50);
+    private static function scrapeGoogle(string $html, string $url): array
+    {
+        // Google Maps vyžaduje Places API — tato metoda není použita
+        return [];
     }
 
     // ---------------------------------------------------------------

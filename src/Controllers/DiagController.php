@@ -21,6 +21,7 @@ class DiagController extends BaseController
                 "INSERT INTO modules (name, label, description, icon, version, is_system_module) VALUES ('scraped_reviews','Scrapované recenze','Automatický sběr recenzí z Heureka, Trusted Shops a Shoptet','search','1.0.0',1) ON DUPLICATE KEY UPDATE label=VALUES(label)",
                 "INSERT INTO user_modules (user_id, module_id, status, activated_at) SELECT u.id, m.id, 'active', NOW() FROM users u CROSS JOIN modules m WHERE u.role='superadmin' ON DUPLICATE KEY UPDATE status='active'",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS deepl_api_key VARCHAR(255) DEFAULT NULL",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_places_api_key VARCHAR(255) DEFAULT NULL",
                 "ALTER TABLE scrape_sources MODIFY COLUMN platform ENUM('heureka','trustedshops','shoptet','google') NOT NULL",
                 "CREATE TABLE IF NOT EXISTS photo_export_log (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, exported_at DATETIME NOT NULL, photo_count INT DEFAULT 0, INDEX idx_pel_user (user_id))",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_warning_sent_at DATETIME DEFAULT NULL",
@@ -34,6 +35,7 @@ class DiagController extends BaseController
                 "INSERT INTO modules (name, label, description, icon, version, is_system_module) VALUES ('scraped_reviews','Scrapované recenze','Automatický sběr recenzí z Heureka, Trusted Shops a Shoptet','search','1.0.0',1) ON DUPLICATE KEY UPDATE label=VALUES(label)",
                 "INSERT INTO user_modules (user_id, module_id, status, activated_at) SELECT u.id, m.id, 'active', NOW() FROM users u CROSS JOIN modules m WHERE u.role='superadmin' ON DUPLICATE KEY UPDATE status='active'",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS deepl_api_key VARCHAR(255) DEFAULT NULL",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_places_api_key VARCHAR(255) DEFAULT NULL",
                 "ALTER TABLE scrape_sources MODIFY COLUMN platform ENUM('heureka','trustedshops','shoptet','google') NOT NULL",
             ];
             foreach ($sqls as $sql) {

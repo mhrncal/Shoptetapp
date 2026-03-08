@@ -52,7 +52,7 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
                                 <option value="heureka">Heureka</option>
                                 <option value="trustedshops">Trusted Shops</option>
                                 <option value="shoptet">Shoptet</option>
-                                <option value="google">Google</option>
+                                <option value="google">Google (Place ID)</option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-sm btn-primary w-100">Přidat zdroj</button>
@@ -126,6 +126,35 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
                     </div>
                     <div class="text-muted mt-1" style="font-size:.75rem;">
                         Free klíč z <a href="https://www.deepl.com/pro-api" target="_blank">deepl.com/pro-api</a> — 500 000 znaků/měsíc zdarma. Klíč končí <code>:fx</code>.
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Google Places API klíč -->
+        <div class="card">
+            <div class="card-header d-flex align-items-center gap-2">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-geo-alt me-1"></i>Google Places API klíč</h6>
+                <?php if ($hasGoogleKey): ?>
+                <span class="badge bg-success ms-auto">Aktivní</span>
+                <?php else: ?>
+                <span class="badge bg-warning text-dark ms-auto">Nenastaveno</span>
+                <?php endif; ?>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/scraped-reviews/save-google-api-key">
+                    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+                    <div class="input-group input-group-sm">
+                        <input type="password" name="google_places_api_key" class="form-control font-monospace"
+                               placeholder="AIza..."
+                               value="<?= $hasGoogleKey ? '••••••••••••••••' : '' ?>">
+                        <button type="submit" class="btn btn-primary">Uložit</button>
+                        <?php if ($hasGoogleKey): ?>
+                        <button type="submit" name="google_places_api_key" value="" class="btn btn-outline-danger" onclick="return confirm('Odstranit klíč?')"><i class="bi bi-trash"></i></button>
+                        <?php endif; ?>
+                    </div>
+                    <div class="text-muted mt-1" style="font-size:.75rem;">
+                        Zdarma na <a href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a> — Places API. Jako URL zdroje zadejte <strong>Place ID</strong> (např. <code>ChIJN1t_tDeuEmsR...</code>).
                     </div>
                 </form>
             </div>

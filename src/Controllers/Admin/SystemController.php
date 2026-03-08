@@ -73,4 +73,24 @@ class SystemController extends BaseController
             'filters' => $filters,
         ], 'admin');
     }
+    public function runScrape(): void
+    {
+        $this->validateCsrf();
+
+        // Spusť cron skript na pozadí
+        $cronScript = ROOT . '/cron/scrape_reviews.php';
+        if (!file_exists($cronScript)) {
+            \ShopCode\Core\Session::flash('error', 'Cron skript nenalezen.');
+            $this->redirect('/admin/system');
+        }
+
+        // Spusť asynchronně
+        $logFile = ROOT . '/public/logs/cron-scrape.log';
+        $phpBin  = PHP_BINARY ?: '/usr/local/bin/php';
+        $cmd     = escapeshellcmd($phpBin) . ' ' . escapeshellarg($cronScript) . ' >> ' . escapeshellarg($logFile) . ' 2>&1 &';
+        exec($cmd);
+
+        \ShopCode\Core\Session::flash('success', 'Scraping spuštěn na pozadí. Log: /public/logs/cron-scrape.log');
+        $this->redirect('/admin/system');
+    }
 }

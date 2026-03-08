@@ -1,8 +1,14 @@
 <?php $pageTitle = 'Systémový přehled'; ?>
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_HTML5, 'UTF-8'); ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 gap-2 flex-wrap">
     <h4 class="fw-bold mb-0"><i class="bi bi-cpu me-2"></i>Systémový přehled</h4>
+    <form method="POST" action="/admin/system/run-scrape">
+        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+        <button type="submit" class="btn btn-sm btn-outline-primary" onclick="return confirm('Spustit scraping všech zdrojů na pozadí?')">
+            <i class="bi bi-arrow-clockwise me-1"></i>Spustit scraping recenzí
+        </button>
+    </form>
 </div>
 
 <div class="d-flex flex-column gap-3">

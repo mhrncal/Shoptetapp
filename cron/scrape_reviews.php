@@ -41,7 +41,16 @@ $log('Zdrojů: ' . count($sources));
 foreach ($sources as $source) {
     $log("Scraping: {$source['name']} ({$source['platform']})");
     try {
-        $reviews = ReviewScraper::scrape($source['url'], $source['platform']);
+        if ($source['platform'] === 'google') {
+            // Načti Google API klíč uživatele
+            $stmt = $db->prepare("SELECT google_places_api_key FROM users WHERE id = ?");
+            $stmt->execute([$source['user_id']]);
+            $googleKey = $stmt->fetchColumn();
+            if (!$googleKey) { $log("  SKIP: Google klíč není nastaven"); continue; }
+            $reviews = ReviewScraper::scrapeGooglePlaces($source['url'], $googleKey);
+        } else {
+            $reviews = ReviewScraper::scrape($source['url'], $source['platform']);
+        }
         $new = 0;
         foreach ($reviews as $r) {
             $ok = ScrapedReview::insertReview(
