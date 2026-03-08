@@ -3,7 +3,7 @@
 namespace ShopCode\Controllers;
 
 use ShopCode\Middleware\ApiAuthMiddleware;
-use ShopCode\Models\{Product, Faq, Branch, Event};
+use ShopCode\Models\{Product, Faq, Branch, Event, ScrapedReview};
 use ShopCode\Core\Database;
 
 /**
@@ -152,6 +152,71 @@ class ApiController
 
         $items = Event::allForUser($userId, $filters);
         $this->json(['data' => $items, 'total' => count($items)]);
+    }
+
+    // ---- Scraped Reviews ----
+
+    public function scrapedReviews(): void
+    {
+        $this->requirePermission('scraped_reviews:read');
+        $userId  = ApiAuthMiddleware::userId();
+        $page    = max(1, (int)($this->request->get('page', 1)));
+        $perPage = min(200, max(1, (int)($this->request->get('per_page', 25))));
+
+        $filters = array_filter([
+            'source_id' => $this->request->get('source_id') ? (int)$this->request->get('source_id') : null,
+        ]);
+
+        $items = ScrapedReview::getReviews($userId, $page, $perPage, $filters);
+        $total = ScrapedReview::countReviews($userId, $filters);
+
+        // Přidej CS překlad jako display_content
+        foreach ($items as &$r) {
+            $r['display_content'] = !empty($r['cs_content']) ? $r['cs_content'] : $r['content'];
+            $r['has_cs_translation'] = !empty($r['cs_content']);
+            unset($r['cs_is_deepl']); // interní pole
+        }
+
+        $this->json([
+            'data'       => $items,
+            'pagination' => [
+                'total'    => $total,
+                'page'     => $page,
+                'per_page' => $perPage,
+                'pages'    => (int)ceil($total / $perPage),
+            ],
+        ]);
+    }
+
+    public function scrapedReview(): void
+    {
+        $this->requirePermission('scraped_reviews:read');
+        $userId = ApiAuthMiddleware::userId();
+        $id     = (int)($this->routeParam('id') ?? 0);
+        $review = ScrapedReview::getReviewWithTranslations($id, $userId);
+
+        if (!$review) { $this->notFound('Recenze nenalezena'); }
+
+        // Normalizuj translations na jednoduché pole text+meta
+        $translations = [];
+        foreach ($review['translations'] as $lang => $t) {
+            $translations[$lang] = [
+                'content'   => $t['content'],
+                'is_deepl'  => (bool)$t['is_deepl'],
+            ];
+        }
+        $review['translations']   = $translations;
+        $review['display_content'] = $translations['CS']['content'] ?? $review['content'];
+
+        $this->json(['data' => $review]);
+    }
+
+    public function scrapedSources(): void
+    {
+        $this->requirePermission('scraped_reviews:read');
+        $userId  = ApiAuthMiddleware::userId();
+        $sources = ScrapedReview::getSources($userId);
+        $this->json(['data' => $sources, 'total' => count($sources)]);
     }
 
     // ---- Helpers ----

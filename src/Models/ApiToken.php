@@ -6,7 +6,7 @@ use ShopCode\Core\Database;
 
 class ApiToken
 {
-    public const PERMISSIONS = ['products:read', 'faq:read', 'branches:read', 'events:read'];
+    public const PERMISSIONS = ['products:read', 'faq:read', 'branches:read', 'events:read', 'scraped_reviews:read'];
 
     public static function allForUser(int $userId): array
     {
