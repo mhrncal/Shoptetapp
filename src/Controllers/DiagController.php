@@ -459,17 +459,18 @@ class DiagController extends BaseController
                 $r=curl_exec($ch);$code=curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);
                 return($r&&$code===200)?$r:null;
             };
-            $extractFn = function($h) {
+            $extractFn = function($h, $debug=false) {
                 preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si',$h,$m);
-                $out=[];
+                $out=[];$skip=0;
                 foreach($m[1] as $json){
                     $d=@json_decode(trim($json),true);
                     foreach($d['review']??[]as $r){
                         $c2=$r['reviewBody']??$r['description']??null;
-                        if(!$c2)continue;
+                        if(!$c2){$skip++;if($debug)echo "  SKIP keys: ".implode(',',array_keys($r))."\n";continue;}
                         $out[]=['author'=>(is_string($r['author']['name']??null)?$r['author']['name']:'Anon'),'content'=>trim($c2),'rating'=>(int)($r['reviewRating']['ratingValue']??0)];
                     }
                 }
+                if($debug && $skip>0) echo "  Přeskočeno (bez reviewBody): $skip\n";
                 return $out;
             };
             $base2=preg_replace('/[?&]page=\d+/','',$url);
@@ -479,7 +480,7 @@ class DiagController extends BaseController
                 $pgUrl=$pg===1?$base2:$base2.$sep2.'page='.$pg;
                 $pgH=$fetchFn($pgUrl);
                 if(!$pgH){echo "page=$pg: FETCH FAILED\n";break;}
-                $pgR=$extractFn($pgH);
+                $pgR=$extractFn($pgH, $pg===1);
                 echo "page=$pg: ".count($pgR)." recenzí\n";
                 if(empty($pgR))break;
                 $all2=array_merge($all2,$pgR);
