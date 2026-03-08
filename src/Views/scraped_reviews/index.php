@@ -71,7 +71,7 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
                             <span class="badge bg-<?= $platformColors[$s['platform']] ?? 'secondary' ?> flex-shrink-0"><?= $platformLabels[$s['platform']] ?? $s['platform'] ?></span>
                             <div class="flex-grow-1 min-w-0">
                                 <div class="fw-semibold small text-truncate"><?= $e($s['name']) ?></div>
-                                <div class="text-muted" style="font-size:.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= $e($s['url']) ?></div>
+                                <div class="text-muted" style="font-size:.75rem;word-break:break-all;overflow-wrap:anywhere;"><?= $e($s['url']) ?></div>
                                 <?php if ($s['last_scraped_at']): ?>
                                 <div class="text-muted" style="font-size:.7rem;">Naposledy: <?= date('d.m.Y H:i', strtotime($s['last_scraped_at'])) ?></div>
                                 <?php endif; ?>
@@ -188,6 +188,21 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
 
     </div>
 </div>
+
+<!-- Rychlé spuštění scrape pro uživatele -->
+<?php if (!empty($sources)): ?>
+<div class="d-flex gap-2 flex-wrap mb-3">
+    <?php foreach ($sources as $s): ?>
+    <form method="POST" action="/scraped-reviews/scrape">
+        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+        <input type="hidden" name="source_id" value="<?= $s['id'] ?>">
+        <button type="submit" class="btn btn-sm btn-outline-<?= $platformColors[$s['platform']] ?? 'secondary' ?>">
+            <i class="bi bi-arrow-clockwise me-1"></i><?= $e($s['name']) ?>
+        </button>
+    </form>
+    <?php endforeach; ?>
+</div>
+<?php endif; ?>
 
 <!-- Filtr zdrojů -->
 <?php if (count($sources) > 1): ?>
