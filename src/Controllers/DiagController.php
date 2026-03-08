@@ -370,6 +370,32 @@ class DiagController extends BaseController
             }
         }
 
+        // Přímý pagination test
+        echo "\n--- Přímý pagination test (stránky 1-5) ---\n";
+        $baseUrl2 = preg_replace('/[?&]page=\d+/', '', $url);
+        $sep2 = str_contains($baseUrl2, '?') ? '&' : '?';
+        $allIds = [];
+        for ($pg = 1; $pg <= 5; $pg++) {
+            $pgUrl = $pg === 1 ? $baseUrl2 : $baseUrl2 . $sep2 . 'page=' . $pg;
+            $pgCh = curl_init($pgUrl);
+            curl_setopt_array($pgCh, [CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_TIMEOUT=>15,
+                CURLOPT_USERAGENT=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
+                CURLOPT_ENCODING=>'',CURLOPT_SSL_VERIFYPEER=>false]);
+            $pgHtml = curl_exec($pgCh); $pgCode = curl_getinfo($pgCh,CURLINFO_HTTP_CODE); curl_close($pgCh);
+            if (!$pgHtml || $pgCode !== 200) { echo "page=$pg: FAILED\n"; break; }
+            preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si', $pgHtml, $pgM);
+            $pgIds = [];
+            foreach ($pgM[1] as $pgJson) {
+                $pgData = @json_decode(trim($pgJson), true);
+                foreach ($pgData['review'] ?? [] as $pgR) {
+                    $pgIds[] = md5(($pgR['author']['name']??'').($pgR['reviewBody']??'').($pgR['datePublished']??''));
+                }
+            }
+            $overlap2 = count(array_intersect($pgIds, $allIds));
+            echo "page=$pg: " . count($pgIds) . " recenzí, překryv s předchozími: $overlap2, první ID: " . ($pgIds[0] ?? 'N/A') . "\n";
+            $allIds = array_merge($allIds, $pgIds);
+        }
+
         // Scraper
         echo "\n--- Scraper výsledek ---\n";
         try {
