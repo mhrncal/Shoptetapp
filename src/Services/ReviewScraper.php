@@ -146,11 +146,16 @@ class ReviewScraper
         for ($page = 2; $page <= $pages; $page++) {
             usleep(300000);
             $pageHtml = self::fetch($baseUrl . $sep . 'page=' . $page);
-            if (!$pageHtml) break;
+            if (!$pageHtml) {
+                error_log("[TS scraper] page=$page: fetch failed");
+                break;
+            }
             $pageReviews = self::extractJsonLd($pageHtml, $url);
+            error_log("[TS scraper] page=$page: " . count($pageReviews) . " reviews, total so far=" . (count($allReviews) + count($pageReviews)));
             if (empty($pageReviews)) break;
             $allReviews = array_merge($allReviews, $pageReviews);
         }
+        error_log("[TS scraper] FINAL total=" . count($allReviews) . " pages_attempted=$pages");
 
         if (!empty($allReviews)) return $allReviews;
 

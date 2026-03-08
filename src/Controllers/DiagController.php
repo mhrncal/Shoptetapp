@@ -432,6 +432,10 @@ class DiagController extends BaseController
             if(empty($pgR))break;
         }
 
+        // Vymaž error log před testem
+        $errLog = ini_get('error_log') ?: '/srv/app/public/logs/php_errors.log';
+        @file_put_contents($errLog, ''); // reset
+
         // Scraper
         echo "\n--- Scraper výsledek ---\n";
         try {
@@ -443,6 +447,19 @@ class DiagController extends BaseController
             }
         } catch (\Throwable $e) {
             echo "ERROR: " . $e->getMessage() . "\n";
+        }
+
+        // Error log výstup
+        echo "\n--- PHP error_log (scraper) ---\n";
+        $errLog = ini_get('error_log') ?: '/srv/app/public/logs/php_errors.log';
+        echo "Log file: $errLog\n";
+        if (file_exists($errLog)) {
+            $lines = file($errLog);
+            foreach ($lines as $line) {
+                if (str_contains($line, 'TS scraper')) echo trim($line) . "\n";
+            }
+        } else {
+            echo "Soubor neexistuje\n";
         }
 
         // HTML ukázka
