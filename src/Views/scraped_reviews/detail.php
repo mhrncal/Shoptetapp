@@ -1,7 +1,7 @@
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); ?>
 <?php
-$platformLabels = ['heureka' => 'Heureka', 'trustedshops' => 'Trusted Shops', 'shoptet' => 'Shoptet'];
-$platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet' => 'primary'];
+$platformLabels = ['heureka' => 'Heureka', 'trustedshops' => 'Trusted Shops', 'shoptet' => 'Shoptet', 'google' => 'Google'];
+$platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet' => 'primary', 'google' => 'danger'];
 ?>
 
 <div class="d-flex align-items-center mb-4 gap-3">

@@ -22,6 +22,7 @@ class ReviewScraper
             'heureka'      => self::scrapeHeureka($html, $url),
             'trustedshops' => self::scrapeTrustedShops($html, $url),
             'shoptet'      => self::scrapeShoptet($html, $url),
+            'google'       => self::scrapeGoogle($html, $url),
             default        => [],
         };
     }
@@ -162,6 +163,55 @@ class ReviewScraper
             ];
         }
         return $result;
+    }
+
+    // ---------------------------------------------------------------
+    // Google Business / Maps
+    // ---------------------------------------------------------------
+    private static function scrapeGoogle(string $html, string $url): array
+    {
+        // Google Maps recenze jsou načítané JavaScriptem — JSON-LD fallback
+        $reviews = self::extractJsonLd($html, $url);
+        if (!empty($reviews)) return $reviews;
+
+        // Zkus strukturovaná data z HTML
+        $doc = new \DOMDocument();
+        @$doc->loadHTML('<?xml encoding="UTF-8">' . $html);
+        $xpath = new \DOMXPath($doc);
+
+        // Google Maps vkládá recenze do data-review-id elementů
+        $nodes = $xpath->query('//*[@data-review-id or contains(@class,"review-full-text") or contains(@class,"MyEned")]');
+        $result = [];
+
+        foreach ($nodes as $i => $node) {
+            $content = trim($node->nodeValue);
+            if (strlen($content) < 10) continue;
+            $result[] = [
+                'external_id' => md5($url . $i . $content),
+                'author'      => 'Google recenze',
+                'rating'      => null,
+                'content'     => $content,
+                'date'        => null,
+            ];
+        }
+
+        // Fallback: hledej JSON v <script> tazích (Google vkládá data jako JS objekty)
+        if (empty($result)) {
+            preg_match_all('/\"text\":\"([^\"]{20,500})\"/', $html, $m);
+            foreach (array_unique($m[1] ?? []) as $i => $text) {
+                $text = stripslashes($text);
+                if (strlen($text) < 20) continue;
+                $result[] = [
+                    'external_id' => md5($url . $i . $text),
+                    'author'      => 'Google recenze',
+                    'rating'      => null,
+                    'content'     => $text,
+                    'date'        => null,
+                ];
+            }
+        }
+
+        return array_slice($result, 0, 50);
     }
 
     // ---------------------------------------------------------------

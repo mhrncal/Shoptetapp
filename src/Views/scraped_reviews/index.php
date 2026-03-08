@@ -1,8 +1,8 @@
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); ?>
 
 <?php
-$platformLabels = ['heureka' => 'Heureka', 'trustedshops' => 'Trusted Shops', 'shoptet' => 'Shoptet'];
-$platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet' => 'primary'];
+$platformLabels = ['heureka' => 'Heureka', 'trustedshops' => 'Trusted Shops', 'shoptet' => 'Shoptet', 'google' => 'Google'];
+$platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet' => 'primary', 'google' => 'danger'];
 ?>
 
 <!-- Hlavička -->
@@ -52,6 +52,7 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
                                 <option value="heureka">Heureka</option>
                                 <option value="trustedshops">Trusted Shops</option>
                                 <option value="shoptet">Shoptet</option>
+                                <option value="google">Google</option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-sm btn-primary w-100">Přidat zdroj</button>

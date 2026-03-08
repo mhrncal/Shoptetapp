@@ -116,7 +116,25 @@ class ScrapedReviewController extends BaseController
         }
 
         ScrapedReview::updateLastScraped($sourceId);
-        Session::flash('success', "Nascrapováno " . count($scraped) . " recenzí, {$new} nových.");
+
+        // Překlad — volitelný, jen pokud má uživatel klíč a nastavené jazyky
+        $translated = 0;
+        $deepl = $this->getDeepL();
+        $langs = ScrapedReview::getUserLangs($userId);
+        if ($deepl && !empty($langs) && $new > 0) {
+            $pending = ScrapedReview::getUntranslated($userId, $langs);
+            foreach ($pending as $review) {
+                foreach ($langs as $lang) {
+                    $text = $deepl->translate($review['content'], $lang);
+                    if ($text) { ScrapedReview::saveTranslation($review['id'], $lang, $text); $translated++; }
+                }
+            }
+        }
+
+        $msg = "Nascrapováno " . count($scraped) . " recenzí, {$new} nových.";
+        if ($translated) $msg .= " Přeloženo: {$translated}.";
+        elseif ($deepl && !empty($langs)) $msg .= " Žádné nové k překladu.";
+        Session::flash('success', $msg);
         $this->redirect('/scraped-reviews');
     }
 

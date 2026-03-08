@@ -174,6 +174,12 @@ class ScrapedReview
     }
 
     // --- Pending translations for all users ---
+    public static function deleteReviewsBySource(int $sourceId, int $userId): void
+    {
+        $db = Database::getInstance();
+        $db->prepare("DELETE FROM scraped_reviews WHERE source_id = ? AND user_id = ?")->execute([$sourceId, $userId]);
+    }
+
     public static function getAllSourcesForCron(): array
     {
         $db = Database::getInstance();
