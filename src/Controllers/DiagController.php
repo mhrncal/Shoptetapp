@@ -239,4 +239,86 @@ class DiagController extends BaseController
         echo "\n=== Konec diagnostiky ===\n";
         exit;
     }
+
+    public function scrapeDiag(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $url      = $_GET['url'] ?? '';
+        $platform = $_GET['platform'] ?? 'heureka';
+
+        echo "=== Scrape diagnostika ===\n\n";
+
+        if (!$url) {
+            echo "Použití: /diag/scrape?key=shopcode_diag&url=https://...&platform=heureka|trustedshops|shoptet\n";
+            exit;
+        }
+
+        echo "URL: $url\n";
+        echo "Platform: $platform\n\n";
+
+        // cURL fetch
+        echo "--- cURL fetch ---\n";
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT        => 20,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+            CURLOPT_HTTPHEADER     => ['Accept: text/html,application/xhtml+xml', 'Accept-Language: cs-CZ,cs;q=0.9'],
+            CURLOPT_ENCODING       => '',
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+        $html = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        curl_close($ch);
+
+        echo "HTTP status: $code\n";
+        echo "HTML délka: " . strlen((string)$html) . " bytů\n";
+        if ($err) echo "cURL error: $err\n";
+        if (!$html || $code !== 200) { echo "Nelze stáhnout.\n"; exit; }
+
+        // JSON-LD
+        echo "\n--- JSON-LD ---\n";
+        preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si', $html, $m);
+        echo "Bloků: " . count($m[1]) . "\n";
+        foreach ($m[1] as $i => $json) {
+            $data = @json_decode(trim($json), true);
+            $type = $data['@type'] ?? ($data[0]['@type'] ?? 'N/A');
+            echo "  [$i] @type=$type";
+            if (isset($data['review'])) echo " → recenzí: " . count($data['review']);
+            if (isset($data['reviews'])) echo " → recenzí: " . count($data['reviews']);
+            echo "\n";
+        }
+
+        // CSS třídy
+        echo "\n--- CSS třídy ---\n";
+        foreach (['c-review','review-item','review-body','review__text','rating-list__item','productReview'] as $cls) {
+            $cnt = substr_count($html, $cls);
+            if ($cnt > 0) echo "  .$cls: $cnt výskytů\n";
+        }
+
+        // Scraper
+        echo "\n--- Scraper výsledek ---\n";
+        try {
+            $reviews = \ShopCode\Services\ReviewScraper::scrape($url, $platform);
+            echo "Nalezeno: " . count($reviews) . "\n";
+            foreach (array_slice($reviews, 0, 3) as $i => $r) {
+                echo "  [$i] author={$r['author']} rating={$r['rating']}\n";
+                echo "      " . mb_substr($r['content'], 0, 120) . "\n";
+            }
+        } catch (\Throwable $e) {
+            echo "ERROR: " . $e->getMessage() . "\n";
+        }
+
+        // HTML ukázka
+        echo "\n--- HTML body (2000 znaků) ---\n";
+        preg_match('/<body[^>]*>(.*)/si', $html, $bm);
+        $body = preg_replace('/\s+/', ' ', strip_tags($bm[1] ?? $html));
+        echo mb_substr(trim($body), 0, 2000) . "\n";
+    }
 }
