@@ -446,15 +446,59 @@ class DiagController extends BaseController
         $errLog = ini_get('error_log') ?: '/srv/app/public/logs/php_errors.log';
         @file_put_contents($errLog, ''); // reset
 
-        // Scraper
-        echo "\n--- Scraper výsledek ---\n";
+        // Scraper — přímé volání s detailním logem
+        echo "\n--- Scraper výsledek (přímý) ---\n";
+        try {
+            $fetchFn = function($u) {
+                $ch = curl_init($u);
+                curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_TIMEOUT=>20,
+                    CURLOPT_USERAGENT=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
+                    CURLOPT_ENCODING=>'',CURLOPT_SSL_VERIFYPEER=>false,
+                    CURLOPT_HTTPHEADER=>['Accept: text/html,application/xhtml+xml','Accept-Language: cs-CZ,cs;q=0.9'],
+                ]);
+                $r=curl_exec($ch);$code=curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);
+                return($r&&$code===200)?$r:null;
+            };
+            $extractFn = function($h) {
+                preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si',$h,$m);
+                $out=[];
+                foreach($m[1] as $json){
+                    $d=@json_decode(trim($json),true);
+                    foreach($d['review']??[]as $r){
+                        $c2=$r['reviewBody']??$r['description']??null;
+                        if(!$c2)continue;
+                        $out[]=['author'=>(is_string($r['author']['name']??null)?$r['author']['name']:'Anon'),'content'=>trim($c2),'rating'=>(int)($r['reviewRating']['ratingValue']??0)];
+                    }
+                }
+                return $out;
+            };
+            $base2=preg_replace('/[?&]page=\d+/','',$url);
+            $sep2=str_contains($base2,'?')?'&':'?';
+            $all2=[];
+            for($pg=1;$pg<=9;$pg++){
+                $pgUrl=$pg===1?$base2:$base2.$sep2.'page='.$pg;
+                $pgH=$fetchFn($pgUrl);
+                if(!$pgH){echo "page=$pg: FETCH FAILED\n";break;}
+                $pgR=$extractFn($pgH);
+                echo "page=$pg: ".count($pgR)." recenzí\n";
+                if(empty($pgR))break;
+                $all2=array_merge($all2,$pgR);
+                usleep(200000);
+            }
+            echo "CELKEM: ".count($all2)."\n";
+            foreach(array_slice($all2,0,2) as $i=>$r){
+                echo "  [$i] {$r['author']}: ".mb_substr($r['content'],0,80)."\n";
+            }
+        } catch (\Throwable $e) {
+            echo "ERROR: " . $e->getMessage() . "\n";
+        }
+
+        // Přes ReviewScraper::scrape()
+        echo "\n--- ReviewScraper::scrape() ---\n";
+        echo "mtime: " . date('Y-m-d H:i:s', filemtime(ROOT.'/src/Services/ReviewScraper.php')) . "\n";
         try {
             $reviews = \ShopCode\Services\ReviewScraper::scrape($url, $platform);
             echo "Nalezeno: " . count($reviews) . "\n";
-            foreach (array_slice($reviews, 0, 3) as $i => $r) {
-                echo "  [$i] author={$r['author']} rating={$r['rating']}\n";
-                echo "      " . mb_substr($r['content'], 0, 120) . "\n";
-            }
         } catch (\Throwable $e) {
             echo "ERROR: " . $e->getMessage() . "\n";
         }
