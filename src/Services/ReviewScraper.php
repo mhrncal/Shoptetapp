@@ -288,8 +288,7 @@ class ReviewScraper
                 }
 
                 foreach ($reviews as $i => $r) {
-                    $content = $r['reviewBody'] ?? $r['description'] ?? null;
-                    if (!$content) continue;
+                    $content = $r['reviewBody'] ?? $r['description'] ?? '';
                     $author  = $r['author']['name'] ?? $r['author'] ?? 'Anonymní';
                     $rating  = isset($r['reviewRating']['ratingValue']) ? (int)$r['reviewRating']['ratingValue'] : null;
                     $date    = $r['datePublished'] ?? null;
