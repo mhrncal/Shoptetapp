@@ -1,4 +1,5 @@
-<?php $pageTitle = 'Recenze #' . $review['id']; ?>
+<?php \$pageTitle = 'Recenze #' . \$review['id']; ?>
+<?php $isPreview = !empty($review['xml_exported_at']); ?>
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); ?>
 <?php $st = \ShopCode\Models\Review::STATUSES[$review['status']] ?? ['label'=>$review['status'],'color'=>'secondary']; ?>
 
@@ -14,6 +15,16 @@
     </span>
     <?php endif; ?>
 </div>
+
+<?php if ($isPreview): ?>
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+    <div class="small">
+        <strong>Fotky jsou náhledy</strong> — originály byly exportovány do Shoptetu <?= date('d.m.Y', strtotime($review['xml_exported_at'])) ?>.
+        Pro nový export nahrajte originální fotky ze zálohy znovu.
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="row g-4" style="overflow-x:hidden;margin-left:0;margin-right:0;">
 

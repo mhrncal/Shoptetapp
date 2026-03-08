@@ -374,4 +374,51 @@ class ImageHandler
             default => 'jpg',
         };
     }
+
+    /**
+     * Zmenší obrázek na náhled (max 300px) — přepíše originál.
+     * Volá se po XML exportu.
+     */
+    public static function downsizeToPreview(string $filepath, int $maxPx = 300): bool
+    {
+        if (!file_exists($filepath)) return false;
+
+        $mime = mime_content_type($filepath);
+        $img  = match($mime) {
+            'image/jpeg' => @imagecreatefromjpeg($filepath),
+            'image/png'  => @imagecreatefrompng($filepath),
+            'image/webp' => @imagecreatefromwebp($filepath),
+            default      => false,
+        };
+        if (!$img) return false;
+
+        $srcW = imagesx($img);
+        $srcH = imagesy($img);
+
+        if ($srcW <= $maxPx && $srcH <= $maxPx) {
+            imagedestroy($img);
+            return true;
+        }
+
+        $ratio = $maxPx / max($srcW, $srcH);
+        $newW  = (int)round($srcW * $ratio);
+        $newH  = (int)round($srcH * $ratio);
+
+        $canvas = imagecreatetruecolor($newW, $newH);
+        imagealphablending($canvas, false);
+        imagesavealpha($canvas, true);
+        $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
+        imagefilledrectangle($canvas, 0, 0, $newW, $newH, $transparent);
+        imagecopyresampled($canvas, $img, 0, 0, 0, 0, $newW, $newH, $srcW, $srcH);
+        imagedestroy($img);
+
+        $ok = match($mime) {
+            'image/jpeg' => imagejpeg($canvas, $filepath, 85),
+            'image/png'  => imagepng($canvas, $filepath, 6),
+            'image/webp' => imagewebp($canvas, $filepath, 85),
+            default      => false,
+        };
+        imagedestroy($canvas);
+        return (bool)$ok;
+    }
 }
