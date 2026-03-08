@@ -23,6 +23,8 @@ class DiagController extends BaseController
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS deepl_api_key VARCHAR(255) DEFAULT NULL",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_places_api_key VARCHAR(255) DEFAULT NULL",
                 "ALTER TABLE scrape_sources MODIFY COLUMN platform ENUM('heureka','trustedshops','shoptet','google') NOT NULL",
+                "ALTER TABLE scraped_reviews ADD COLUMN IF NOT EXISTS source_lang VARCHAR(5) DEFAULT NULL",
+                "ALTER TABLE scraped_review_translations ADD COLUMN IF NOT EXISTS is_deepl TINYINT(1) DEFAULT 1",
                 "CREATE TABLE IF NOT EXISTS photo_export_log (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, exported_at DATETIME NOT NULL, photo_count INT DEFAULT 0, INDEX idx_pel_user (user_id))",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_warning_sent_at DATETIME DEFAULT NULL",
                 "CREATE TABLE IF NOT EXISTS scrape_sources (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, name VARCHAR(255) NOT NULL, url VARCHAR(1000) NOT NULL, platform ENUM('heureka','trustedshops','shoptet','google') NOT NULL, is_active TINYINT(1) DEFAULT 1, last_scraped_at DATETIME DEFAULT NULL, created_at DATETIME DEFAULT NOW(), INDEX idx_ss_user (user_id))",
@@ -37,6 +39,8 @@ class DiagController extends BaseController
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS deepl_api_key VARCHAR(255) DEFAULT NULL",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_places_api_key VARCHAR(255) DEFAULT NULL",
                 "ALTER TABLE scrape_sources MODIFY COLUMN platform ENUM('heureka','trustedshops','shoptet','google') NOT NULL",
+                "ALTER TABLE scraped_reviews ADD COLUMN IF NOT EXISTS source_lang VARCHAR(5) DEFAULT NULL",
+                "ALTER TABLE scraped_review_translations ADD COLUMN IF NOT EXISTS is_deepl TINYINT(1) DEFAULT 1",
             ];
             foreach ($sqls as $sql) {
                 try { $db->exec($sql); echo "OK: " . substr($sql, 0, 60) . "...\n"; }

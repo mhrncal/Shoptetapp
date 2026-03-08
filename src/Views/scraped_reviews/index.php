@@ -230,7 +230,7 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
     <a href="/scraped-reviews/<?= $r['id'] ?>" class="text-decoration-none">
     <div class="card card-hover">
         <div class="card-body py-2 px-3">
-            <div class="d-flex align-items-center gap-2 mb-1">
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                 <span class="badge bg-<?= $platformColors[$r['platform']] ?? 'secondary' ?> flex-shrink-0"><?= $platformLabels[$r['platform']] ?? $r['platform'] ?></span>
                 <strong class="small flex-grow-1 text-dark text-truncate"><?= $e($r['author']) ?></strong>
                 <?php if ($r['rating']): ?>
@@ -238,9 +238,16 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
                     <?= str_repeat('★', (int)$r['rating']) ?><?= str_repeat('☆', 5 - (int)$r['rating']) ?>
                 </span>
                 <?php endif; ?>
+                <?php if (!empty($r['source_lang'])): ?>
+                <span class="badge bg-light text-secondary border flex-shrink-0" style="font-size:.65rem;" title="Zdrojový jazyk"><?= $e(strtolower($r['source_lang'])) ?></span>
+                <?php endif; ?>
+                <?php if (!empty($r['cs_content'])): ?>
+                <span class="badge bg-success flex-shrink-0" style="font-size:.65rem;" title="Přeloženo DeepL">🇨🇿 CS</span>
+                <?php endif; ?>
                 <span class="text-muted small flex-shrink-0"><?= $r['reviewed_at'] ? date('d.m.Y', strtotime($r['reviewed_at'])) : '' ?></span>
             </div>
-            <p class="small text-muted mb-0" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;"><?= $e($r['content']) ?></p>
+            <?php $displayContent = !empty($r['cs_content']) ? $r['cs_content'] : $r['content']; ?>
+            <p class="small text-muted mb-0" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;"><?= $e($displayContent) ?></p>
         </div>
     </div>
     </a>

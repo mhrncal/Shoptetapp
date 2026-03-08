@@ -81,6 +81,56 @@ class DeepLTranslator
     }
 
     /**
+     * Přeloží text a vrátí ['text' => ..., 'detected_lang' => ...]
+     */
+    public function translateWithLang(string $text, string $targetLang): ?array
+    {
+        if (empty(trim($text))) return null;
+
+        $endpoint = str_ends_with($this->apiKey, ':fx')
+            ? 'https://api-free.deepl.com/v2/translate'
+            : 'https://api.deepl.com/v2/translate';
+
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => http_build_query([
+                'text'        => $text,
+                'target_lang' => strtoupper($targetLang),
+            ]),
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: DeepL-Auth-Key ' . $this->apiKey,
+                'Content-Type: application/x-www-form-urlencoded',
+            ],
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+
+        $response = curl_exec($ch);
+        $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($code !== 200 || !$response) return null;
+        $data = @json_decode($response, true);
+        $t    = $data['translations'][0] ?? null;
+        if (!$t) return null;
+
+        return [
+            'text'          => $t['text'],
+            'detected_lang' => strtoupper($t['detected_source_language'] ?? ''),
+        ];
+    }
+
+    /**
+     * Detekuje jazyk textu (bez překladu — pošle do EN a přečte detected_source_language)
+     */
+    public function detectLang(string $text): ?string
+    {
+        $result = $this->translateWithLang(mb_substr($text, 0, 100), 'EN-GB');
+        return $result['detected_lang'] ?? null;
+    }
+
+    /**
      * Přeloží pole textů najednou (batch)
      */
     public function translateBatch(array $texts, string $targetLang): array

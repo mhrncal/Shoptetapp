@@ -46,18 +46,25 @@ class ScrapedReview
 
     // --- Reviews ---
 
-    public static function insertReview(int $userId, int $sourceId, string $externalId, string $author, ?int $rating, string $content, ?string $date): bool
+    public static function insertReview(int $userId, int $sourceId, string $externalId, string $author, ?int $rating, string $content, ?string $date, ?string $sourceLang = null): bool
     {
         $db = Database::getInstance();
         try {
             $db->prepare("
-                INSERT IGNORE INTO scraped_reviews (user_id, source_id, external_id, author, rating, content, reviewed_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ")->execute([$userId, $sourceId, $externalId, $author, $rating, $content, $date]);
+                INSERT IGNORE INTO scraped_reviews (user_id, source_id, external_id, author, rating, content, reviewed_at, source_lang)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ")->execute([$userId, $sourceId, $externalId, $author, $rating, $content, $date, $sourceLang]);
             return $db->lastInsertId() > 0;
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    public static function updateSourceLang(int $reviewId, string $lang): void
+    {
+        $db = Database::getInstance();
+        $db->prepare("UPDATE scraped_reviews SET source_lang = ? WHERE id = ? AND source_lang IS NULL")
+           ->execute([$lang, $reviewId]);
     }
 
     public static function getReviews(int $userId, int $page = 1, int $perPage = 25, array $filters = []): array
@@ -76,9 +83,11 @@ class ScrapedReview
         }
 
         $sql = "
-            SELECT sr.*, ss.name AS source_name, ss.platform
+            SELECT sr.*, ss.name AS source_name, ss.platform,
+                   cs_t.content AS cs_content, cs_t.is_deepl AS cs_is_deepl
             FROM scraped_reviews sr
             JOIN scrape_sources ss ON ss.id = sr.source_id
+            LEFT JOIN scraped_review_translations cs_t ON cs_t.review_id = sr.id AND cs_t.lang = 'CS'
             WHERE " . implode(' AND ', $where) . "
             ORDER BY sr.reviewed_at DESC, sr.scraped_at DESC
             LIMIT $perPage OFFSET $offset
@@ -115,9 +124,17 @@ class ScrapedReview
         $review = $stmt->fetch();
         if (!$review) return null;
 
-        $stmt2 = $db->prepare("SELECT lang, content FROM scraped_review_translations WHERE review_id = ?");
+        $stmt2 = $db->prepare("SELECT lang, content, is_deepl, translated_at FROM scraped_review_translations WHERE review_id = ? ORDER BY lang");
         $stmt2->execute([$id]);
-        $review['translations'] = $stmt2->fetchAll(\PDO::FETCH_KEY_PAIR);
+        $rows = $stmt2->fetchAll();
+        $review['translations'] = [];
+        foreach ($rows as $row) {
+            $review['translations'][$row['lang']] = [
+                'content'  => $row['content'],
+                'is_deepl' => (bool)$row['is_deepl'],
+                'translated_at' => $row['translated_at'],
+            ];
+        }
         return $review;
     }
 
@@ -143,14 +160,14 @@ class ScrapedReview
         return $stmt->fetchAll();
     }
 
-    public static function saveTranslation(int $reviewId, string $lang, string $content): void
+    public static function saveTranslation(int $reviewId, string $lang, string $content, bool $isDeepL = true): void
     {
         $db = Database::getInstance();
         $db->prepare("
-            INSERT INTO scraped_review_translations (review_id, lang, content)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE content = VALUES(content), translated_at = NOW()
-        ")->execute([$reviewId, $lang, $content]);
+            INSERT INTO scraped_review_translations (review_id, lang, content, is_deepl)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE content = VALUES(content), translated_at = NOW(), is_deepl = VALUES(is_deepl)
+        ")->execute([$reviewId, $lang, $content, $isDeepL ? 1 : 0]);
     }
 
     // --- User language settings ---

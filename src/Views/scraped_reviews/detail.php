@@ -15,7 +15,12 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
 
         <!-- Originální text -->
         <div class="card mb-3">
-            <div class="card-header"><h6 class="mb-0 fw-semibold">Originál</h6></div>
+            <div class="card-header d-flex align-items-center gap-2">
+                <h6 class="mb-0 fw-semibold">Originál</h6>
+                <?php if (!empty($review['source_lang'])): ?>
+                <span class="badge bg-light text-secondary border ms-auto" title="Detekovaný zdrojový jazyk"><?= $e(strtolower($review['source_lang'])) ?></span>
+                <?php endif; ?>
+            </div>
             <div class="card-body">
                 <?php if ($review['rating']): ?>
                 <div class="text-warning mb-2">
@@ -33,18 +38,25 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
             <div class="card-header"><h6 class="mb-0 fw-semibold"><i class="bi bi-translate me-1"></i>Překlady</h6></div>
             <div class="card-body p-0">
                 <div class="accordion accordion-flush" id="translationsAccordion">
-                    <?php foreach ($review['translations'] as $lang => $text): ?>
+                    <?php foreach ($review['translations'] as $lang => $t): ?>
+                    <?php $isCS = strtoupper($lang) === 'CS'; ?>
                     <div class="accordion-item">
                         <h2 class="accordion-header">
-                            <button class="accordion-button collapsed py-2" type="button"
+                            <button class="accordion-button <?= $isCS ? '' : 'collapsed' ?> py-2" type="button"
                                     data-bs-toggle="collapse" data-bs-target="#lang_<?= $e($lang) ?>">
-                                <?= $e($allLangs[$lang] ?? $lang) ?>
+                                <?= $isCS ? '🇨🇿 ' : '' ?><?= $e($allLangs[$lang] ?? $lang) ?>
                                 <span class="badge bg-secondary ms-2" style="font-size:.7rem;"><?= $e($lang) ?></span>
+                                <?php if (!empty($t['is_deepl'])): ?>
+                                <span class="badge bg-info ms-1" style="font-size:.65rem;">DeepL</span>
+                                <?php endif; ?>
+                                <?php if ($isCS): ?>
+                                <span class="badge bg-success ms-1" style="font-size:.65rem;">primární</span>
+                                <?php endif; ?>
                             </button>
                         </h2>
-                        <div id="lang_<?= $e($lang) ?>" class="accordion-collapse collapse" data-bs-parent="#translationsAccordion">
+                        <div id="lang_<?= $e($lang) ?>" class="accordion-collapse collapse <?= $isCS ? 'show' : '' ?>" data-bs-parent="#translationsAccordion">
                             <div class="accordion-body py-2">
-                                <p class="mb-0 small"><?= nl2br($e($text)) ?></p>
+                                <p class="mb-0 small"><?= nl2br($e($t['content'] ?? '')) ?></p>
                             </div>
                         </div>
                     </div>
@@ -73,6 +85,12 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
                 <div class="d-flex justify-content-between px-3 py-2 border-bottom">
                     <span class="text-muted small">Datum</span>
                     <span class="small"><?= date('d.m.Y', strtotime($review['reviewed_at'])) ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($review['source_lang'])): ?>
+                <div class="d-flex justify-content-between px-3 py-2 border-bottom">
+                    <span class="text-muted small">Zdrojový jazyk</span>
+                    <span class="small"><?= $e(strtolower($review['source_lang'])) ?></span>
                 </div>
                 <?php endif; ?>
                 <div class="d-flex justify-content-between px-3 py-2">
