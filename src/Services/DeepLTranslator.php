@@ -19,16 +19,12 @@ class DeepLTranslator
         'FR' => 'Francouzština',
         'HR' => 'Chorvatština',
         'HU' => 'Maďarština',
-        'ID' => 'Indonéština',
         'IT' => 'Italština',
-        'JA' => 'Japonština',
-        'KO' => 'Korejština',
         'LT' => 'Litevština',
         'LV' => 'Lotyština',
         'NB' => 'Norština',
         'NL' => 'Nizozemština',
         'PL' => 'Polština',
-        'PT-BR' => 'Portugalština (Brazílie)',
         'PT-PT' => 'Portugalština',
         'RO' => 'Rumunština',
         'RU' => 'Ruština',
@@ -37,7 +33,6 @@ class DeepLTranslator
         'SV' => 'Švédština',
         'TR' => 'Turečtina',
         'UK' => 'Ukrajinština',
-        'ZH' => 'Čínština',
     ];
 
     private string $apiKey;
