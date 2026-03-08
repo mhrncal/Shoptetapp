@@ -180,14 +180,6 @@ class ReviewController extends BaseController
             $gen->generatePermanentFeed($userId, $reviews ?: []);
             Review::markAsXmlExported($userId);
 
-            // Zmenš fotky na náhled (300px) — originály jsou v záloze uživatele
-            foreach ($reviews ?: [] as $review) {
-                foreach ($review['photos'] as $photo) {
-                    if (empty($photo['path'])) continue;
-                    $path = ROOT . '/public/uploads/' . $photo['path'];
-                    \ShopCode\Services\ImageHandler::downsizeToPreview($path, 300);
-                }
-            }
 
             Session::flash('success', 'XML feed byl vygenerován. Použijte URL níže pro import do Shoptetu.');
             $this->redirect('/reviews');
@@ -466,6 +458,13 @@ class ReviewController extends BaseController
         header('Cache-Control: no-cache');
         readfile($zipFile);
         unlink($zipFile);
+
+        // Zmenš originály na 300px náhled — záloha je u uživatele v ZIP
+        foreach ($photos as $photo) {
+            $abs = ROOT . '/public/uploads/' . ltrim($photo['path'], '/');
+            \ShopCode\Services\ImageHandler::downsizeToPreview($abs, 300);
+        }
+
         exit;
     }
 
