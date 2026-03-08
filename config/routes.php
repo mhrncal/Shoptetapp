@@ -127,6 +127,14 @@ return [
     // ============================================================
     // Fotorecenze
     // ============================================================
+    ['GET',    '/scraped-reviews',                    'ScrapedReviewController@index',         ['auth','approved','module:scraped_reviews']],
+    ['POST',   '/scraped-reviews/add-source',          'ScrapedReviewController@addSource',     ['auth','approved','module:scraped_reviews']],
+    ['POST',   '/scraped-reviews/delete-source',       'ScrapedReviewController@deleteSource',  ['auth','approved','module:scraped_reviews']],
+    ['POST',   '/scraped-reviews/scrape',              'ScrapedReviewController@scrapeSource',  ['auth','approved','module:scraped_reviews']],
+    ['POST',   '/scraped-reviews/save-langs',          'ScrapedReviewController@saveLangs',     ['auth','approved','module:scraped_reviews']],
+    ['POST',   '/scraped-reviews/translate',           'ScrapedReviewController@translatePending', ['auth','approved','module:scraped_reviews']],
+    ['GET',    '/scraped-reviews/{id}',                'ScrapedReviewController@detail',        ['auth','approved','module:scraped_reviews']],
+
     ['GET',    '/reviews',                    'ReviewController@index',      ['auth','approved','module:reviews']],
     ['GET',    '/watermark/settings',         'WatermarkController@settings', ['auth','approved']],
     ['POST',   '/watermark/update',           'WatermarkController@update',   ['auth','approved']],

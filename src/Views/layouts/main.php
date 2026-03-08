@@ -94,6 +94,11 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
                 </a>
             </li>
             <li>
+                <a href="<?= APP_URL ?>/scraped-reviews" class="nav-link <?= $active('/scraped-reviews') ?>">
+                    <i class="bi bi-search"></i> Scrapované recenze
+                </a>
+            </li>
+            <li>
                 <a href="<?= APP_URL ?>/watermark/settings" class="nav-link <?= $active('/watermark') ?>">
                     <i class="bi bi-droplet"></i> Watermark
                 </a>

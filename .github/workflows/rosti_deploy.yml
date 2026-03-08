@@ -48,6 +48,7 @@ jobs:
             mkdir -p /srv/app/tmp/feeds /srv/app/tmp/logs /srv/app/public/logs /srv/app/public/feeds /srv/app/public/uploads
             chmod 755 /srv/app/tmp/feeds /srv/app/tmp/logs /srv/app/public/logs /srv/app/public/feeds /srv/app/public/uploads
             chmod +x /srv/app/scripts/watchdog_feeds.sh 2>/dev/null || true
+            chmod +x /srv/app/cron/scrape_reviews.php 2>/dev/null || true
           ENDSSH
       
       - name: Restart application
