@@ -432,6 +432,16 @@ class DiagController extends BaseController
             if(empty($pgR))break;
         }
 
+        // Verze scraperu
+        echo "\n--- Verze scraperu ---\n";
+        $scraperFile = ROOT . '/src/Services/ReviewScraper.php';
+        echo "mtime: " . date('Y-m-d H:i:s', filemtime($scraperFile)) . "\n";
+        $scraperContent = file_get_contents($scraperFile);
+        echo "obsahuje 'seenIds': " . (str_contains($scraperContent, 'seenIds') ? 'ANO (stará verze!)' : 'NE (nová verze OK)') . "\n";
+        echo "obsahuje 'error_log': " . (str_contains($scraperContent, 'TS scraper') ? 'ANO' : 'NE') . "\n";
+        $linesCount = substr_count($scraperContent, '\n');
+        echo "řádků v souboru: $linesCount\n";
+
         // Vymaž error log před testem
         $errLog = ini_get('error_log') ?: '/srv/app/public/logs/php_errors.log';
         @file_put_contents($errLog, ''); // reset
