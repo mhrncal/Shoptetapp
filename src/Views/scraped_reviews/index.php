@@ -21,12 +21,7 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
     <?php endif; ?>
 </div>
 
-<?php if (!$hasDeepL): ?>
-<div class="alert alert-warning d-flex gap-2 align-items-center mb-3">
-    <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
-    <span class="small">DeepL API klíč není nastaven. Přidejte <code>DEEPL_API_KEY=váš_klíč</code> do .env pro aktivaci překladů.</span>
-</div>
-<?php endif; ?>
+
 
 <div class="row g-3 mb-4">
 
@@ -101,9 +96,42 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
         </div>
     </div>
 
-    <!-- Jazyky překladů -->
-    <div class="col-12 col-lg-7">
-        <div class="card h-100">
+    <!-- Pravý sloupec: DeepL klíč + jazyky -->
+    <div class="col-12 col-lg-7 d-flex flex-column gap-3">
+
+        <!-- DeepL API klíč -->
+        <div class="card">
+            <div class="card-header d-flex align-items-center gap-2">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-key me-1"></i>DeepL API klíč</h6>
+                <?php if ($hasDeepL): ?>
+                <span class="badge bg-success ms-auto">Aktivní</span>
+                <?php else: ?>
+                <span class="badge bg-warning text-dark ms-auto">Nenastaveno</span>
+                <?php endif; ?>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/scraped-reviews/save-api-key">
+                    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+                    <div class="input-group input-group-sm">
+                        <input type="password" name="deepl_api_key" class="form-control font-monospace"
+                               placeholder="váš-deepl-api-klíč:fx"
+                               value="<?= $hasDeepL ? '••••••••••••••••' : '' ?>">
+                        <button type="submit" class="btn btn-primary">Uložit</button>
+                        <?php if ($hasDeepL): ?>
+                        <button type="submit" name="deepl_api_key" value="" class="btn btn-outline-danger" onclick="return confirm('Odstranit klíč?')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        <?php endif; ?>
+                    </div>
+                    <div class="text-muted mt-1" style="font-size:.75rem;">
+                        Free klíč z <a href="https://www.deepl.com/pro-api" target="_blank">deepl.com/pro-api</a> — 500 000 znaků/měsíc zdarma. Klíč končí <code>:fx</code>.
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Jazyky překladů -->
+        <div class="card">
             <div class="card-header">
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-translate me-1"></i>Jazyky překladů</h6>
             </div>
@@ -120,10 +148,14 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
                         </div>
                         <?php endforeach; ?>
                     </div>
-                    <button type="submit" class="btn btn-sm btn-primary">Uložit jazyky</button>
+                    <button type="submit" class="btn btn-sm btn-primary <?= !$hasDeepL ? 'disabled' : '' ?>">Uložit jazyky</button>
+                    <?php if (!$hasDeepL): ?>
+                    <span class="text-muted small ms-2">Nejprve zadejte DeepL klíč.</span>
+                    <?php endif; ?>
                 </form>
             </div>
         </div>
+
     </div>
 </div>
 

@@ -133,6 +133,7 @@ return [
     ['POST',   '/scraped-reviews/scrape',              'ScrapedReviewController@scrapeSource',  ['auth','approved','module:scraped_reviews']],
     ['POST',   '/scraped-reviews/save-langs',          'ScrapedReviewController@saveLangs',     ['auth','approved','module:scraped_reviews']],
     ['POST',   '/scraped-reviews/translate',           'ScrapedReviewController@translatePending', ['auth','approved','module:scraped_reviews']],
+    ['POST',   '/scraped-reviews/save-api-key',          'ScrapedReviewController@saveApiKey',    ['auth','approved','module:scraped_reviews']],
     ['GET',    '/scraped-reviews/{id}',                'ScrapedReviewController@detail',        ['auth','approved','module:scraped_reviews']],
 
     ['GET',    '/reviews',                    'ReviewController@index',      ['auth','approved','module:reviews']],

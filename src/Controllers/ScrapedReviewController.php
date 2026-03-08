@@ -8,10 +8,24 @@ use ShopCode\Services\{ReviewScraper, DeepLTranslator};
 
 class ScrapedReviewController extends BaseController
 {
+    private function getDeeplKey(): ?string
+    {
+        $db   = \ShopCode\Core\Database::getInstance();
+        $stmt = $db->prepare("SELECT deepl_api_key FROM users WHERE id = ?");
+        $stmt->execute([$this->user['id']]);
+        $key  = $stmt->fetchColumn();
+        return $key ?: null;
+    }
+
     private function getDeepL(): ?DeepLTranslator
     {
-        $key = defined('DEEPL_API_KEY') ? DEEPL_API_KEY : null;
+        $key = $this->getDeeplKey();
         return $key ? new DeepLTranslator($key) : null;
+    }
+
+    private function hasDeepL(): bool
+    {
+        return (bool)$this->getDeeplKey();
     }
 
     // Seznam recenzí + správa zdrojů
@@ -37,7 +51,8 @@ class ScrapedReviewController extends BaseController
             'sourceFilter' => $sourceId,
             'userLangs'  => $userLangs,
             'allLangs'   => DeepLTranslator::LANGUAGES,
-            'hasDeepL'   => (bool)(defined('DEEPL_API_KEY') && DEEPL_API_KEY),
+            'hasDeepL'   => $this->hasDeepL(),
+            'deeplKey'   => !empty($this->user['deepl_api_key']),
         ]);
     }
 
@@ -130,7 +145,7 @@ class ScrapedReviewController extends BaseController
         $deepl  = $this->getDeepL();
 
         if (!$deepl) {
-            Session::flash('error', 'DeepL API klíč není nastaven. Přidejte DEEPL_API_KEY do .env');
+            Session::flash('error', 'DeepL API klíč není nastaven. Zadejte jej v nastavení modulu.');
             $this->redirect('/scraped-reviews');
         }
 
@@ -174,5 +189,20 @@ class ScrapedReviewController extends BaseController
             'review'    => $review,
             'allLangs'  => DeepLTranslator::LANGUAGES,
         ]);
+    }
+
+    // Uložit DeepL API klíč
+    public function saveApiKey(): void
+    {
+        $this->validateCsrf();
+        $userId = $this->user['id'];
+        $key    = trim($this->request->post('deepl_api_key', ''));
+
+        $db = \ShopCode\Core\Database::getInstance();
+        $db->prepare("UPDATE users SET deepl_api_key = ? WHERE id = ?")
+           ->execute([$key ?: null, $userId]);
+
+        Session::flash('success', $key ? 'DeepL API klíč uložen.' : 'DeepL API klíč odstraněn.');
+        $this->redirect('/scraped-reviews');
     }
 }
