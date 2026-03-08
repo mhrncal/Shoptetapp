@@ -318,6 +318,38 @@ class DiagController extends BaseController
         if (preg_match('/>(\d+)<\/\w+>\s*Bewertungen/i', $html, $pm2)) {
             echo "Alt regex match: " . $pm2[0] . "\n";
         }
+        // Zkus page=4 URL a porovnej external_id s page=3
+        $testUrl3 = preg_replace('/[?&]page=\d+/', '', $url) . (str_contains($url,'?') ? '&' : '?') . 'page=3';
+        $testUrl4 = preg_replace('/[?&]page=\d+/', '', $url) . (str_contains($url,'?') ? '&' : '?') . 'page=4';
+        $fetch = function($u) {
+            $ch = curl_init($u);
+            curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_TIMEOUT=>15,
+                CURLOPT_USERAGENT=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
+                CURLOPT_ENCODING=>'',CURLOPT_SSL_VERIFYPEER=>false]);
+            $r = curl_exec($ch); $code = curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
+            return ($r && $code===200) ? $r : null;
+        };
+        $getIds = function($html) {
+            preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si', $html, $m);
+            $ids = [];
+            foreach ($m[1] as $json) {
+                $d = @json_decode(trim($json), true);
+                foreach ($d['review'] ?? [] as $r) {
+                    $ids[] = md5(($r['author']['name']??'').($r['reviewBody']??'').($r['datePublished']??''));
+                }
+            }
+            return $ids;
+        };
+        $h3 = $fetch($testUrl3);
+        $h4 = $fetch($testUrl4);
+        $ids3 = $h3 ? $getIds($h3) : [];
+        $ids4 = $h4 ? $getIds($h4) : [];
+        echo "page=3 IDs: " . count($ids3) . ", page=4 IDs: " . count($ids4) . "\n";
+        $overlap = count(array_intersect($ids3, $ids4));
+        echo "Překryv page3/page4: $overlap\n";
+        if ($overlap === count($ids3) && count($ids3) > 0) echo "⚠ page4 == page3 (duplikát) — stránkování nefunguje za page=3\n";
+        else echo "✓ page4 je jiná stránka\n";
+
         // Zkus page=3 URL
         $testUrl = preg_replace('/[?&]page=\d+/', '', $url) . (str_contains($url,'?') ? '&' : '?') . 'page=3';
         $testHtml = (function($u) {

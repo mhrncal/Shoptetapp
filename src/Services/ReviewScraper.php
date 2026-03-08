@@ -130,10 +130,9 @@ class ReviewScraper
             }
         }
 
-        // HTML je React SSR — číslo je HTML-escaped, hledej v raw HTML jako číslo před &lt;!-- --&gt;
+        // HTML je React SSR double-encoded — dekóduj dvakrát
         if (!$total) {
-            // Dekóduj HTML entity a hledej
-            $decoded = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $decoded = html_entity_decode(html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
             if (preg_match('/(\d+)\s*Bewertungen\s*insgesamt/i', $decoded, $m)) {
                 $total = (int)str_replace('.', '', $m[1]);
             }
