@@ -302,100 +302,6 @@ class DiagController extends BaseController
             if ($cnt > 0) echo "  .$cls: $cnt výskytů\n";
         }
 
-        // TrustedShops pagination debug
-        echo "\n--- TrustedShops pagination debug ---\n";
-        if (preg_match('/([\d\.]+)\s*Bewertungen\s*insgesamt/i', $html, $pm)) {
-            echo "Regex 'insgesamt' match: " . $pm[0] . "\n";
-        } else {
-            echo "Regex 'insgesamt': NENALEZENO\n";
-            // Hledej okolí slova insgesamt
-            $pos = stripos($html, 'insgesamt');
-            if ($pos !== false) {
-                echo "Raw HTML okolí: " . htmlspecialchars(substr($html, max(0,$pos-50), 120)) . "\n";
-            }
-        }
-        // Zkus alternativní pattern
-        if (preg_match('/>(\d+)<\/\w+>\s*Bewertungen/i', $html, $pm2)) {
-            echo "Alt regex match: " . $pm2[0] . "\n";
-        }
-        // Zkus page=4 URL a porovnej external_id s page=3
-        $testUrl3 = preg_replace('/[?&]page=\d+/', '', $url) . (str_contains($url,'?') ? '&' : '?') . 'page=3';
-        $testUrl4 = preg_replace('/[?&]page=\d+/', '', $url) . (str_contains($url,'?') ? '&' : '?') . 'page=4';
-        $fetch = function($u) {
-            $ch = curl_init($u);
-            curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_TIMEOUT=>15,
-                CURLOPT_USERAGENT=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
-                CURLOPT_ENCODING=>'',CURLOPT_SSL_VERIFYPEER=>false]);
-            $r = curl_exec($ch); $code = curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
-            return ($r && $code===200) ? $r : null;
-        };
-        $getIds = function($html) {
-            preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si', $html, $m);
-            $ids = [];
-            foreach ($m[1] as $json) {
-                $d = @json_decode(trim($json), true);
-                foreach ($d['review'] ?? [] as $r) {
-                    $ids[] = md5(($r['author']['name']??'').($r['reviewBody']??'').($r['datePublished']??''));
-                }
-            }
-            return $ids;
-        };
-        $h3 = $fetch($testUrl3);
-        $h4 = $fetch($testUrl4);
-        $ids3 = $h3 ? $getIds($h3) : [];
-        $ids4 = $h4 ? $getIds($h4) : [];
-        echo "page=3 IDs: " . count($ids3) . ", page=4 IDs: " . count($ids4) . "\n";
-        $overlap = count(array_intersect($ids3, $ids4));
-        echo "Překryv page3/page4: $overlap\n";
-        if ($overlap === count($ids3) && count($ids3) > 0) echo "⚠ page4 == page3 (duplikát) — stránkování nefunguje za page=3\n";
-        else echo "✓ page4 je jiná stránka\n";
-
-        // Zkus page=3 URL
-        $testUrl = preg_replace('/[?&]page=\d+/', '', $url) . (str_contains($url,'?') ? '&' : '?') . 'page=3';
-        $testHtml = (function($u) {
-            $ch = curl_init($u);
-            curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_TIMEOUT=>15,
-                CURLOPT_USERAGENT=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
-                CURLOPT_ENCODING=>'',CURLOPT_SSL_VERIFYPEER=>false]);
-            $r = curl_exec($ch); $code = curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
-            return ($r && $code===200) ? $r : null;
-        })($testUrl);
-        echo "page=3 fetch: " . ($testHtml ? strlen($testHtml)." bytů" : "FAILED") . "\n";
-        if ($testHtml) {
-            preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si', $testHtml, $pm3);
-            echo "page=3 JSON-LD bloků: " . count($pm3[1]) . "\n";
-            foreach ($pm3[1] as $json) {
-                $d = @json_decode(trim($json),true);
-                if (isset($d['review'])) echo "page=3 recenzí v JSON-LD: " . count($d['review']) . "\n";
-            }
-        }
-
-        // Přímý pagination test
-        echo "\n--- Přímý pagination test (stránky 1-5) ---\n";
-        $baseUrl2 = preg_replace('/[?&]page=\d+/', '', $url);
-        $sep2 = str_contains($baseUrl2, '?') ? '&' : '?';
-        $allIds = [];
-        for ($pg = 1; $pg <= 5; $pg++) {
-            $pgUrl = $pg === 1 ? $baseUrl2 : $baseUrl2 . $sep2 . 'page=' . $pg;
-            $pgCh = curl_init($pgUrl);
-            curl_setopt_array($pgCh, [CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_TIMEOUT=>15,
-                CURLOPT_USERAGENT=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
-                CURLOPT_ENCODING=>'',CURLOPT_SSL_VERIFYPEER=>false]);
-            $pgHtml = curl_exec($pgCh); $pgCode = curl_getinfo($pgCh,CURLINFO_HTTP_CODE); curl_close($pgCh);
-            if (!$pgHtml || $pgCode !== 200) { echo "page=$pg: FAILED\n"; break; }
-            preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si', $pgHtml, $pgM);
-            $pgIds = [];
-            foreach ($pgM[1] as $pgJson) {
-                $pgData = @json_decode(trim($pgJson), true);
-                foreach ($pgData['review'] ?? [] as $pgR) {
-                    $pgIds[] = md5(($pgR['author']['name']??'').($pgR['reviewBody']??'').($pgR['datePublished']??''));
-                }
-            }
-            $overlap2 = count(array_intersect($pgIds, $allIds));
-            echo "page=$pg: " . count($pgIds) . " recenzí, překryv s předchozími: $overlap2, první ID: " . ($pgIds[0] ?? 'N/A') . "\n";
-            $allIds = array_merge($allIds, $pgIds);
-        }
-
         // Přímý scraper debug — kolik stránek projde
         echo "\n--- Scraper interní debug ---\n";
         $allR2 = [];
@@ -432,74 +338,18 @@ class DiagController extends BaseController
             if(empty($pgR))break;
         }
 
-        // Verze scraperu
-        echo "\n--- Verze scraperu ---\n";
-        $scraperFile = ROOT . '/src/Services/ReviewScraper.php';
-        echo "mtime: " . date('Y-m-d H:i:s', filemtime($scraperFile)) . "\n";
-        $scraperContent = file_get_contents($scraperFile);
-        echo "obsahuje 'seenIds': " . (str_contains($scraperContent, 'seenIds') ? 'ANO (stará verze!)' : 'NE (nová verze OK)') . "\n";
-        echo "obsahuje 'error_log': " . (str_contains($scraperContent, 'TS scraper') ? 'ANO' : 'NE') . "\n";
-        $linesCount = substr_count($scraperContent, '\n');
-        echo "řádků v souboru: $linesCount\n";
-
         // Vymaž error log před testem
         $errLog = ini_get('error_log') ?: '/srv/app/public/logs/php_errors.log';
         @file_put_contents($errLog, ''); // reset
 
-        // Scraper — přímé volání s detailním logem
-        echo "\n--- Scraper výsledek (přímý) ---\n";
-        try {
-            $fetchFn = function($u) {
-                $ch = curl_init($u);
-                curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_TIMEOUT=>20,
-                    CURLOPT_USERAGENT=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36',
-                    CURLOPT_ENCODING=>'',CURLOPT_SSL_VERIFYPEER=>false,
-                    CURLOPT_HTTPHEADER=>['Accept: text/html,application/xhtml+xml','Accept-Language: cs-CZ,cs;q=0.9'],
-                ]);
-                $r=curl_exec($ch);$code=curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);
-                return($r&&$code===200)?$r:null;
-            };
-            $extractFn = function($h, $debug=false) {
-                preg_match_all('/<script[^>]+type="application\/ld\+json"[^>]*>(.*?)<\/script>/si',$h,$m);
-                $out=[];$skip=0;
-                foreach($m[1] as $json){
-                    $d=@json_decode(trim($json),true);
-                    foreach($d['review']??[]as $r){
-                        $c2=$r['reviewBody']??$r['description']??null;
-                        if(!$c2){$skip++;if($debug)echo "  SKIP reviewBody='".($r['reviewBody']??"NULL")."'\n";continue;}
-                        $out[]=['author'=>(is_string($r['author']['name']??null)?$r['author']['name']:'Anon'),'content'=>trim($c2),'rating'=>(int)($r['reviewRating']['ratingValue']??0)];
-                    }
-                }
-                if($debug && $skip>0) echo "  Přeskočeno (bez reviewBody): $skip\n";
-                return $out;
-            };
-            $base2=preg_replace('/[?&]page=\d+/','',$url);
-            $sep2=str_contains($base2,'?')?'&':'?';
-            $all2=[];
-            for($pg=1;$pg<=9;$pg++){
-                $pgUrl=$pg===1?$base2:$base2.$sep2.'page='.$pg;
-                $pgH=$fetchFn($pgUrl);
-                if(!$pgH){echo "page=$pg: FETCH FAILED\n";break;}
-                $pgR=$extractFn($pgH, $pg===1);
-                echo "page=$pg: ".count($pgR)." recenzí\n";
-                if(empty($pgR))break;
-                $all2=array_merge($all2,$pgR);
-                usleep(200000);
-            }
-            echo "CELKEM: ".count($all2)."\n";
-            foreach(array_slice($all2,0,2) as $i=>$r){
-                echo "  [$i] {$r['author']}: ".mb_substr($r['content'],0,80)."\n";
-            }
-        } catch (\Throwable $e) {
-            echo "ERROR: " . $e->getMessage() . "\n";
-        }
-
-        // Přes ReviewScraper::scrape()
-        echo "\n--- ReviewScraper::scrape() ---\n";
-        echo "mtime: " . date('Y-m-d H:i:s', filemtime(ROOT.'/src/Services/ReviewScraper.php')) . "\n";
+        echo "\n--- Scraper výsledek ---\n";
         try {
             $reviews = \ShopCode\Services\ReviewScraper::scrape($url, $platform);
             echo "Nalezeno: " . count($reviews) . "\n";
+            foreach (array_slice($reviews, 0, 3) as $i => $r) {
+                echo "  [$i] author={$r['author']} rating={$r['rating']}\n";
+                echo "      " . mb_substr($r['content'], 0, 120) . "\n";
+            }
         } catch (\Throwable $e) {
             echo "ERROR: " . $e->getMessage() . "\n";
         }
