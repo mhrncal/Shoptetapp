@@ -249,6 +249,8 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
             const pct = Math.round((syncDone / syncTotal) * 100);
             if (!d.ok) {
                 setProgress(pct, '⚠ ' + sourceName + ': ' + (d.error || 'chyba'), 'warning');
+            } else if (d.background) {
+                setProgress(pct, '⏳ ' + sourceName + ': ' + (d.msg || 'scraping na pozadí…'));
             } else {
                 setProgress(pct, 'Hotovo: ' + sourceName + ' — nových: ' + d.new + ', přeloženo: ' + d.translated);
             }

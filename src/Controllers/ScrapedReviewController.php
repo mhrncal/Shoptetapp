@@ -337,6 +337,21 @@ class ScrapedReviewController extends BaseController
         $_SESSION[$progKey] = ['step' => 'scraping', 'msg' => 'Stahuji recenze z ' . $source['name'] . '…', 'new' => 0, 'translated' => 0];
         session_write_close();
 
+        // Shoptet má stovky stránek — spusť jako background CLI proces
+        if ($source['platform'] === 'shoptet') {
+            $cmd = sprintf(
+                'php %s/cron/scrape_one.php %d %d %d > %s/public/logs/scrape-%d.log 2>&1 &',
+                escapeshellarg(BASE_PATH),
+                $userId, $sourceId,
+                $userId,
+                escapeshellarg(BASE_PATH),
+                $sourceId
+            );
+            exec($cmd);
+            echo json_encode(['ok' => true, 'background' => true, 'new' => 0, 'translated' => 0, 'msg' => 'Shoptet scraping spuštěn na pozadí (může trvat 2-3 minuty).']);
+            exit;
+        }
+
         // Scrape
         if ($source['platform'] === 'google') {
             $googleKey = $this->getGoogleApiKey();
