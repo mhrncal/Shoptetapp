@@ -478,15 +478,25 @@ class ScrapedReviewController extends BaseController
             $db = \ShopCode\Core\Database::getInstance();
             $shopName = isset($col['name']) && !empty($rows[1][$col['name']]) ? $rows[1][$col['name']] : 'Outscraper import';
             $placeId  = isset($col['place_id']) && !empty($rows[1][$col['place_id']]) ? $rows[1][$col['place_id']] : '';
-            $url      = $placeId ?: 'outscraper-import-' . time();
 
-            // Zkontroluj jestli existuje zdroj se stejnou URL nebo name
-            $ex = $db->prepare("SELECT id FROM scrape_sources WHERE user_id=? AND (url=? OR name=?) AND platform='outscraper' LIMIT 1");
-            $ex->execute([$userId, $url, $shopName]);
-            $existing = $ex->fetchColumn();
+            // Nejdřív zkus najít zdroj podle place_id v URL
+            $existing = false;
+            if ($placeId) {
+                $ex = $db->prepare("SELECT id FROM scrape_sources WHERE user_id=? AND platform='outscraper' AND url LIKE ? LIMIT 1");
+                $ex->execute([$userId, '%' . $placeId . '%']);
+                $existing = $ex->fetchColumn();
+            }
+            // Pak podle jména
+            if (!$existing) {
+                $ex = $db->prepare("SELECT id FROM scrape_sources WHERE user_id=? AND platform='outscraper' AND name=? LIMIT 1");
+                $ex->execute([$userId, $shopName]);
+                $existing = $ex->fetchColumn();
+            }
+
             if ($existing) {
                 $sourceId = (int)$existing;
             } else {
+                $url = $placeId ?: 'outscraper-' . preg_replace('/[^a-z0-9]/i', '-', strtolower($shopName)) . '-' . time();
                 $db->prepare("INSERT INTO scrape_sources (user_id, name, url, platform, is_active) VALUES (?,?,?,'outscraper',1)")
                    ->execute([$userId, $shopName, $url]);
                 $sourceId = (int)$db->lastInsertId();
