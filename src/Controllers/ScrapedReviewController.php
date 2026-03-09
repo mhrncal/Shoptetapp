@@ -129,16 +129,7 @@ class ScrapedReviewController extends BaseController
         } else {
             $scraped = ReviewScraper::scrape($source['url'], $source['platform']);
         }
-        $new = 0;
-        foreach ($scraped as $r) {
-            $inserted = ScrapedReview::insertReview(
-                $userId, $sourceId,
-                $r['external_id'], $r['author'],
-                $r['rating'], $r['content'], $r['date']
-            );
-            if ($inserted) $new++;
-        }
-
+        $new = ScrapedReview::insertReviews($userId, $sourceId, $scraped);
         ScrapedReview::updateLastScraped($sourceId);
 
         // Překlad — volitelný, CS je primární jazyk (vždy se přeloží + detekuje source_lang)
@@ -367,12 +358,7 @@ class ScrapedReviewController extends BaseController
             $scraped = ReviewScraper::scrape($source['url'], $source['platform']);
         }
 
-        $new = 0;
-        foreach ($scraped as $r) {
-            if (ScrapedReview::insertReview($userId, $sourceId, $r['external_id'], $r['author'], $r['rating'], $r['content'], $r['date'])) {
-                $new++;
-            }
-        }
+        $new = ScrapedReview::insertReviews($userId, $sourceId, $scraped);
         ScrapedReview::updateLastScraped($sourceId);
 
         // Překlad

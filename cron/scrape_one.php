@@ -43,12 +43,7 @@ echo "URL: {$source['url']}\n";
 $scraped = ReviewScraper::scrape($source['url'], $source['platform']);
 echo "Nascrapováno: " . count($scraped) . "\n";
 
-$new = 0;
-foreach ($scraped as $r) {
-    if (ScrapedReview::insertReview($userId, $sourceId, $r['external_id'], $r['author'], $r['rating'], $r['content'], $r['date'])) {
-        $new++;
-    }
-}
+$new = ScrapedReview::insertReviews($userId, $sourceId, $scraped);
 ScrapedReview::updateLastScraped($sourceId);
 echo "Nových v DB: $new\n";
 

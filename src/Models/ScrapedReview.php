@@ -68,6 +68,49 @@ class ScrapedReview
         }
     }
 
+    /**
+     * Batch INSERT — vloží pole recenzí najednou, vrátí počet nových
+     */
+    public static function insertReviews(int $userId, int $sourceId, array $reviews): int
+    {
+        if (empty($reviews)) return 0;
+        $db    = Database::getInstance();
+        $new   = 0;
+        $batch = array_chunk($reviews, 100);
+
+        foreach ($batch as $chunk) {
+            $placeholders = implode(',', array_fill(0, count($chunk), '(?,?,?,?,?,?,?,?)'));
+            $params = [];
+            foreach ($chunk as $r) {
+                $params[] = $userId;
+                $params[] = $sourceId;
+                $params[] = $r['external_id'];
+                $params[] = $r['author'];
+                $params[] = $r['rating'];
+                $params[] = $r['content'];
+                $params[] = $r['date'] ?? null;
+                $params[] = $r['source_lang'] ?? null;
+            }
+            try {
+                $stmt = $db->prepare("
+                    INSERT IGNORE INTO scraped_reviews
+                        (user_id, source_id, external_id, author, rating, content, reviewed_at, source_lang)
+                    VALUES $placeholders
+                ");
+                $stmt->execute($params);
+                $new += $stmt->rowCount();
+            } catch (\Exception $e) {
+                // fallback: jednotlivě
+                foreach ($chunk as $r) {
+                    if (self::insertReview($userId, $sourceId, $r['external_id'], $r['author'], $r['rating'], $r['content'], $r['date'] ?? null)) {
+                        $new++;
+                    }
+                }
+            }
+        }
+        return $new;
+    }
+
     public static function updateSourceLang(int $reviewId, string $lang): void
     {
         $db = Database::getInstance();

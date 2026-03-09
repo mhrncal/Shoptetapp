@@ -51,15 +51,7 @@ foreach ($sources as $source) {
         } else {
             $reviews = ReviewScraper::scrape($source['url'], $source['platform']);
         }
-        $new = 0;
-        foreach ($reviews as $r) {
-            $ok = ScrapedReview::insertReview(
-                $source['user_id'], $source['id'],
-                $r['external_id'], $r['author'],
-                $r['rating'], $r['content'], $r['date']
-            );
-            if ($ok) $new++;
-        }
+        $new = ScrapedReview::insertReviews($source['user_id'], $source['id'], $reviews);
         ScrapedReview::updateLastScraped($source['id']);
         $log("  → $new nových z " . count($reviews));
     } catch (\Throwable $e) {
