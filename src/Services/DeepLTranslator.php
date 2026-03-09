@@ -21,6 +21,7 @@ class DeepLTranslator
         'HR' => 'Chorvatština',
         'SL' => 'Slovinština',
         'IT' => 'Italština',
+        'PL' => 'Polština',
     ];
 
     private string $apiKey;
