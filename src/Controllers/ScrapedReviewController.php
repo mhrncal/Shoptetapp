@@ -81,7 +81,9 @@ class ScrapedReviewController extends BaseController
             'userLangs'  => $userLangs,
             'allLangs'   => DeepLTranslator::LANGUAGES,
             'hasDeepL'       => $this->hasDeepL(),
-            'hasGoogleKey'   => (bool)$this->getGoogleApiKey(),
+            'hasGoogleKey'       => (bool)$this->getGoogleApiKey(),
+            'outscraperKey'      => $this->getOutscraperApiKey() ?? '',
+            'googlePlacesKey'    => $this->getGoogleApiKey() ?? '',
             'deeplKey'   => !empty($this->user['deepl_api_key']),
         ]);
     }

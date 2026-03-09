@@ -51,9 +51,7 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
                                 <option value="heureka">Heureka</option>
                                 <option value="trustedshops">Trusted Shops</option>
                                 <option value="shoptet">Shoptet</option>
-                                <option value="google">Google Places</option>
                                 <option value="outscraper">Outscraper (Google)</option>
-                                <option value="google">Google (Place ID)</option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-sm btn-primary w-100">Přidat zdroj</button>
@@ -97,13 +95,6 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
     <div class="col-12 col-lg-7 d-flex flex-column gap-3">
 
         <!-- Outscraper API klíč -->
-<?php
-$outscraperKey = '';
-$stmt = $pdo->prepare("SELECT outscraper_api_key FROM users WHERE id = ?");
-$stmt->execute([$userId]);
-$outRow = $stmt->fetch();
-$outscraperKey = $outRow['outscraper_api_key'] ?? '';
-?>
 <div class="card mb-3">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h6 class="mb-0 fw-semibold"><i class="bi bi-google me-1"></i>Outscraper API klíč</h6>
