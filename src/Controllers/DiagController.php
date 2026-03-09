@@ -468,7 +468,48 @@ class DiagController extends BaseController
         echo "\nNyní klikni 'Přeložit nepřeložené' v modulu.\n";
     }
 
-    public function testHeureka(): void
+    public function testDeepL(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $db = \ShopCode\Core\Database::getInstance();
+
+        // Načti DeepL klíč prvního uživatele
+        $row = $db->query("SELECT id, deepl_api_key FROM users WHERE deepl_api_key IS NOT NULL LIMIT 1")->fetch();
+        if (!$row) { echo "Žádný uživatel nemá DeepL klíč.\n"; exit; }
+        echo "User ID: {$row['id']}\n";
+        echo "API key: " . substr($row['deepl_api_key'], 0, 8) . "...\n\n";
+
+        $deepl = new \ShopCode\Services\DeepLTranslator($row['deepl_api_key']);
+
+        $text = "Polecam, obawiałam się że nie dotrze ale wszystko super bez problemu i szybko";
+        echo "Text: $text\n\n";
+
+        $cs = $deepl->translate($text, 'CS');
+        echo "→ CS: $cs\n";
+
+        $de = $deepl->translate($text, 'DE');
+        echo "→ DE: $de\n";
+
+        $detected = $deepl->detectLang($text);
+        echo "→ Detected lang: $detected\n\n";
+
+        // Koukni co je v DB pro tuto recenzi
+        $stmt = $db->prepare("SELECT sr.id, sr.content, srt.lang, LEFT(srt.content,80) as trans 
+            FROM scraped_reviews sr 
+            LEFT JOIN scraped_review_translations srt ON srt.review_id = sr.id
+            WHERE sr.content LIKE ? LIMIT 10");
+        $stmt->execute(['%Polecam%']);
+        $rows = $stmt->fetchAll();
+        echo "DB záznamy:\n";
+        foreach ($rows as $r) {
+            echo "  review_id={$r['id']} lang={$r['lang']}: {$r['trans']}\n";
+        }
+        exit;
+    }
+
+        public function testHeureka(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
         header('Content-Type: text/plain; charset=utf-8');

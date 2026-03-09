@@ -11,6 +11,7 @@ return [
     ['GET', '/diag/scrape',   'DiagController@scrapeDiag',    []],
     ['GET', '/diag/dedup',        'DiagController@dedupReviews',  []],
     ['GET', '/diag/delete-outscraper-bad', 'DiagController@deleteOutscraperBad', []],
+    ['GET', '/diag/test-deepl',   'DiagController@testDeepL',         []],
     ['GET', '/diag/detect-langs',   'DiagController@detectLangs',      []],
     ['GET', '/diag/fix-cs',         'DiagController@fixCsTranslations', []],
     ['GET', '/diag/test-heureka',   'DiagController@testHeureka',       []],
