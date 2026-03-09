@@ -236,37 +236,49 @@ class ReviewScraper
     // ---------------------------------------------------------------
     public static function scrapeGooglePlaces(string $placeId, string $apiKey): array
     {
-        $endpoint = 'https://maps.googleapis.com/maps/api/place/details/json?'
-            . http_build_query([
-                'place_id' => $placeId,
-                'fields'   => 'reviews',
-                'language' => 'cs',
-                'key'      => $apiKey,
-            ]);
-
-        $ch = curl_init($endpoint);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 15,
-            CURLOPT_SSL_VERIFYPEER => false,
-        ]);
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        if (!$response) return [];
-        $data = @json_decode($response, true);
-        if (($data['status'] ?? '') !== 'OK') return [];
-
+        // Google Places API vrací max 5 recenzí per jazyk
+        // Dotážeme se na více jazyků abychom získali více unikátních recenzí
+        $languages = ['cs', 'de', 'en', 'pl', 'sk'];
+        $seen   = [];
         $result = [];
-        foreach ($data['result']['reviews'] ?? [] as $r) {
-            if (empty($r['text'])) continue;
-            $result[] = [
-                'external_id' => md5($placeId . $r['author_name'] . $r['time']),
-                'author'      => $r['author_name'] ?? 'Anonymní',
-                'rating'      => isset($r['rating']) ? (int)$r['rating'] : null,
-                'content'     => $r['text'],
-                'date'        => isset($r['time']) ? date('Y-m-d', $r['time']) : null,
-            ];
+
+        foreach ($languages as $lang) {
+            $endpoint = 'https://maps.googleapis.com/maps/api/place/details/json?'
+                . http_build_query([
+                    'place_id'    => $placeId,
+                    'fields'      => 'reviews',
+                    'language'    => $lang,
+                    'reviews_sort'=> 'newest',
+                    'key'         => $apiKey,
+                ]);
+
+            $ch = curl_init($endpoint);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 15,
+                CURLOPT_SSL_VERIFYPEER => false,
+            ]);
+            $response = curl_exec($ch);
+            curl_close($ch);
+
+            if (!$response) continue;
+            $data = @json_decode($response, true);
+            if (($data['status'] ?? '') !== 'OK') continue;
+
+            foreach ($data['result']['reviews'] ?? [] as $r) {
+                $dedupKey = $placeId . '|' . ($r['author_name'] ?? '') . '|' . ($r['time'] ?? '');
+                if (isset($seen[$dedupKey])) continue;
+                $seen[$dedupKey] = true;
+
+                $result[] = [
+                    'external_id' => md5($dedupKey),
+                    'author'      => $r['author_name'] ?? 'Anonymní',
+                    'rating'      => isset($r['rating']) ? (int)$r['rating'] : null,
+                    'content'     => $r['text'] ?? '',
+                    'date'        => isset($r['time']) ? date('Y-m-d', (int)$r['time']) : null,
+                ];
+            }
+            usleep(200000);
         }
         return $result;
     }
@@ -341,5 +353,66 @@ class ReviewScraper
         }
         $ts = @strtotime($raw);
         return $ts ? date('Y-m-d', $ts) : null;
+    }
+
+    /**
+     * Google recenze přes Outscraper API
+     * URL/place_id: Google Maps URL nebo Place ID (ChIJ...)
+     * apiKey: Outscraper API klíč
+     */
+    public static function scrapeOutscraper(string $placeId, string $apiKey, int $limit = 100): array
+    {
+        // Outscraper akceptuje Google Maps URL i Place ID
+        $endpoint = 'https://api.app.outscraper.com/maps/reviews-v3?' . http_build_query([
+            'query'       => $placeId,
+            'reviewsLimit' => $limit,
+            'language'    => 'en',
+            'async'       => 'false',
+        ]);
+
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 60,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_HTTPHEADER     => [
+                'X-API-KEY: ' . $apiKey,
+                'Accept: application/json',
+            ],
+        ]);
+        $body = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($code !== 200 || !$body) return [];
+
+        $data = @json_decode($body, true);
+        if (!$data || empty($data['data'][0])) return [];
+
+        $reviews = [];
+        foreach ($data['data'][0] as $place) {
+            if (empty($place['reviews_data'])) continue;
+            foreach ($place['reviews_data'] as $r) {
+                $text = trim($r['review_text'] ?? '');
+                $date = null;
+                if (!empty($r['review_datetime_utc'])) {
+                    $date = date('Y-m-d', strtotime($r['review_datetime_utc']));
+                } elseif (!empty($r['review_timestamp'])) {
+                    $date = date('Y-m-d', (int)$r['review_timestamp']);
+                }
+                $rating = (int)round((float)($r['review_rating'] ?? 0));
+                $author = trim($r['author_title'] ?? 'Google zákazník');
+                $extId  = $r['review_id'] ?? md5($author . $text . $date);
+
+                $reviews[] = [
+                    'external_id' => $extId,
+                    'author'      => $author,
+                    'rating'      => min(5, max(1, $rating)),
+                    'content'     => $text,
+                    'date'        => $date,
+                ];
+            }
+        }
+        return $reviews;
     }
 }

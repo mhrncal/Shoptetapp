@@ -8,6 +8,26 @@ use ShopCode\Services\{ReviewScraper, DeepLTranslator};
 
 class ScrapedReviewController extends BaseController
 {
+    public function saveOutscraperApiKey(): void
+    {
+        $this->validateCsrf();
+        $key = trim($this->request->post('outscraper_api_key', ''));
+        $db  = \ShopCode\Core\Database::getInstance();
+        $db->prepare("UPDATE users SET outscraper_api_key = ? WHERE id = ?")
+           ->execute([$key ?: null, $this->user['id']]);
+        Session::flash('success', $key ? 'Outscraper API klíč uložen.' : 'Outscraper API klíč odstraněn.');
+        $this->redirect('/scraped-reviews');
+    }
+
+    private function getOutscraperApiKey(): ?string
+    {
+        $db   = \ShopCode\Core\Database::getInstance();
+        $stmt = $db->prepare("SELECT outscraper_api_key FROM users WHERE id = ?");
+        $stmt->execute([$this->user['id']]);
+        $row  = $stmt->fetch();
+        return !empty($row['outscraper_api_key']) ? $row['outscraper_api_key'] : null;
+    }
+
     private function getGoogleApiKey(): ?string
     {
         $db   = \ShopCode\Core\Database::getInstance();
@@ -75,7 +95,7 @@ class ScrapedReviewController extends BaseController
         $url      = trim($this->request->post('url', ''));
         $platform = $this->request->post('platform', '');
 
-        if (!$name || !$url || !in_array($platform, ['heureka', 'trustedshops', 'shoptet', 'google'])) {
+        if (!$name || !$url || !in_array($platform, ['heureka', 'trustedshops', 'shoptet', 'google', 'outscraper'])) {
             Session::flash('error', 'Vyplňte všechna pole.');
             $this->redirect('/scraped-reviews');
         }
@@ -121,11 +141,12 @@ class ScrapedReviewController extends BaseController
 
         if ($source['platform'] === 'google') {
             $googleKey = $this->getGoogleApiKey();
-            if (!$googleKey) {
-                Session::flash('error', 'Google Places API klíč není nastaven.');
-                $this->redirect('/scraped-reviews');
-            }
+            if (!$googleKey) { Session::flash('error', 'Google Places API klíč není nastaven.'); $this->redirect('/scraped-reviews'); }
             $scraped = ReviewScraper::scrapeGooglePlaces($source['url'], $googleKey);
+        } elseif ($source['platform'] === 'outscraper') {
+            $outKey = $this->getOutscraperApiKey();
+            if (!$outKey) { Session::flash('error', 'Outscraper API klíč není nastaven.'); $this->redirect('/scraped-reviews'); }
+            $scraped = ReviewScraper::scrapeOutscraper($source['url'], $outKey);
         } else {
             $scraped = ReviewScraper::scrape($source['url'], $source['platform']);
         }
@@ -354,6 +375,9 @@ class ScrapedReviewController extends BaseController
         if ($source['platform'] === 'google') {
             $googleKey = $this->getGoogleApiKey();
             $scraped = $googleKey ? ReviewScraper::scrapeGooglePlaces($source['url'], $googleKey) : [];
+        } elseif ($source['platform'] === 'outscraper') {
+            $outKey = $this->getOutscraperApiKey();
+            $scraped = $outKey ? ReviewScraper::scrapeOutscraper($source['url'], $outKey) : [];
         } else {
             $scraped = ReviewScraper::scrape($source['url'], $source['platform']);
         }

@@ -148,6 +148,7 @@ return [
     ['GET',    '/scraped-reviews/sync-status',           'ScrapedReviewController@syncStatus',    ['auth','approved','module:scraped_reviews']],
     ['POST',   '/scraped-reviews/sync-one',              'ScrapedReviewController@syncOne',       ['auth','approved','module:scraped_reviews']],
     ['GET',    '/scraped-reviews/sync-all',              'ScrapedReviewController@syncAll',       ['auth','approved','module:scraped_reviews']],
+    ['POST',   '/scraped-reviews/save-outscraper-api-key', 'ScrapedReviewController@saveOutscraperApiKey', ['auth','approved','module:scraped_reviews']],
     ['POST',   '/scraped-reviews/save-google-api-key',      'ScrapedReviewController@saveGoogleApiKey', ['auth','approved','module:scraped_reviews']],
     ['POST',   '/scraped-reviews/save-api-key',          'ScrapedReviewController@saveApiKey',    ['auth','approved','module:scraped_reviews']],
     ['GET',    '/scraped-reviews/{id}',                'ScrapedReviewController@detail',        ['auth','approved','module:scraped_reviews']],

@@ -3,7 +3,8 @@
 <?php
 $platformLabels = ['heureka' => 'Heureka', 'trustedshops' => 'Trusted Shops', 'shoptet' => 'Shoptet', 'google' => 'Google'];
 $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
-    'shoptet'      => 'primary', 'shoptet' => 'primary', 'google' => 'danger'];
+    'shoptet'      => 'primary',
+    'outscraper'   => 'danger', 'shoptet' => 'primary', 'google' => 'danger'];
 ?>
 
 <!-- Hlavička -->
@@ -51,6 +52,7 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
                                 <option value="trustedshops">Trusted Shops</option>
                                 <option value="shoptet">Shoptet</option>
                                 <option value="google">Google Places</option>
+                                <option value="outscraper">Outscraper (Google)</option>
                                 <option value="google">Google (Place ID)</option>
                             </select>
                         </div>
@@ -94,7 +96,37 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
     <!-- Pravý sloupec: DeepL klíč + jazyky -->
     <div class="col-12 col-lg-7 d-flex flex-column gap-3">
 
-        <!-- DeepL API klíč -->
+        <!-- Outscraper API klíč -->
+<?php
+$outscraperKey = '';
+$stmt = $pdo->prepare("SELECT outscraper_api_key FROM users WHERE id = ?");
+$stmt->execute([$userId]);
+$outRow = $stmt->fetch();
+$outscraperKey = $outRow['outscraper_api_key'] ?? '';
+?>
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-semibold"><i class="bi bi-google me-1"></i>Outscraper API klíč</h6>
+        <?php if ($outscraperKey): ?>
+            <span class="badge bg-success">Aktivní</span>
+        <?php else: ?>
+            <span class="badge bg-secondary">Nenastaveno</span>
+        <?php endif; ?>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="/scraped-reviews/save-outscraper-api-key">
+            <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+            <div class="input-group input-group-sm">
+                <input type="password" name="outscraper_api_key" class="form-control font-monospace"
+                       placeholder="YOUR-API-KEY..." value="<?= $e($outscraperKey) ?>" autocomplete="new-password">
+                <button class="btn btn-outline-primary" type="submit">Uložit</button>
+            </div>
+            <div class="form-text">Klíč z <a href="https://outscraper.com" target="_blank">outscraper.com</a>. Jako URL zdroje zadej Google Maps URL obchodu.</div>
+        </form>
+    </div>
+</div>
+
+<!-- DeepL API klíč -->
         <div class="card">
             <div class="card-header d-flex align-items-center gap-2">
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-key me-1"></i>DeepL API klíč</h6>
