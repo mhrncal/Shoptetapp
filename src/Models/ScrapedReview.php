@@ -16,6 +16,14 @@ class ScrapedReview
         return $stmt->fetchAll();
     }
 
+    public static function urlExists(int $userId, string $url): bool
+    {
+        $db   = Database::getInstance();
+        $stmt = $db->prepare("SELECT id FROM scrape_sources WHERE user_id = ? AND url = ? LIMIT 1");
+        $stmt->execute([$userId, $url]);
+        return (bool)$stmt->fetch();
+    }
+
     public static function addSource(int $userId, string $name, string $url, string $platform): int
     {
         $db = Database::getInstance();

@@ -85,6 +85,11 @@ class ScrapedReviewController extends BaseController
             $this->redirect('/scraped-reviews');
         }
 
+        if (ScrapedReview::urlExists($userId, $url)) {
+            Session::flash('error', 'Zdroj s touto URL již existuje.');
+            $this->redirect('/scraped-reviews');
+        }
+
         ScrapedReview::addSource($userId, $name, $url, $platform);
         Session::flash('success', 'Zdroj přidán.');
         $this->redirect('/scraped-reviews');
