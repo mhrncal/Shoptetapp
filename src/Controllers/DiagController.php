@@ -486,14 +486,34 @@ class DiagController extends BaseController
         $text = "Polecam, obawiałam się że nie dotrze ale wszystko super bez problemu i szybko";
         echo "Text: $text\n\n";
 
-        $cs = $deepl->translate($text, 'CS');
-        echo "→ CS: $cs\n";
-
-        $de = $deepl->translate($text, 'DE');
-        echo "→ DE: $de\n";
-
         $detected = $deepl->detectLang($text);
-        echo "→ Detected lang: $detected\n\n";
+        echo "→ Detected lang: $detected\n";
+
+        $cs = $deepl->translate($text, 'CS');
+        echo "→ CS (bez source_lang): $cs\n";
+
+        $csWithSrc = $deepl->translate($text, 'CS', 'PL');
+        echo "→ CS (source_lang=PL): $csWithSrc\n";
+
+        $de = $deepl->translate($text, 'DE', 'PL');
+        echo "→ DE (source_lang=PL): $de\n\n";
+
+        // Raw curl test
+        $endpoint = str_ends_with($row['deepl_api_key'], ':fx')
+            ? 'https://api-free.deepl.com/v2/translate'
+            : 'https://api.deepl.com/v2/translate';
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => http_build_query(['text' => $text, 'target_lang' => 'CS', 'source_lang' => 'PL']),
+            CURLOPT_HTTPHEADER     => ['Authorization: DeepL-Auth-Key ' . $row['deepl_api_key'], 'Content-Type: application/x-www-form-urlencoded'],
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $raw = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        echo "Raw API response (HTTP $code):\n$raw\n\n";
 
         // Koukni co je v DB pro tuto recenzi
         $stmt = $db->prepare("SELECT sr.id, sr.content, srt.lang, LEFT(srt.content,80) as trans 
@@ -509,7 +529,7 @@ class DiagController extends BaseController
         exit;
     }
 
-        public function testHeureka(): void
+    public function testHeureka(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
         header('Content-Type: text/plain; charset=utf-8');
