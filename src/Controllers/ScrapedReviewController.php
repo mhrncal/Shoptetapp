@@ -270,4 +270,118 @@ class ScrapedReviewController extends BaseController
         Session::flash('success', $key ? 'Google Places API klíč uložen.' : 'Google Places API klíč odstraněn.');
         $this->redirect('/scraped-reviews');
     }
+
+    // Stav synchronizace (polling)
+    public function syncStatus(): void
+    {
+        header('Content-Type: application/json');
+        $userId  = $this->user['id'];
+        $lockKey = "sync_lock_{$userId}";
+        $progKey = "sync_progress_{$userId}";
+
+        $lock = $_SESSION[$lockKey] ?? null;
+        $prog = $_SESSION[$progKey] ?? null;
+
+        // Zkontroluj jestli proces stále běží (max 5 minut)
+        $running = $lock && (time() - ($lock['started'] ?? 0)) < 300;
+
+        echo json_encode([
+            'running'  => $running,
+            'progress' => $prog,
+            'lock'     => $lock,
+        ]);
+        exit;
+    }
+
+    // Synchronizuj jeden zdroj (AJAX)
+    public function syncOne(): void
+    {
+        header('Content-Type: application/json');
+        $this->validateCsrf();
+        $userId   = $this->user['id'];
+        $sourceId = (int)$this->request->post('source_id', 0);
+        $lockKey  = "sync_lock_{$userId}";
+        $progKey  = "sync_progress_{$userId}";
+
+        // Zkontroluj lock
+        $lock = $_SESSION[$lockKey] ?? null;
+        if ($lock && (time() - ($lock['started'] ?? 0)) < 300) {
+            echo json_encode(['ok' => false, 'error' => 'Synchronizace již probíhá.']);
+            exit;
+        }
+
+        $source = ScrapedReview::getSource($sourceId, $userId);
+        if (!$source) {
+            echo json_encode(['ok' => false, 'error' => 'Zdroj nenalezen.']);
+            exit;
+        }
+
+        // Nastav lock + progress
+        $_SESSION[$lockKey] = ['started' => time(), 'source_id' => $sourceId, 'source_name' => $source['name']];
+        $_SESSION[$progKey] = ['step' => 'scraping', 'msg' => 'Stahuji recenze z ' . $source['name'] . '…', 'new' => 0, 'translated' => 0];
+        session_write_close();
+
+        // Scrape
+        if ($source['platform'] === 'google') {
+            $googleKey = $this->getGoogleApiKey();
+            $scraped = $googleKey ? ReviewScraper::scrapeGooglePlaces($source['url'], $googleKey) : [];
+        } else {
+            $scraped = ReviewScraper::scrape($source['url'], $source['platform']);
+        }
+
+        $new = 0;
+        foreach ($scraped as $r) {
+            if (ScrapedReview::insertReview($userId, $sourceId, $r['external_id'], $r['author'], $r['rating'], $r['content'], $r['date'])) {
+                $new++;
+            }
+        }
+        ScrapedReview::updateLastScraped($sourceId);
+
+        // Překlad
+        session_start();
+        $_SESSION[$progKey] = ['step' => 'translating', 'msg' => "Nascrapováno {$new} nových. Překládám…", 'new' => $new, 'translated' => 0];
+        session_write_close();
+
+        $translated = 0;
+        $deepl = $this->getDeepL();
+        $langs = ScrapedReview::getUserLangs($userId);
+        if ($deepl && $new > 0) {
+            $pending = ScrapedReview::getUntranslated($userId, array_unique(array_merge(['CS'], $langs)));
+            foreach ($pending as $review) {
+                if (empty(trim($review['content']))) continue;
+                $result = $deepl->translateWithLang($review['content'], 'CS');
+                if ($result) {
+                    ScrapedReview::saveTranslation($review['id'], 'CS', $result['text'], true);
+                    if (!empty($result['detected_lang'])) ScrapedReview::updateSourceLang($review['id'], $result['detected_lang']);
+                    $translated++;
+                }
+                foreach ($langs as $lang) {
+                    if (strtoupper($lang) === 'CS') continue;
+                    $text = $deepl->translate($review['content'], $lang);
+                    if ($text) ScrapedReview::saveTranslation($review['id'], $lang, $text, true);
+                }
+                usleep(200000);
+            }
+        }
+
+        // Uvolni lock
+        session_start();
+        $_SESSION[$lockKey] = null;
+        $_SESSION[$progKey] = ['step' => 'done', 'msg' => "Hotovo. Nových: {$new}, přeloženo: {$translated}.", 'new' => $new, 'translated' => $translated];
+        session_write_close();
+
+        echo json_encode(['ok' => true, 'new' => $new, 'translated' => $translated]);
+        exit;
+    }
+
+    // Synchronizuj všechny zdroje postupně (AJAX — volá se per-source)
+    public function syncAll(): void
+    {
+        header('Content-Type: application/json');
+        $userId  = $this->user['id'];
+        $sources = ScrapedReview::getSources($userId);
+        $active  = array_filter($sources, fn($s) => $s['is_active']);
+        echo json_encode(['ok' => true, 'sources' => array_values(array_map(fn($s) => ['id' => $s['id'], 'name' => $s['name'], 'platform' => $s['platform']], $active))]);
+        exit;
+    }
 }

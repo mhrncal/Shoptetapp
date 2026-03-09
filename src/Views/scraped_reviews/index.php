@@ -189,19 +189,114 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
     </div>
 </div>
 
-<!-- Rychlé spuštění scrape pro uživatele -->
+<!-- Synchronizace -->
 <?php if (!empty($sources)): ?>
-<div class="d-flex gap-2 flex-wrap mb-3">
-    <?php foreach ($sources as $s): ?>
-    <form method="POST" action="/scraped-reviews/scrape">
-        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-        <input type="hidden" name="source_id" value="<?= $s['id'] ?>">
-        <button type="submit" class="btn btn-sm btn-outline-<?= $platformColors[$s['platform']] ?? 'secondary' ?>">
-            <i class="bi bi-arrow-clockwise me-1"></i><?= $e($s['name']) ?>
-        </button>
-    </form>
-    <?php endforeach; ?>
+<div class="card mb-3" id="syncCard">
+    <div class="card-body py-2 px-3">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button id="btnSyncAll" class="btn btn-sm btn-primary" onclick="startSyncAll()">
+                <i class="bi bi-arrow-repeat me-1"></i>Synchronizovat vše
+            </button>
+            <?php foreach ($sources as $s): ?>
+            <button class="btn btn-sm btn-outline-<?= $platformColors[$s['platform']] ?? 'secondary' ?> btn-sync-one"
+                    data-id="<?= $s['id'] ?>" data-name="<?= $e($s['name']) ?>"
+                    onclick="startSyncOne(<?= $s['id'] ?>, '<?= $e(addslashes($s['name'])) ?>')">
+                <i class="bi bi-arrow-clockwise me-1"></i><?= $e($s['name']) ?>
+            </button>
+            <?php endforeach; ?>
+        </div>
+        <!-- Progress bar -->
+        <div id="syncProgress" class="mt-2" style="display:none;">
+            <div class="progress" style="height:6px;">
+                <div id="syncProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%"></div>
+            </div>
+            <div id="syncProgressMsg" class="text-muted mt-1" style="font-size:.75rem;"></div>
+        </div>
+    </div>
 </div>
+
+<script>
+(function() {
+    const csrf = <?= json_encode($csrfToken) ?>;
+    let syncing = false;
+    let syncQueue = [];
+    let syncTotal = 0;
+    let syncDone = 0;
+
+    function setButtons(disabled) {
+        syncing = disabled;
+        document.getElementById('btnSyncAll').disabled = disabled;
+        document.querySelectorAll('.btn-sync-one').forEach(b => b.disabled = disabled);
+    }
+
+    function setProgress(pct, msg, color) {
+        const el = document.getElementById('syncProgress');
+        el.style.display = '';
+        const bar = document.getElementById('syncProgressBar');
+        bar.style.width = pct + '%';
+        bar.className = 'progress-bar progress-bar-striped' + (pct < 100 ? ' progress-bar-animated' : '') + (color ? ' bg-' + color : '');
+        document.getElementById('syncProgressMsg').textContent = msg;
+    }
+
+    function hideProgress() {
+        setTimeout(() => { document.getElementById('syncProgress').style.display = 'none'; }, 3000);
+    }
+
+    async function runSync(sourceId, sourceName) {
+        setProgress(Math.round((syncDone / syncTotal) * 80), 'Synchronizuji: ' + sourceName + '…');
+        try {
+            const r = await fetch('/scraped-reviews/sync-one', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: '_csrf=' + encodeURIComponent(csrf) + '&source_id=' + sourceId
+            });
+            const d = await r.json();
+            syncDone++;
+            const pct = Math.round((syncDone / syncTotal) * 100);
+            if (!d.ok) {
+                setProgress(pct, '⚠ ' + sourceName + ': ' + (d.error || 'chyba'), 'warning');
+            } else {
+                setProgress(pct, 'Hotovo: ' + sourceName + ' — nových: ' + d.new + ', přeloženo: ' + d.translated);
+            }
+        } catch(e) {
+            syncDone++;
+            setProgress(Math.round((syncDone / syncTotal) * 100), '⚠ Chyba sítě: ' + sourceName, 'danger');
+        }
+    }
+
+    async function processQueue() {
+        for (const item of syncQueue) {
+            await runSync(item.id, item.name);
+        }
+        setProgress(100, '✓ Synchronizace dokončena. Stránka se obnoví…', 'success');
+        setButtons(false);
+        hideProgress();
+        setTimeout(() => location.reload(), 2000);
+    }
+
+    window.startSyncAll = async function() {
+        if (syncing) return;
+        setButtons(true);
+        const r = await fetch('/scraped-reviews/sync-all');
+        const d = await r.json();
+        syncQueue = d.sources;
+        syncTotal = syncQueue.length;
+        syncDone = 0;
+        setProgress(0, 'Připravuji synchronizaci ' + syncTotal + ' zdrojů…');
+        processQueue();
+    };
+
+    window.startSyncOne = function(id, name) {
+        if (syncing) return;
+        setButtons(true);
+        syncQueue = [{id, name}];
+        syncTotal = 1;
+        syncDone = 0;
+        setProgress(0, 'Připravuji…');
+        processQueue();
+    };
+})();
+</script>
 <?php endif; ?>
 
 <!-- Filtr zdrojů -->
