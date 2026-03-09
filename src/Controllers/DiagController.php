@@ -447,4 +447,22 @@ class DiagController extends BaseController
         }
         echo "\nHotovo. Aktualizováno: $updated\n";
     }
+
+    public function fixCsTranslations(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $db = \ShopCode\Core\Database::getInstance();
+
+        // Smaž všechny CS překlady — budou přegenerovány správně
+        $stmt = $db->query("DELETE FROM scraped_review_translations WHERE lang = 'CS'");
+        $deleted = $stmt->rowCount();
+        echo "Smazáno CS překladů: $deleted\n";
+
+        // Reset source_lang — bude znovu detekován
+        $db->query("UPDATE scraped_reviews SET source_lang = NULL WHERE source_lang IS NOT NULL");
+        echo "Reset source_lang hotov.\n";
+        echo "\nNyní klikni 'Přeložit nepřeložené' v modulu.\n";
+    }
 }
