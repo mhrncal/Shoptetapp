@@ -97,19 +97,20 @@ class ScrapedReviewController extends BaseController
         $url      = trim($this->request->post('url', ''));
         $platform = $this->request->post('platform', '');
 
-        if (!$name || !$url || !in_array($platform, ['heureka', 'trustedshops', 'shoptet', 'google', 'outscraper'])) {
+        if (!$name || !in_array($platform, ['heureka', 'trustedshops', 'shoptet', 'google', 'outscraper'])) {
             Session::flash('error', 'Vyplňte všechna pole.');
             $this->redirect('/scraped-reviews');
         }
 
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            Session::flash('error', 'Neplatná URL adresa.');
-            $this->redirect('/scraped-reviews');
-        }
-
-        if (ScrapedReview::urlExists($userId, $url)) {
-            Session::flash('error', 'Zdroj s touto URL již existuje.');
-            $this->redirect('/scraped-reviews');
+        if ($platform !== 'outscraper') {
+            if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
+                Session::flash('error', 'Neplatná URL adresa.');
+                $this->redirect('/scraped-reviews');
+            }
+            if (ScrapedReview::urlExists($userId, $url)) {
+                Session::flash('error', 'Zdroj s touto URL již existuje.');
+                $this->redirect('/scraped-reviews');
+            }
         }
 
         ScrapedReview::addSource($userId, $name, $url, $platform);
@@ -476,7 +477,10 @@ class ScrapedReviewController extends BaseController
         // Pokud není vybrán zdroj, vezmi první outscraper zdroj nebo vytvoř nový
         if (!$sourceId) {
             $db = \ShopCode\Core\Database::getInstance();
-            $shopName = isset($col['name']) && !empty($rows[1][$col['name']]) ? $rows[1][$col['name']] : 'Outscraper import';
+            $shopName = trim($this->request->post('name', ''));
+            if (!$shopName) {
+                $shopName = isset($col['name']) && !empty($rows[1][$col['name']]) ? $rows[1][$col['name']] : 'Outscraper import';
+            }
             $placeId  = isset($col['place_id']) && !empty($rows[1][$col['place_id']]) ? $rows[1][$col['place_id']] : '';
 
             // Nejdřív zkus najít zdroj podle place_id v URL

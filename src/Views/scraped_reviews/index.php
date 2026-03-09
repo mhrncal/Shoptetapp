@@ -29,53 +29,67 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-link-45deg me-1"></i>Zdroje</h6>
-                <div class="d-flex gap-1">
-                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#importXlsxForm" title="Import Outscraper XLSX">
-                        <i class="bi bi-file-earmark-spreadsheet"></i> Import
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addSourceForm">
-                        <i class="bi bi-plus"></i> Přidat
-                    </button>
-                </div>
-            </div>
-
-            <!-- Import Outscraper XLSX -->
-            <div class="collapse" id="importXlsxForm">
-                <div class="card-body border-bottom bg-light">
-                    <form method="POST" action="/scraped-reviews/import-xlsx" enctype="multipart/form-data">
-                        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-                        <div class="mb-2">
-                            <label class="form-label small fw-semibold mb-1">Outscraper XLSX export</label>
-                            <input type="file" name="xlsx_file" class="form-control form-control-sm" accept=".xlsx" required>
-                            <div class="text-muted mt-1" style="font-size:.75rem;">Zdroj se vytvoří automaticky podle názvu obchodu v souboru, nebo se doplní do existujícího.</div>
-                        </div>
-                        <button type="submit" class="btn btn-sm btn-secondary w-100"><i class="bi bi-upload me-1"></i>Nahrát a importovat</button>
-                    </form>
-                </div>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addSourceForm">
+                    <i class="bi bi-plus"></i> Přidat
+                </button>
             </div>
 
             <!-- Formulář přidání zdroje -->
             <div class="collapse" id="addSourceForm">
                 <div class="card-body border-bottom">
-                    <form method="POST" action="/scraped-reviews/add-source">
+                    <form method="POST" action="/scraped-reviews/add-source" id="addSourceFormEl" enctype="multipart/form-data">
                         <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                         <div class="mb-2">
-                            <input type="text" name="name" class="form-control form-control-sm" placeholder="Název (např. Heureka CZ)" required>
+                            <input type="text" name="name" class="form-control form-control-sm" placeholder="Název zdroje (např. Můj obchod)" required>
                         </div>
                         <div class="mb-2">
-                            <input type="url" name="url" class="form-control form-control-sm" placeholder="URL stránky s recenzemi" required>
-                        </div>
-                        <div class="mb-2">
-                            <select name="platform" class="form-select form-select-sm" required>
-                                <option value="">— Platforma —</option>
+                            <select name="platform" id="platformSelect" class="form-select form-select-sm" required onchange="onPlatformChange(this.value)">
+                                <option value="">— Vyberte platformu —</option>
                                 <option value="heureka">Heureka</option>
                                 <option value="trustedshops">Trusted Shops</option>
                                 <option value="shoptet">Shoptet</option>
                                 <option value="outscraper">Outscraper (Google)</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-sm btn-primary w-100">Přidat zdroj</button>
+                        <div id="fieldUrl" class="mb-2" style="display:none">
+                            <input type="url" name="url" id="urlInput" class="form-control form-control-sm" placeholder="URL stránky s recenzemi">
+                            <div class="text-muted mt-1" style="font-size:.75rem;" id="urlHint"></div>
+                        </div>
+                        <div id="fieldXlsx" class="mb-2" style="display:none">
+                            <input type="file" name="xlsx_file" class="form-control form-control-sm" accept=".xlsx">
+                            <div class="text-muted mt-1" style="font-size:.75rem;">Nahrajte XLSX export z Outscraper dashboardu. Zdroj se přidá automaticky.</div>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary w-100" id="addSourceBtn" disabled>Přidat zdroj</button>
                     </form>
+                    <script>
+                    function onPlatformChange(val) {
+                        var fieldUrl  = document.getElementById('fieldUrl');
+                        var fieldXlsx = document.getElementById('fieldXlsx');
+                        var urlInput  = document.getElementById('urlInput');
+                        var urlHint   = document.getElementById('urlHint');
+                        var btn       = document.getElementById('addSourceBtn');
+                        var hints = {
+                            'heureka':      'https://www.heureka.cz/direct/dotaznik/export-review.php?key=...',
+                            'trustedshops': 'https://api.trustedshops.com/rest/public/v2/shops/{tsid}/reviews/...',
+                            'shoptet':      'https://vaseshop.cz/ (URL vašeho Shoptet obchodu)',
+                        };
+                        fieldUrl.style.display  = 'none';
+                        fieldXlsx.style.display = 'none';
+                        urlInput.required = false;
+                        btn.disabled = !val;
+                        if (val === 'outscraper') {
+                            fieldXlsx.style.display = 'block';
+                            // Pro outscraper action jde na import-xlsx
+                            document.getElementById('addSourceFormEl').action = '/scraped-reviews/import-xlsx';
+                        } else if (val) {
+                            fieldUrl.style.display = 'block';
+                            urlInput.required = true;
+                            urlInput.placeholder = hints[val] || 'URL stránky s recenzemi';
+                            urlHint.textContent = hints[val] || '';
+                            document.getElementById('addSourceFormEl').action = '/scraped-reviews/add-source';
+                        }
+                    }
+                    </script>
                 </div>
             </div>
 

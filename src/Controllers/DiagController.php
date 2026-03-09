@@ -568,7 +568,25 @@ class DiagController extends BaseController
         }
     }
 
-    public function testExec(): void
+    public function deleteOutscraperBad(): void
+    {
+        header('Content-Type: text/plain; charset=utf-8');
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { echo "403"; exit; }
+        $db = \ShopCode\Core\Database::getInstance();
+
+        // Smaž recenze kde source_id patří zdroji s platform='outscraper' ale source_id=0 nebo zdroj neexistuje
+        $del1 = $db->exec("DELETE sr FROM scraped_reviews sr LEFT JOIN scrape_sources ss ON sr.source_id=ss.id WHERE ss.id IS NULL OR sr.source_id=0");
+        echo "Smazáno recenzí bez platného zdroje: {$del1}\n";
+
+        // Smaž zdroje outscraper které nemají žádné recenze a jsou starší než 1 minuta
+        $del2 = $db->exec("DELETE ss FROM scrape_sources ss LEFT JOIN scraped_reviews sr ON ss.id=sr.source_id WHERE ss.platform='outscraper' AND sr.id IS NULL AND ss.created_at < DATE_SUB(NOW(), INTERVAL 1 MINUTE)");
+        echo "Smazáno prázdných outscraper zdrojů: {$del2}\n";
+
+        echo "Hotovo.\n";
+        exit;
+    }
+
+        public function testExec(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
         header('Content-Type: text/plain; charset=utf-8');
