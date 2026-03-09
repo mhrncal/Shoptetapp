@@ -582,11 +582,11 @@ class DiagController extends BaseController
         echo "exec('echo hello'): " . implode('', $out) . " (ret=$ret)\n\n";
 
         // 3. Zkus spustit scrape_one.php bez argumentů
-        $script = BASE_PATH . '/cron/scrape_one.php';
+        $script = \BASE_PATH . '/cron/scrape_one.php';
         echo "Script existuje: " . (file_exists($script) ? 'ANO' : 'NE') . "\n";
         echo "PHP binary: " . (PHP_BINARY ?: 'neznámý') . "\n";
 
-        $logFile = BASE_PATH . '/public/logs/diag-exec-test.log';
+        $logFile = \BASE_PATH . '/public/logs/diag-exec-test.log';
         $cmd = sprintf('php %s > %s 2>&1 &', escapeshellarg($script), escapeshellarg($logFile));
         echo "CMD: $cmd\n";
         exec($cmd, $out2, $ret2);
@@ -603,7 +603,7 @@ class DiagController extends BaseController
         // 4. Ukáž log posledního scrape
         $sourceId = (int)($_GET['source'] ?? 0);
         if ($sourceId) {
-            $log = BASE_PATH . '/public/logs/scrape-' . $sourceId . '.log';
+            $log = \BASE_PATH . '/public/logs/scrape-' . $sourceId . '.log';
             echo "\n--- Log scrape-$sourceId.log ---\n";
             echo file_exists($log) ? file_get_contents($log) : "Soubor neexistuje\n";
         }

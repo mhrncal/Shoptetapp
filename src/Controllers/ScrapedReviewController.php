@@ -338,8 +338,8 @@ class ScrapedReviewController extends BaseController
 
         // Shoptet má stovky stránek — spusť jako background CLI proces
         if ($source['platform'] === 'shoptet') {
-            $script  = BASE_PATH . '/cron/scrape_one.php';
-            $logFile = BASE_PATH . '/public/logs/scrape-' . $sourceId . '.log';
+            $script  = \BASE_PATH . '/cron/scrape_one.php';
+            $logFile = \BASE_PATH . '/public/logs/scrape-' . $sourceId . '.log';
             $cmd = sprintf(
                 'php %s %d %d > %s 2>&1 &',
                 escapeshellarg($script),
