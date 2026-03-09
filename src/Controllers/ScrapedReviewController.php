@@ -340,18 +340,23 @@ class ScrapedReviewController extends BaseController
         if ($source['platform'] === 'shoptet') {
             $script  = dirname(__DIR__, 2) . '/cron/scrape_one.php';
             $logFile = dirname(__DIR__, 2) . '/public/logs/scrape-' . $sourceId . '.log';
-            $phpBin = str_replace('php-fpm', 'php', PHP_BINARY ?: '/usr/bin/php');
-            $cmd = sprintf(
-                '%s %s %d %d > %s 2>&1 &',
-                escapeshellarg($phpBin),
-                escapeshellarg($script),
-                $userId,
-                $sourceId,
-                escapeshellarg($logFile)
+            $phpBin  = str_replace('php-fpm', 'php', PHP_BINARY ?: '/usr/bin/php');
+            $cmd     = sprintf('%s %s %d %d > %s 2>&1 &',
+                escapeshellarg($phpBin), escapeshellarg($script),
+                $userId, $sourceId, escapeshellarg($logFile)
             );
-            exec($cmd);
-            echo json_encode(['ok' => true, 'background' => true, 'new' => 0, 'translated' => 0, 'msg' => 'Shoptet scraping spuštěn na pozadí (může trvat 2-3 minuty).']);
-            exit;
+            // Zkus background exec, ověř spuštění podle logu
+            @exec($cmd);
+            sleep(1);
+            $launched = file_exists($logFile) && filesize($logFile) > 0;
+            if ($launched) {
+                echo json_encode(['ok' => true, 'background' => true, 'new' => 0, 'translated' => 0,
+                    'msg' => 'Shoptet scraping spuštěn na pozadí (může trvat 2–3 minuty). Log: /public/logs/scrape-' . $sourceId . '.log']);
+                exit;
+            }
+            // Fallback: synchronní scrape (exec nefunguje)
+            ignore_user_abort(true);
+            set_time_limit(300);
         }
 
         // Scrape
