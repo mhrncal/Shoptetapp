@@ -12,6 +12,7 @@ return [
     ['GET', '/diag/dedup',        'DiagController@dedupReviews',  []],
     ['GET', '/diag/detect-langs',   'DiagController@detectLangs',      []],
     ['GET', '/diag/fix-cs',         'DiagController@fixCsTranslations', []],
+    ['GET', '/diag/test-heureka',   'DiagController@testHeureka',       []],
     ['GET', '/diag/migrate', 'DiagController@runMigration', []],
     // ---- Auth -----------------------------------------------
     ['GET',  '/login',    'AuthController@loginForm',  []],
