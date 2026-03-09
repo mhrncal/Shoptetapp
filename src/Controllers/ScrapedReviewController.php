@@ -318,7 +318,6 @@ class ScrapedReviewController extends BaseController
         $sourceId = (int)$this->request->post('source_id', 0);
         $lockKey  = "sync_lock_{$userId}";
         $progKey  = "sync_progress_{$userId}";
-
         // Zkontroluj lock
         $lock = $_SESSION[$lockKey] ?? null;
         if ($lock && (time() - ($lock['started'] ?? 0)) < 300) {
