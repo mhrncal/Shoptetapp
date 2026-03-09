@@ -468,7 +468,23 @@ class DiagController extends BaseController
         echo "\nNyní klikni 'Přeložit nepřeložené' v modulu.\n";
     }
 
-    public function testDeepL(): void
+    public function unlockScrape(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
+        header('Content-Type: text/plain; charset=utf-8');
+        $lockFile = dirname(__DIR__, 2) . '/public/logs/cron-scrape.lock';
+        if (!file_exists($lockFile)) {
+            echo "Lock soubor neexistuje — scrape není zablokovaný.\n";
+        } else {
+            $age = time() - filemtime($lockFile);
+            echo "Lock soubor existuje, stáří: {$age}s\n";
+            unlink($lockFile);
+            echo "Odblokováno.\n";
+        }
+        exit;
+    }
+
+        public function testDeepL(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
         header('Content-Type: text/plain; charset=utf-8');

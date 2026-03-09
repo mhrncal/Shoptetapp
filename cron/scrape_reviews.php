@@ -28,13 +28,19 @@ use ShopCode\Models\ScrapedReview;
 use ShopCode\Services\ReviewScraper;
 use ShopCode\Services\DeepLTranslator;
 
-// Lock
+// Lock — pokud soubor existuje déle než 2 hodiny, považujeme za zamrzlý a smažeme
 $lockFile = ROOT . '/public/logs/cron-scrape.lock';
+if (file_exists($lockFile) && (time() - filemtime($lockFile)) > 7200) {
+    unlink($lockFile);
+    echo '[' . date('H:i:s') . '] WARN: lock byl starší než 2h, odblokováno' . PHP_EOL;
+}
 $fp = fopen($lockFile, 'c');
 if (!flock($fp, LOCK_EX | LOCK_NB)) {
     echo '[' . date('H:i:s') . '] SKIP: jiz bezi (lock)' . PHP_EOL;
     exit(0);
 }
+// Aktualizuj mtime lock souboru aby watchdog věděl kdy začal
+touch($lockFile);
 
 $log = function (string $msg): void {
     echo '[' . date('Y-m-d H:i:s') . '] ' . $msg . PHP_EOL;
