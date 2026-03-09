@@ -15,14 +15,20 @@ class ReviewScraper
      */
     public static function scrape(string $url, string $platform): array
     {
+        // Heureka a Shoptet fetchují interně (stránkování / XML)
+        if ($platform === 'heureka') {
+            $xml = self::fetch($url);
+            return $xml ? self::scrapeHeureka($xml, $url) : [];
+        }
+        if ($platform === 'shoptet') {
+            return self::scrapeShoptet($url);
+        }
+
         $html = self::fetch($url);
         if (!$html) return [];
 
         return match($platform) {
-            'heureka'      => self::scrapeHeureka($html, $url),
             'trustedshops' => self::scrapeTrustedShops($html, $url),
-            'shoptet'      => self::scrapeShoptet($html, $url),
-            'google'       => self::scrapeGoogle($html, $url),
             default        => [],
         };
     }
@@ -327,10 +333,8 @@ class ReviewScraper
         return $ts ? date('Y-m-d', $ts) : null;
     }
 
-    public static function scrapeHeureka(string $url): array
+    public static function scrapeHeureka(string $xml, string $url = ''): array
     {
-        // Heureka exportuje XML přes URL s ?key=...
-        $xml = self::fetchHtml($url);
         if (!$xml) return [];
 
         // Suppress XML errors
