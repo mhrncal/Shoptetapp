@@ -25,6 +25,7 @@ class DeepLTranslator
     ];
 
     private string $apiKey;
+    public ?string $lastDetectedLang = null;
 
     public function __construct(string $apiKey)
     {
@@ -50,6 +51,13 @@ class DeepLTranslator
         ];
         if ($sourceLang) {
             $params['source_lang'] = strtoupper($sourceLang);
+        } else {
+            // Bez source_lang DeepL může chybně detekovat jazyk — nejdřív detekujeme
+            $detected = $this->detectLang($text);
+            if ($detected) {
+                $params['source_lang'] = strtoupper($detected);
+                $this->lastDetectedLang = $detected;
+            }
         }
 
         $ch = curl_init($endpoint);

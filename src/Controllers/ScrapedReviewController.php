@@ -231,7 +231,7 @@ class ScrapedReviewController extends BaseController
             if (empty(trim($review['content']))) continue;
             $missingLangs = $review['missing_langs'] ?? $allLangs;
 
-            // Detekuj zdrojový jazyk jednou pro celou recenzi
+            // Použij uložený source_lang nebo ho detekuj
             $srcLang = $review['source_lang'] ?? null;
             if (!$srcLang) {
                 $srcLang = $deepl->detectLang($review['content']);
@@ -240,13 +240,19 @@ class ScrapedReviewController extends BaseController
 
             foreach ($missingLangs as $lang) {
                 // Přeskoč pokud je target stejný jako source
-                if ($srcLang && strtoupper($srcLang) === strtoupper(explode('-', $lang)[0])) {
-                    // Ulož originál jako překlad
+                $targetBase = strtoupper(explode('-', $lang)[0]);
+                $sourceBase = $srcLang ? strtoupper(explode('-', $srcLang)[0]) : null;
+                if ($sourceBase && $sourceBase === $targetBase) {
                     ScrapedReview::saveTranslation($review['id'], $lang, $review['content'], false);
                     $count++;
                     continue;
                 }
                 $translated = $deepl->translate($review['content'], $lang, $srcLang);
+                // Ulož detekovaný jazyk pokud jsme ho ještě neměli
+                if (!$srcLang && $deepl->lastDetectedLang) {
+                    $srcLang = $deepl->lastDetectedLang;
+                    ScrapedReview::updateSourceLang($review['id'], $srcLang);
+                }
                 if ($translated) {
                     ScrapedReview::saveTranslation($review['id'], $lang, $translated, true);
                     $count++;
