@@ -565,4 +565,47 @@ class DiagController extends BaseController
             echo "Druhá: " . json_encode($result[1], JSON_UNESCAPED_UNICODE) . "\n";
         }
     }
+
+    public function testExec(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        // 1. Funguje exec?
+        $disabled = ini_get('disable_functions');
+        echo "disable_functions: " . ($disabled ?: '(žádné)') . "\n";
+        echo "exec exists: " . (function_exists('exec') ? 'ANO' : 'NE') . "\n\n";
+
+        // 2. Zkus spustit test příkaz
+        $out = [];
+        exec('echo hello_from_exec', $out, $ret);
+        echo "exec('echo hello'): " . implode('', $out) . " (ret=$ret)\n\n";
+
+        // 3. Zkus spustit scrape_one.php bez argumentů
+        $script = BASE_PATH . '/cron/scrape_one.php';
+        echo "Script existuje: " . (file_exists($script) ? 'ANO' : 'NE') . "\n";
+        echo "PHP binary: " . (PHP_BINARY ?: 'neznámý') . "\n";
+
+        $logFile = BASE_PATH . '/public/logs/diag-exec-test.log';
+        $cmd = sprintf('php %s > %s 2>&1 &', escapeshellarg($script), escapeshellarg($logFile));
+        echo "CMD: $cmd\n";
+        exec($cmd, $out2, $ret2);
+        echo "exec ret: $ret2\n\n";
+
+        // Počkej chvíli a přečti log
+        sleep(2);
+        if (file_exists($logFile)) {
+            echo "Log:\n" . file_get_contents($logFile) . "\n";
+        } else {
+            echo "Log neexistuje — exec pravděpodobně nefunguje nebo script selhal\n";
+        }
+
+        // 4. Ukáž log posledního scrape
+        $sourceId = (int)($_GET['source'] ?? 0);
+        if ($sourceId) {
+            $log = BASE_PATH . '/public/logs/scrape-' . $sourceId . '.log';
+            echo "\n--- Log scrape-$sourceId.log ---\n";
+            echo file_exists($log) ? file_get_contents($log) : "Soubor neexistuje\n";
+        }
+    }
 }

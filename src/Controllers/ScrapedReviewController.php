@@ -338,13 +338,14 @@ class ScrapedReviewController extends BaseController
 
         // Shoptet má stovky stránek — spusť jako background CLI proces
         if ($source['platform'] === 'shoptet') {
+            $script  = BASE_PATH . '/cron/scrape_one.php';
+            $logFile = BASE_PATH . '/public/logs/scrape-' . $sourceId . '.log';
             $cmd = sprintf(
-                'php %s/cron/scrape_one.php %d %d %d > %s/public/logs/scrape-%d.log 2>&1 &',
-                escapeshellarg(BASE_PATH),
-                $userId, $sourceId,
+                'php %s %d %d > %s 2>&1 &',
+                escapeshellarg($script),
                 $userId,
-                escapeshellarg(BASE_PATH),
-                $sourceId
+                $sourceId,
+                escapeshellarg($logFile)
             );
             exec($cmd);
             echo json_encode(['ok' => true, 'background' => true, 'new' => 0, 'translated' => 0, 'msg' => 'Shoptet scraping spuštěn na pozadí (může trvat 2-3 minuty).']);

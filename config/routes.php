@@ -15,6 +15,7 @@ return [
     ['GET', '/diag/test-heureka',   'DiagController@testHeureka',       []],
     ['GET', '/diag/heureka-count',  'DiagController@heurekaCount',      []],
     ['GET', '/diag/test-shoptet',   'DiagController@testShoptet',       []],
+    ['GET', '/diag/test-exec',      'DiagController@testExec',          []],
     ['GET', '/diag/migrate', 'DiagController@runMigration', []],
     // ---- Auth -----------------------------------------------
     ['GET',  '/login',    'AuthController@loginForm',  []],
