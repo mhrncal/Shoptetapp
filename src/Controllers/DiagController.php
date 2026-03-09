@@ -547,4 +547,22 @@ class DiagController extends BaseController
             }
         }
     }
+
+    public function testShoptet(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $url = $_GET['url'] ?? 'https://www.svihej.cz/hodnoceni-obchodu/';
+        echo "URL: $url\n---\n";
+
+        $result = \ShopCode\Services\ReviewScraper::scrape($url, 'shoptet');
+        echo "Počet recenzí: " . count($result) . "\n";
+        if (!empty($result[0])) {
+            echo "První: " . json_encode($result[0], JSON_UNESCAPED_UNICODE) . "\n";
+        }
+        if (!empty($result[1])) {
+            echo "Druhá: " . json_encode($result[1], JSON_UNESCAPED_UNICODE) . "\n";
+        }
+    }
 }
