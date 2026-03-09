@@ -75,7 +75,7 @@ class ScrapedReviewController extends BaseController
         $url      = trim($this->request->post('url', ''));
         $platform = $this->request->post('platform', '');
 
-        if (!$name || !$url || !in_array($platform, ['heureka', 'trustedshops', 'shoptet'])) {
+        if (!$name || !$url || !in_array($platform, ['heureka', 'trustedshops', 'shoptet', 'google'])) {
             Session::flash('error', 'Vyplňte všechna pole.');
             $this->redirect('/scraped-reviews');
         }

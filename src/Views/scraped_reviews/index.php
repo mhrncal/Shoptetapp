@@ -2,7 +2,8 @@
 
 <?php
 $platformLabels = ['heureka' => 'Heureka', 'trustedshops' => 'Trusted Shops', 'shoptet' => 'Shoptet', 'google' => 'Google'];
-$platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet' => 'primary', 'google' => 'danger'];
+$platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
+    'shoptet'      => 'primary', 'shoptet' => 'primary', 'google' => 'danger'];
 ?>
 
 <!-- Hlavička -->
@@ -47,6 +48,7 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
                             <select name="platform" class="form-select form-select-sm" required>
                                 <option value="">— Platforma —</option>
                                 <option value="heureka">Heureka</option>
+                <option value="shoptet">Shoptet</option>
                                 <option value="trustedshops">Trusted Shops</option>
                                 <option value="shoptet">Shoptet</option>
                                 <option value="google">Google (Place ID)</option>

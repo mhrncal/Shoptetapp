@@ -326,4 +326,88 @@ class ReviewScraper
         $ts = @strtotime($raw);
         return $ts ? date('Y-m-d', $ts) : null;
     }
+
+    public static function scrapeShoptet(string $url): array
+    {
+        $reviews = [];
+        $page    = 1;
+        $maxPages = 500; // safety limit
+
+        while ($page <= $maxPages) {
+            $pageUrl = rtrim($url, '/') . '/strana-' . $page . '/';
+            $html    = self::fetchHtml($pageUrl);
+            if (!$html) break;
+
+            $parsed = self::parseShoptetPage($html);
+            if (empty($parsed)) break;
+
+            $reviews = array_merge($reviews, $parsed);
+
+            // Zjisti počet stránek z první stránky
+            if ($page === 1) {
+                if (preg_match('/strana-(\d+)\/[^"]*"[^>]*>\s*\d+\s*<\/a>\s*<\/li>\s*<\/ul>/i', $html, $m)) {
+                    $maxPages = (int)$m[1];
+                } else {
+                    $maxPages = 1;
+                }
+            }
+
+            $page++;
+            usleep(300000);
+        }
+
+        return $reviews;
+    }
+
+    private static function parseShoptetPage(string $html): array
+    {
+        $reviews = [];
+        // Extrahuj všechny vote-wrap bloky
+        preg_match_all('/<div class="vote-wrap"[^>]*>(.*?)<\/div>\s*<\/div>\s*(?=<div class="vote-wrap"|<\/div>\s*<\/div>\s*<\/div>\s*(?:<!--|\/\/|$|<h2|<div id="paging))/si', $html, $matches);
+
+        // Fallback: rozděl na vote-wrap sekce manuálně
+        $chunks = preg_split('/<div class="vote-wrap"[^>]*>/', $html);
+        array_shift($chunks); // první je před prvním výsledkem
+
+        foreach ($chunks as $chunk) {
+            // Autor
+            $author = '';
+            if (preg_match('/<span[^>]*data-testid="textRatingAuthor"[^>]*>\s*<span>([^<]+)<\/span>/i', $chunk, $m)) {
+                $author = trim(html_entity_decode(strip_tags($m[1]), ENT_QUOTES, 'UTF-8'));
+            }
+
+            // Rating (počet star-on)
+            preg_match_all('/<span class="star star-on[^"]*"><\/span>/i', $chunk, $stars);
+            $rating = count($stars[0]);
+            if ($rating === 0) continue; // přeskoč pokud není rating
+
+            // Datum
+            $date = null;
+            if (preg_match('/<span[^>]*data-testid="latestContributionDate"[^>]*>\s*([\d.]+)\s*<\/span>/i', $chunk, $m)) {
+                $parts = explode('.', trim($m[1]));
+                if (count($parts) === 3) {
+                    $date = sprintf('%04d-%02d-%02d', $parts[2], $parts[1], $parts[0]);
+                }
+            }
+
+            // Obsah
+            $content = '';
+            if (preg_match('/<div[^>]*data-testid="textRating"[^>]*>\s*(.*?)\s*<\/div>/si', $chunk, $m)) {
+                $content = trim(html_entity_decode(strip_tags($m[1]), ENT_QUOTES, 'UTF-8'));
+            }
+
+            if (!$author && !$content) continue;
+
+            $externalId = md5($author . '|' . $content . '|' . $date);
+            $reviews[]  = [
+                'external_id' => $externalId,
+                'author'      => $author ?: 'Zákazník',
+                'rating'      => min(5, max(1, $rating)),
+                'content'     => $content,
+                'date'        => $date,
+            ];
+        }
+
+        return $reviews;
+    }
 }
