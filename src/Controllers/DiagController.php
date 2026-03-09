@@ -465,4 +465,56 @@ class DiagController extends BaseController
         echo "Reset source_lang hotov.\n";
         echo "\nNyní klikni 'Přeložit nepřeložené' v modulu.\n";
     }
+
+    public function testHeureka(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $url = $_GET['url'] ?? '';
+        if (!$url) { echo "Chybí ?url=..."; exit; }
+
+        echo "1. Fetching URL: $url\n";
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT        => 20,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+        $xml  = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        curl_close($ch);
+
+        echo "HTTP: $code, cURL error: " . ($err ?: 'none') . "\n";
+        echo "Response length: " . strlen($xml) . " bytes\n";
+        echo "First 300 chars:\n" . substr($xml, 0, 300) . "\n\n";
+
+        if (!$xml) { echo "Prázdná odpověď."; exit; }
+
+        echo "2. Parsing XML...\n";
+        libxml_use_internal_errors(true);
+        $doc = simplexml_load_string($xml);
+        $errs = libxml_get_errors();
+        libxml_clear_errors();
+
+        if (!$doc) {
+            echo "XML parse FAILED:\n";
+            foreach ($errs as $e) echo "  Line {$e->line}: {$e->message}";
+            exit;
+        }
+
+        $count = count($doc->review);
+        echo "XML OK. Počet <review> elementů: $count\n\n";
+
+        $i = 0;
+        foreach ($doc->review as $r) {
+            echo "Review #{$i}: rating_id={$r->rating_id}, total_rating={$r->total_rating}, ts={$r->unix_timestamp}\n";
+            echo "  pros: " . mb_substr((string)$r->pros, 0, 80) . "\n";
+            echo "  summary: " . mb_substr((string)$r->summary, 0, 80) . "\n";
+            if (++$i >= 3) break;
+        }
+    }
 }

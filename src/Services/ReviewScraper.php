@@ -72,52 +72,6 @@ class ReviewScraper
     // ---------------------------------------------------------------
     // Heureka
     // ---------------------------------------------------------------
-    private static function scrapeHeureka(string $html, string $url): array
-    {
-        $doc = new \DOMDocument();
-        @$doc->loadHTML('<?xml encoding="UTF-8">' . $html);
-        $xpath = new \DOMXPath($doc);
-        $reviews = [];
-
-        // Heureka: recenze jsou v .c-review nebo [data-review]
-        $nodes = $xpath->query('//*[contains(@class,"c-review") or contains(@class,"review-item")]');
-
-        foreach ($nodes as $i => $node) {
-            $content = self::xpathText($xpath, './/*[contains(@class,"c-review__text") or contains(@class,"review-body") or contains(@class,"review__text")]', $node)
-                    ?: self::xpathText($xpath, './/p', $node);
-
-            $author  = self::xpathText($xpath, './/*[contains(@class,"c-review__author") or contains(@class,"review-author") or contains(@class,"review__author")]', $node)
-                    ?: 'Anonymní';
-
-            $ratingEl = $xpath->query('.//*[@class and (contains(@class,"c-stars") or contains(@class,"rating"))]/@*[name()="data-rating" or name()="aria-label" or name()="title"]', $node);
-            $rating   = null;
-            if ($ratingEl->length > 0) {
-                preg_match('/(\d+)/', $ratingEl->item(0)->nodeValue, $m);
-                $rating = isset($m[1]) ? min(5, (int)$m[1]) : null;
-            }
-
-            $dateEl = self::xpathText($xpath, './/*[contains(@class,"c-review__date") or contains(@class,"review-date") or @itemprop="datePublished"]/@content', $node)
-                   ?: self::xpathText($xpath, './/*[contains(@class,"date")]', $node);
-
-            if (!$content) continue;
-
-            $reviews[] = [
-                'external_id' => md5($url . $i . $content),
-                'author'      => trim($author),
-                'rating'      => $rating,
-                'content'     => trim($content),
-                'date'        => self::parseDate($dateEl),
-            ];
-        }
-
-        // Fallback: JSON-LD
-        if (empty($reviews)) {
-            $reviews = array_merge($reviews, self::extractJsonLd($html, $url));
-        }
-
-        return $reviews;
-    }
-
     // ---------------------------------------------------------------
     // Trusted Shops
     // ---------------------------------------------------------------
@@ -333,7 +287,7 @@ class ReviewScraper
         return $ts ? date('Y-m-d', $ts) : null;
     }
 
-    public static function scrapeHeureka(string $xml, string $url = ''): array
+    private static function scrapeHeureka(string $xml, string $url = ''): array
     {
         if (!$xml) return [];
 
