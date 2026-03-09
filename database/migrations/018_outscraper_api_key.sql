@@ -1,0 +1,2 @@
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS outscraper_api_key VARCHAR(255) DEFAULT NULL;
