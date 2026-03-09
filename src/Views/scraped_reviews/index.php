@@ -12,12 +12,9 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
         <p class="text-muted small mb-0">Celkem: <strong><?= $total ?></strong></p>
     </div>
     <?php if (!empty($userLangs) && $hasDeepL): ?>
-    <form method="POST" action="/scraped-reviews/translate">
-        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-        <button class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-translate me-1"></i>Přeložit nepřeložené
-        </button>
-    </form>
+    <button id="btnTranslate" class="btn btn-sm btn-outline-primary" onclick="startTranslate()">
+        <i class="bi bi-translate me-1"></i>Přeložit nepřeložené
+    </button>
     <?php endif; ?>
 </div>
 
@@ -294,6 +291,52 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
         syncDone = 0;
         setProgress(0, 'Připravuji…');
         processQueue();
+    };
+})();
+
+    window.startTranslate = async function() {
+        if (syncing) return;
+        const btn = document.getElementById('btnTranslate');
+        if (!btn) return;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Překládám…';
+
+        // Ukaž progress bar
+        const prog = document.getElementById('syncProgress');
+        if (prog) {
+            prog.style.display = '';
+            document.getElementById('syncProgressBar').style.width = '30%';
+            document.getElementById('syncProgressBar').className = 'progress-bar progress-bar-striped progress-bar-animated bg-info';
+            document.getElementById('syncProgressMsg').textContent = 'Překládám nepřeložené recenze…';
+        }
+
+        try {
+            const r = await fetch('/scraped-reviews/translate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: '_csrf=' + encodeURIComponent(csrf)
+            });
+            const d = await r.json();
+            if (prog) {
+                document.getElementById('syncProgressBar').style.width = '100%';
+                document.getElementById('syncProgressBar').className = 'progress-bar bg-success';
+                document.getElementById('syncProgressMsg').textContent = d.ok
+                    ? '✓ Přeloženo ' + d.translated + ' textů do ' + d.langs + ' jazyků.'
+                    : '⚠ Chyba překladu.';
+                setTimeout(() => { prog.style.display = 'none'; location.reload(); }, 2500);
+            }
+        } catch(e) {
+            if (prog) {
+                document.getElementById('syncProgressBar').className = 'progress-bar bg-danger';
+                document.getElementById('syncProgressMsg').textContent = '⚠ Chyba sítě.';
+            }
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-translate me-1"></i>Přeložit nepřeložené';
     };
 })();
 </script>

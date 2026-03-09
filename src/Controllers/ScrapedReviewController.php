@@ -190,6 +190,7 @@ class ScrapedReviewController extends BaseController
     // Přeložit recenze (AJAX nebo ruční spuštění)
     public function translatePending(): void
     {
+        $isAjax = ($this->request->header('X-Requested-With') === 'XMLHttpRequest') || !empty($_SERVER['HTTP_X_REQUESTED_WITH']);
         $this->validateCsrf();
         $userId = $this->user['id'];
         $deepl  = $this->getDeepL();
@@ -219,6 +220,11 @@ class ScrapedReviewController extends BaseController
             }
         }
 
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true, 'translated' => $count, 'langs' => count($langs)]);
+            exit;
+        }
         Session::flash('success', "Přeloženo {$count} textů do " . count($langs) . " jazyků.");
         $this->redirect('/scraped-reviews');
     }
