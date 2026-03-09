@@ -190,42 +190,47 @@ class ScrapedReviewController extends BaseController
     // Přeložit recenze (AJAX nebo ruční spuštění)
     public function translatePending(): void
     {
-        $isAjax = ($this->request->header('X-Requested-With') === 'XMLHttpRequest') || !empty($_SERVER['HTTP_X_REQUESTED_WITH']);
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']);
         $this->validateCsrf();
         $userId = $this->user['id'];
         $deepl  = $this->getDeepL();
 
         if (!$deepl) {
-            Session::flash('error', 'DeepL API klíč není nastaven. Zadejte jej v nastavení modulu.');
-            $this->redirect('/scraped-reviews');
+            if ($isAjax) { header('Content-Type: application/json'); echo json_encode(['ok' => false, 'error' => 'DeepL klíč není nastaven.']); exit; }
+            Session::flash('error', 'DeepL API klíč není nastaven.'); $this->redirect('/scraped-reviews');
         }
 
         $langs    = ScrapedReview::getUserLangs($userId);
-        if (empty($langs)) {
-            Session::flash('error', 'Nejsou vybrány žádné jazyky pro překlad.');
-            $this->redirect('/scraped-reviews');
-        }
-
-        $reviews  = ScrapedReview::getUntranslated($userId, $langs);
+        $allLangs = array_unique(array_merge(['CS'], $langs));
+        $reviews  = ScrapedReview::getUntranslated($userId, $allLangs);
         $count    = 0;
 
         foreach ($reviews as $review) {
-            $texts = array_fill(0, count($langs), $review['content']);
-            foreach ($langs as $lang) {
-                $translated = $deepl->translate($review['content'], $lang);
-                if ($translated) {
-                    ScrapedReview::saveTranslation($review['id'], $lang, $translated);
+            if (empty(trim($review['content']))) continue;
+            $missingLangs = $review['missing_langs'] ?? $allLangs;
+
+            if (in_array('CS', $missingLangs)) {
+                $result = $deepl->translateWithLang($review['content'], 'CS');
+                if ($result) {
+                    ScrapedReview::saveTranslation($review['id'], 'CS', $result['text'], true);
+                    if (!empty($result['detected_lang'])) ScrapedReview::updateSourceLang($review['id'], $result['detected_lang']);
                     $count++;
                 }
             }
+            foreach ($missingLangs as $lang) {
+                if (strtoupper($lang) === 'CS') continue;
+                $text = $deepl->translate($review['content'], $lang);
+                if ($text) { ScrapedReview::saveTranslation($review['id'], $lang, $text, true); $count++; }
+            }
+            usleep(200000);
         }
 
         if ($isAjax) {
             header('Content-Type: application/json');
-            echo json_encode(['ok' => true, 'translated' => $count, 'langs' => count($langs)]);
+            echo json_encode(['ok' => true, 'translated' => $count, 'langs' => count($allLangs), 'reviews' => count($reviews)]);
             exit;
         }
-        Session::flash('success', "Přeloženo {$count} textů do " . count($langs) . " jazyků.");
+        Session::flash('success', "Přeloženo {$count} textů.");
         $this->redirect('/scraped-reviews');
     }
 
