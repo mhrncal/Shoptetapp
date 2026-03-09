@@ -47,17 +47,7 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
                         <div class="mb-2">
                             <label class="form-label small fw-semibold mb-1">Outscraper XLSX export</label>
                             <input type="file" name="xlsx_file" class="form-control form-control-sm" accept=".xlsx" required>
-                        </div>
-                        <div class="mb-2">
-                            <select name="source_id" class="form-select form-select-sm">
-                                <option value="">— Přidat jako nový zdroj —</option>
-                                <?php foreach ($sources as $src): ?>
-                                    <?php if ($src['platform'] === 'outscraper'): ?>
-                                    <option value="<?= $src['id'] ?>"><?= $e($src['name']) ?></option>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                            </select>
-                            <div class="text-muted mt-1" style="font-size:.75rem;">Pokud nevyberete zdroj, vytvoří se automaticky.</div>
+                            <div class="text-muted mt-1" style="font-size:.75rem;">Zdroj se vytvoří automaticky podle názvu obchodu v souboru, nebo se doplní do existujícího.</div>
                         </div>
                         <button type="submit" class="btn btn-sm btn-secondary w-100"><i class="bi bi-upload me-1"></i>Nahrát a importovat</button>
                     </form>

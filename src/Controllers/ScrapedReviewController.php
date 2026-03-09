@@ -473,16 +473,16 @@ class ScrapedReviewController extends BaseController
             }
         }
 
-        // Pokud není vybrán zdroj, vytvoř nový podle name sloupce
+        // Pokud není vybrán zdroj, vezmi první outscraper zdroj nebo vytvoř nový
         if (!$sourceId) {
+            $db = \ShopCode\Core\Database::getInstance();
             $shopName = isset($col['name']) && !empty($rows[1][$col['name']]) ? $rows[1][$col['name']] : 'Outscraper import';
             $placeId  = isset($col['place_id']) && !empty($rows[1][$col['place_id']]) ? $rows[1][$col['place_id']] : '';
             $url      = $placeId ?: 'outscraper-import-' . time();
 
-            $db = \ShopCode\Core\Database::getInstance();
-            // Zkontroluj duplicitu
-            $ex = $db->prepare("SELECT id FROM scrape_sources WHERE user_id=? AND url=?");
-            $ex->execute([$userId, $url]);
+            // Zkontroluj jestli existuje zdroj se stejnou URL nebo name
+            $ex = $db->prepare("SELECT id FROM scrape_sources WHERE user_id=? AND (url=? OR name=?) AND platform='outscraper' LIMIT 1");
+            $ex->execute([$userId, $url, $shopName]);
             $existing = $ex->fetchColumn();
             if ($existing) {
                 $sourceId = (int)$existing;
@@ -511,18 +511,16 @@ class ScrapedReviewController extends BaseController
             }
 
             $reviews[] = [
-                'user_id'     => $userId,
-                'source_id'   => $sourceId,
                 'external_id' => $extId ?: null,
                 'author'      => $author,
                 'rating'      => $rating ?: null,
                 'content'     => $text,
-                'reviewed_at' => $date,
+                'date'        => $date,
                 'source_lang' => null,
             ];
         }
 
-        $new = ScrapedReview::insertReviews($reviews);
+        $new = ScrapedReview::insertReviews($userId, $sourceId, $reviews);
 
         // Aktualizuj last_scraped_at
         $db = \ShopCode\Core\Database::getInstance();
