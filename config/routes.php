@@ -8,7 +8,8 @@ return [
 
     // Diagnostika
     ['GET', '/diag', 'DiagController@index', []],
-    ['GET', '/diag/scrape',   'DiagController@scrapeDiag', []],
+    ['GET', '/diag/scrape',   'DiagController@scrapeDiag',    []],
+    ['GET', '/diag/dedup',    'DiagController@dedupReviews',  []],
     ['GET', '/diag/migrate', 'DiagController@runMigration', []],
     // ---- Auth -----------------------------------------------
     ['GET',  '/login',    'AuthController@loginForm',  []],

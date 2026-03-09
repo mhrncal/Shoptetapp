@@ -377,4 +377,43 @@ class DiagController extends BaseController
         $body = preg_replace('/\s+/', ' ', strip_tags($bm[1] ?? $html));
         echo mb_substr(trim($body), 0, 2000) . "\n";
     }
+
+    public function dedupReviews(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $db = \ShopCode\Core\Database::getInstance();
+
+        // Najdi duplicity — stejný author+content+reviewed_at v rámci jednoho source_id
+        $stmt = $db->query("
+            SELECT source_id, author, content, reviewed_at, COUNT(*) as cnt, MIN(id) as keep_id, MAX(id) as drop_id
+            FROM scraped_reviews
+            GROUP BY source_id, author, content, reviewed_at
+            HAVING cnt > 1
+        ");
+        $dupes = $stmt->fetchAll();
+        echo "Nalezeno duplicitních skupin: " . count($dupes) . "\n\n";
+
+        $deleted = 0;
+        foreach ($dupes as $d) {
+            // Přesuň překlady z drop_id na keep_id pokud existují
+            $db->prepare("
+                INSERT IGNORE INTO scraped_review_translations (review_id, lang, content, is_deepl, translated_at)
+                SELECT ?, lang, content, is_deepl, translated_at
+                FROM scraped_review_translations WHERE review_id = ?
+            ")->execute([$d['keep_id'], $d['drop_id']]);
+
+            // Smaž překlady drop_id
+            $db->prepare("DELETE FROM scraped_review_translations WHERE review_id = ?")->execute([$d['drop_id']]);
+
+            // Smaž duplicitní recenzi
+            $db->prepare("DELETE FROM scraped_reviews WHERE id = ?")->execute([$d['drop_id']]);
+
+            echo "Smazáno id={$d['drop_id']}, zachováno id={$d['keep_id']} (author={$d['author']})\n";
+            $deleted++;
+        }
+
+        echo "\nHotovo. Smazáno: $deleted duplicit.\n";
+    }
 }
