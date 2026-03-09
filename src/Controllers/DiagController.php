@@ -518,4 +518,33 @@ class DiagController extends BaseController
         }
     }
 
+    public function heurekaCount(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $db = \ShopCode\Core\Database::getInstance();
+
+        $stmt = $db->query("
+            SELECT ss.id, ss.name, ss.platform, ss.url, COUNT(sr.id) as cnt
+            FROM scrape_sources ss
+            LEFT JOIN scraped_reviews sr ON sr.source_id = ss.id
+            GROUP BY ss.id
+        ");
+        foreach ($stmt->fetchAll() as $r) {
+            echo "source_id={$r['id']} [{$r['platform']}] {$r['name']}: {$r['cnt']} recenzí\n";
+            echo "  URL: {$r['url']}\n";
+        }
+
+        // Ukázkové volání scraperu
+        $url = $_GET['url'] ?? '';
+        if ($url) {
+            echo "\n--- Scraping $url ---\n";
+            $result = \ShopCode\Services\ReviewScraper::scrape($url, 'heureka');
+            echo "Počet vrácených recenzí: " . count($result) . "\n";
+            if (!empty($result[0])) {
+                echo "První: " . json_encode($result[0], JSON_UNESCAPED_UNICODE) . "\n";
+            }
+        }
+    }
 }
