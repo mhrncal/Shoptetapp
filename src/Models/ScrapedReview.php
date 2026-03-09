@@ -194,21 +194,29 @@ class ScrapedReview
         if (empty($langs)) return [];
         $db = Database::getInstance();
         $placeholders = implode(',', array_fill(0, count($langs), '?'));
+
+        // Vrať recenze kde chybí alespoň jeden jazyk, včetně seznamu chybějících jazyků
         $stmt = $db->prepare("
-            SELECT sr.id, sr.content, sr.user_id
+            SELECT sr.id, sr.content, sr.source_lang,
+                GROUP_CONCAT(DISTINCT srt.lang) as existing_langs
             FROM scraped_reviews sr
+            LEFT JOIN scraped_review_translations srt
+                ON srt.review_id = sr.id AND srt.lang IN ($placeholders)
             WHERE sr.user_id = ?
               AND sr.content IS NOT NULL AND sr.content != ''
-              AND sr.id NOT IN (
-                  SELECT review_id FROM scraped_review_translations
-                  WHERE lang IN ($placeholders)
-                  GROUP BY review_id
-                  HAVING COUNT(DISTINCT lang) = ?
-              )
+            GROUP BY sr.id, sr.content, sr.source_lang
+            HAVING COUNT(DISTINCT srt.lang) < ?
             LIMIT 50
         ");
-        $stmt->execute(array_merge([$userId], $langs, [count($langs)]));
-        return $stmt->fetchAll();
+        $stmt->execute(array_merge($langs, [$userId], [count($langs)]));
+        $rows = $stmt->fetchAll();
+
+        // Doplň missing_langs
+        foreach ($rows as &$row) {
+            $existing = $row['existing_langs'] ? explode(',', $row['existing_langs']) : [];
+            $row['missing_langs'] = array_values(array_diff($langs, $existing));
+        }
+        return $rows;
     }
 
     public static function saveTranslation(int $reviewId, string $lang, string $content, bool $isDeepL = true): void
