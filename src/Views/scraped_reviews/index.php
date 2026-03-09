@@ -74,11 +74,6 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
                                 <?php endif; ?>
                             </div>
                             <div class="d-flex gap-1 flex-shrink-0">
-                                <form method="POST" action="/scraped-reviews/scrape">
-                                    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-                                    <input type="hidden" name="source_id" value="<?= $s['id'] ?>">
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Scrape nyní"><i class="bi bi-arrow-clockwise"></i></button>
-                                </form>
                                 <form method="POST" action="/scraped-reviews/delete-source" onsubmit="return confirm('Smazat zdroj i recenze?')">
                                     <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                                     <input type="hidden" name="id" value="<?= $s['id'] ?>">
