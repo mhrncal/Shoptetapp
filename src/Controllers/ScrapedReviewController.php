@@ -145,12 +145,11 @@ class ScrapedReviewController extends BaseController
             foreach ($pending as $review) {
                 if (empty(trim($review['content']))) continue;
                 // CS vždy — detekuj zdrojový jazyk
-                $result = $deepl->translateWithLang($review['content'], 'CS');
-                if ($result) {
-                    ScrapedReview::saveTranslation($review['id'], 'CS', $result['text'], true);
-                    if (!empty($result['detected_lang'])) {
-                        ScrapedReview::updateSourceLang($review['id'], $result['detected_lang']);
-                    }
+                $csText = $deepl->translate($review['content'], 'CS');
+                if ($csText) {
+                    ScrapedReview::saveTranslation($review['id'], 'CS', $csText, true);
+                    $srcLang = $deepl->detectLang($review['content']);
+                    if ($srcLang) ScrapedReview::updateSourceLang($review['id'], $srcLang);
                     $translated++;
                 }
                 // Ostatní jazyky
@@ -210,10 +209,11 @@ class ScrapedReviewController extends BaseController
             $missingLangs = $review['missing_langs'] ?? $allLangs;
 
             if (in_array('CS', $missingLangs)) {
-                $result = $deepl->translateWithLang($review['content'], 'CS');
-                if ($result) {
-                    ScrapedReview::saveTranslation($review['id'], 'CS', $result['text'], true);
-                    if (!empty($result['detected_lang'])) ScrapedReview::updateSourceLang($review['id'], $result['detected_lang']);
+                $csText = $deepl->translate($review['content'], 'CS');
+                if ($csText) {
+                    ScrapedReview::saveTranslation($review['id'], 'CS', $csText, true);
+                    $srcLang = $deepl->detectLang($review['content']);
+                    if ($srcLang) ScrapedReview::updateSourceLang($review['id'], $srcLang);
                     $count++;
                 }
             }
@@ -363,10 +363,11 @@ class ScrapedReviewController extends BaseController
                 $missingLangs = $review['missing_langs'] ?? array_unique(array_merge(['CS'], $langs));
                 // CS jako první — detekuj zdrojový jazyk
                 if (in_array('CS', $missingLangs)) {
-                    $result = $deepl->translateWithLang($review['content'], 'CS');
-                    if ($result) {
-                        ScrapedReview::saveTranslation($review['id'], 'CS', $result['text'], true);
-                        if (!empty($result['detected_lang'])) ScrapedReview::updateSourceLang($review['id'], $result['detected_lang']);
+                    $csText = $deepl->translate($review['content'], 'CS');
+                    if ($csText) {
+                        ScrapedReview::saveTranslation($review['id'], 'CS', $csText, true);
+                        $srcLang = $deepl->detectLang($review['content']);
+                        if ($srcLang) ScrapedReview::updateSourceLang($review['id'], $srcLang);
                         $translated++;
                     }
                 }

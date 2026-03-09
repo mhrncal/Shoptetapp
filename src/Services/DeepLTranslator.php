@@ -122,12 +122,32 @@ class DeepLTranslator
     }
 
     /**
-     * Detekuje jazyk textu (bez překladu — pošle do EN a přečte detected_source_language)
+     * Detekuje jazyk textu přes DeepL /v2/translate (přeloží do EN jen pro detekci — výsledek zahoď)
      */
     public function detectLang(string $text): ?string
     {
-        $result = $this->translateWithLang(mb_substr($text, 0, 100), 'EN-GB');
-        return $result['detected_lang'] ?? null;
+        $endpoint = str_ends_with($this->apiKey, ':fx')
+            ? 'https://api-free.deepl.com/v2/translate'
+            : 'https://api.deepl.com/v2/translate';
+
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => http_build_query([
+                'text'        => mb_substr($text, 0, 100),
+                'target_lang' => 'EN-GB',
+            ]),
+            CURLOPT_HTTPHEADER => [
+                'Authorization: DeepL-Auth-Key ' . $this->apiKey,
+                'Content-Type: application/x-www-form-urlencoded',
+            ],
+            CURLOPT_TIMEOUT => 10,
+        ]);
+        $response = curl_exec($ch);
+        curl_close($ch);
+        $data = @json_decode($response, true);
+        return strtoupper($data['translations'][0]['detected_source_language'] ?? '') ?: null;
     }
 
     /**
