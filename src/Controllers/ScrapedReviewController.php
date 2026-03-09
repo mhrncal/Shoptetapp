@@ -355,16 +355,20 @@ class ScrapedReviewController extends BaseController
             $pending = ScrapedReview::getUntranslated($userId, array_unique(array_merge(['CS'], $langs)));
             foreach ($pending as $review) {
                 if (empty(trim($review['content']))) continue;
-                $result = $deepl->translateWithLang($review['content'], 'CS');
-                if ($result) {
-                    ScrapedReview::saveTranslation($review['id'], 'CS', $result['text'], true);
-                    if (!empty($result['detected_lang'])) ScrapedReview::updateSourceLang($review['id'], $result['detected_lang']);
-                    $translated++;
+                $missingLangs = $review['missing_langs'] ?? array_unique(array_merge(['CS'], $langs));
+                // CS jako první — detekuj zdrojový jazyk
+                if (in_array('CS', $missingLangs)) {
+                    $result = $deepl->translateWithLang($review['content'], 'CS');
+                    if ($result) {
+                        ScrapedReview::saveTranslation($review['id'], 'CS', $result['text'], true);
+                        if (!empty($result['detected_lang'])) ScrapedReview::updateSourceLang($review['id'], $result['detected_lang']);
+                        $translated++;
+                    }
                 }
-                foreach ($langs as $lang) {
+                foreach ($missingLangs as $lang) {
                     if (strtoupper($lang) === 'CS') continue;
                     $text = $deepl->translate($review['content'], $lang);
-                    if ($text) ScrapedReview::saveTranslation($review['id'], $lang, $text, true);
+                    if ($text) { ScrapedReview::saveTranslation($review['id'], $lang, $text, true); $translated++; }
                 }
                 usleep(200000);
             }
