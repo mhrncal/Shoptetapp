@@ -48,9 +48,9 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
                             <select name="platform" class="form-select form-select-sm" required>
                                 <option value="">— Platforma —</option>
                                 <option value="heureka">Heureka</option>
-                <option value="shoptet">Shoptet</option>
                                 <option value="trustedshops">Trusted Shops</option>
                                 <option value="shoptet">Shoptet</option>
+                                <option value="google">Google Places</option>
                                 <option value="google">Google (Place ID)</option>
                             </select>
                         </div>

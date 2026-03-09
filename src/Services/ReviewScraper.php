@@ -327,6 +327,42 @@ class ReviewScraper
         return $ts ? date('Y-m-d', $ts) : null;
     }
 
+    public static function scrapeHeureka(string $url): array
+    {
+        // Heureka exportuje XML přes URL s ?key=...
+        $xml = self::fetchHtml($url);
+        if (!$xml) return [];
+
+        // Suppress XML errors
+        $prev = libxml_use_internal_errors(true);
+        $doc  = simplexml_load_string($xml);
+        libxml_use_internal_errors($prev);
+        if (!$doc) return [];
+
+        $reviews = [];
+        foreach ($doc->review as $r) {
+            $ratingId = (string)$r->rating_id;
+            $ts       = (int)$r->unix_timestamp;
+            $date     = $ts ? date('Y-m-d', $ts) : null;
+            $rating   = (int)round((float)$r->total_rating);
+
+            // Obsah: pros + summary spojeny
+            $parts = [];
+            if (!empty((string)$r->pros))    $parts[] = trim((string)$r->pros);
+            if (!empty((string)$r->summary)) $parts[] = trim((string)$r->summary);
+            $content = implode(' ', $parts);
+
+            $reviews[] = [
+                'external_id' => $ratingId ?: md5($content . $date),
+                'author'      => 'Zákazník Heureka',
+                'rating'      => min(5, max(1, $rating)),
+                'content'     => $content,
+                'date'        => $date,
+            ];
+        }
+        return $reviews;
+    }
+
     public static function scrapeShoptet(string $url): array
     {
         $reviews = [];
