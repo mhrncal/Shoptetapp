@@ -292,7 +292,6 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success', 'shoptet
         setProgress(0, 'Připravuji…');
         processQueue();
     };
-})();
 
     window.startTranslate = async function() {
         if (syncing) return;
