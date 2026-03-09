@@ -416,4 +416,35 @@ class DiagController extends BaseController
 
         echo "\nHotovo. Smazáno: $deleted duplicit.\n";
     }
+
+    public function detectLangs(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        // Načti DeepL klíč prvního uživatele který ho má
+        $db   = \ShopCode\Core\Database::getInstance();
+        $stmt = $db->query("SELECT id, deepl_api_key FROM users WHERE deepl_api_key IS NOT NULL LIMIT 1");
+        $user = $stmt->fetch();
+        if (!$user) { echo "Žádný uživatel nemá DeepL klíč.\n"; exit; }
+
+        $deepl = new \ShopCode\Services\DeepLTranslator($user['deepl_api_key']);
+
+        // Recenze bez source_lang s neprázdným contentem
+        $stmt = $db->query("SELECT id, content FROM scraped_reviews WHERE source_lang IS NULL AND content != '' AND content IS NOT NULL LIMIT 200");
+        $rows = $stmt->fetchAll();
+        echo "Recenzí bez source_lang: " . count($rows) . "\n\n";
+
+        $updated = 0;
+        foreach ($rows as $r) {
+            $lang = $deepl->detectLang($r['content']);
+            if ($lang) {
+                $db->prepare("UPDATE scraped_reviews SET source_lang = ? WHERE id = ?")->execute([$lang, $r['id']]);
+                echo "id={$r['id']}: $lang\n";
+                $updated++;
+            }
+            usleep(200000);
+        }
+        echo "\nHotovo. Aktualizováno: $updated\n";
+    }
 }
