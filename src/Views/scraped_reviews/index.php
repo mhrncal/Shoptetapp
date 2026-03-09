@@ -366,14 +366,18 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
         }
 
         try {
+            const controller = new AbortController();
+            const tid = setTimeout(() => controller.abort(), 300000); // 5 minut
             const r = await fetch('/scraped-reviews/translate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: '_csrf=' + encodeURIComponent(csrf)
+                body: '_csrf=' + encodeURIComponent(csrf),
+                signal: controller.signal
             });
+            clearTimeout(tid);
             const d = await r.json();
             if (prog) {
                 document.getElementById('syncProgressBar').style.width = '100%';

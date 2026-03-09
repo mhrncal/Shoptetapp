@@ -214,6 +214,9 @@ class ScrapedReviewController extends BaseController
         $userId = $this->user['id'];
         $deepl  = $this->getDeepL();
 
+        set_time_limit(0);
+        session_write_close();
+
         if (!$deepl) {
             if ($isAjax) { header('Content-Type: application/json'); echo json_encode(['ok' => false, 'error' => 'DeepL klíč není nastaven.']); exit; }
             Session::flash('error', 'DeepL API klíč není nastaven.'); $this->redirect('/scraped-reviews');
