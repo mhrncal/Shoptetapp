@@ -231,19 +231,26 @@ class ScrapedReviewController extends BaseController
             if (empty(trim($review['content']))) continue;
             $missingLangs = $review['missing_langs'] ?? $allLangs;
 
-            if (in_array('CS', $missingLangs)) {
-                $csText = $deepl->translate($review['content'], 'CS');
-                if ($csText) {
-                    ScrapedReview::saveTranslation($review['id'], 'CS', $csText, true);
-                    $srcLang = $deepl->detectLang($review['content']);
-                    if ($srcLang) ScrapedReview::updateSourceLang($review['id'], $srcLang);
+            // Detekuj zdrojový jazyk jednou pro celou recenzi
+            $srcLang = $review['source_lang'] ?? null;
+            if (!$srcLang) {
+                $srcLang = $deepl->detectLang($review['content']);
+                if ($srcLang) ScrapedReview::updateSourceLang($review['id'], $srcLang);
+            }
+
+            foreach ($missingLangs as $lang) {
+                // Přeskoč pokud je target stejný jako source
+                if ($srcLang && strtoupper($srcLang) === strtoupper(explode('-', $lang)[0])) {
+                    // Ulož originál jako překlad
+                    ScrapedReview::saveTranslation($review['id'], $lang, $review['content'], false);
+                    $count++;
+                    continue;
+                }
+                $translated = $deepl->translate($review['content'], $lang, $srcLang);
+                if ($translated) {
+                    ScrapedReview::saveTranslation($review['id'], $lang, $translated, true);
                     $count++;
                 }
-            }
-            foreach ($missingLangs as $lang) {
-                if (strtoupper($lang) === 'CS') continue;
-                $text = $deepl->translate($review['content'], $lang);
-                if ($text) { ScrapedReview::saveTranslation($review['id'], $lang, $text, true); $count++; }
             }
             usleep(200000);
         }

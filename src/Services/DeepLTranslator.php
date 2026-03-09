@@ -35,7 +35,7 @@ class DeepLTranslator
      * Přeloží text do zadaného jazyka.
      * Vrací přeložený text nebo null při chybě.
      */
-    public function translate(string $text, string $targetLang): ?string
+    public function translate(string $text, string $targetLang, ?string $sourceLang = null): ?string
     {
         if (empty(trim($text))) return null;
 
@@ -44,14 +44,19 @@ class DeepLTranslator
             ? 'https://api-free.deepl.com/v2/translate'
             : 'https://api.deepl.com/v2/translate';
 
+        $params = [
+            'text'        => $text,
+            'target_lang' => strtoupper($targetLang),
+        ];
+        if ($sourceLang) {
+            $params['source_lang'] = strtoupper($sourceLang);
+        }
+
         $ch = curl_init($endpoint);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => http_build_query([
-                'text'        => $text,
-                'target_lang' => strtoupper($targetLang),
-            ]),
+            CURLOPT_POSTFIELDS     => http_build_query($params),
             CURLOPT_HTTPHEADER     => [
                 'Authorization: DeepL-Auth-Key ' . $this->apiKey,
                 'Content-Type: application/x-www-form-urlencoded',
