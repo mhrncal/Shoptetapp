@@ -29,9 +29,39 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-link-45deg me-1"></i>Zdroje</h6>
-                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addSourceForm">
-                    <i class="bi bi-plus"></i> Přidat
-                </button>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#importXlsxForm" title="Import Outscraper XLSX">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Import
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#addSourceForm">
+                        <i class="bi bi-plus"></i> Přidat
+                    </button>
+                </div>
+            </div>
+
+            <!-- Import Outscraper XLSX -->
+            <div class="collapse" id="importXlsxForm">
+                <div class="card-body border-bottom bg-light">
+                    <form method="POST" action="/scraped-reviews/import-xlsx" enctype="multipart/form-data">
+                        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold mb-1">Outscraper XLSX export</label>
+                            <input type="file" name="xlsx_file" class="form-control form-control-sm" accept=".xlsx" required>
+                        </div>
+                        <div class="mb-2">
+                            <select name="source_id" class="form-select form-select-sm">
+                                <option value="">— Přidat jako nový zdroj —</option>
+                                <?php foreach ($sources as $src): ?>
+                                    <?php if ($src['platform'] === 'outscraper'): ?>
+                                    <option value="<?= $src['id'] ?>"><?= $e($src['name']) ?></option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="text-muted mt-1" style="font-size:.75rem;">Pokud nevyberete zdroj, vytvoří se automaticky.</div>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-secondary w-100"><i class="bi bi-upload me-1"></i>Nahrát a importovat</button>
+                    </form>
+                </div>
             </div>
 
             <!-- Formulář přidání zdroje -->

@@ -151,6 +151,7 @@ return [
     ['POST',   '/scraped-reviews/save-outscraper-api-key', 'ScrapedReviewController@saveOutscraperApiKey', ['auth','approved','module:scraped_reviews']],
     ['POST',   '/scraped-reviews/save-google-api-key',      'ScrapedReviewController@saveGoogleApiKey', ['auth','approved','module:scraped_reviews']],
     ['POST',   '/scraped-reviews/save-api-key',          'ScrapedReviewController@saveApiKey',    ['auth','approved','module:scraped_reviews']],
+    ['POST',   '/scraped-reviews/import-xlsx',           'ScrapedReviewController@importXlsx',    ['auth','approved','module:scraped_reviews']],
     ['GET',    '/scraped-reviews/{id}',                'ScrapedReviewController@detail',        ['auth','approved','module:scraped_reviews']],
 
     ['GET',    '/reviews',                    'ReviewController@index',      ['auth','approved','module:reviews']],

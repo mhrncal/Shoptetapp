@@ -439,4 +439,164 @@ class ScrapedReviewController extends BaseController
         echo json_encode(['ok' => true, 'sources' => array_values(array_map(fn($s) => ['id' => $s['id'], 'name' => $s['name'], 'platform' => $s['platform']], $active))]);
         exit;
     }
+
+    // Import Outscraper XLSX
+    public function importXlsx(): void
+    {
+        $this->validateCsrf();
+        $userId = $this->user['id'];
+
+        if (empty($_FILES['xlsx_file']['tmp_name'])) {
+            Session::flash('error', 'Nebyl nahrán žádný soubor.');
+            $this->redirect('/scraped-reviews');
+        }
+
+        $sourceId = (int)$this->request->post('source_id', 0);
+        $file     = $_FILES['xlsx_file']['tmp_name'];
+
+        // Parsuj XLSX (ZIP + XML)
+        $rows = $this->parseXlsx($file);
+        if ($rows === false || count($rows) < 2) {
+            Session::flash('error', 'Nepodařilo se načíst soubor nebo je prázdný.');
+            $this->redirect('/scraped-reviews');
+        }
+
+        // Hlavička — najdi indexy sloupců
+        $header = array_map('trim', $rows[0]);
+        $col = array_flip($header);
+
+        $required = ['review_id', 'author_title', 'review_rating', 'review_text', 'review_datetime_utc'];
+        foreach ($required as $r) {
+            if (!isset($col[$r])) {
+                Session::flash('error', "Chybí sloupec: {$r}. Nahraj export z Outscraper.");
+                $this->redirect('/scraped-reviews');
+            }
+        }
+
+        // Pokud není vybrán zdroj, vytvoř nový podle name sloupce
+        if (!$sourceId) {
+            $shopName = isset($col['name']) && !empty($rows[1][$col['name']]) ? $rows[1][$col['name']] : 'Outscraper import';
+            $placeId  = isset($col['place_id']) && !empty($rows[1][$col['place_id']]) ? $rows[1][$col['place_id']] : '';
+            $url      = $placeId ?: 'outscraper-import-' . time();
+
+            $db = \ShopCode\Core\Database::getInstance();
+            // Zkontroluj duplicitu
+            $ex = $db->prepare("SELECT id FROM scrape_sources WHERE user_id=? AND url=?");
+            $ex->execute([$userId, $url]);
+            $existing = $ex->fetchColumn();
+            if ($existing) {
+                $sourceId = (int)$existing;
+            } else {
+                $db->prepare("INSERT INTO scrape_sources (user_id, name, url, platform, is_active) VALUES (?,?,?,'outscraper',1)")
+                   ->execute([$userId, $shopName, $url]);
+                $sourceId = (int)$db->lastInsertId();
+            }
+        }
+
+        // Importuj recenze
+        $reviews = [];
+        for ($i = 1; $i < count($rows); $i++) {
+            $row = $rows[$i];
+            $text = isset($col['review_text']) ? trim($row[$col['review_text']] ?? '') : '';
+            if ($text === '') continue;
+
+            $extId  = trim($row[$col['review_id']] ?? '');
+            $author = trim($row[$col['author_title']] ?? 'Zákazník');
+            $rating = (int)round((float)($row[$col['review_rating']] ?? 0));
+            $dtRaw  = trim($row[$col['review_datetime_utc']] ?? '');
+            $date   = null;
+            if ($dtRaw) {
+                $ts = strtotime($dtRaw);
+                $date = $ts ? date('Y-m-d', $ts) : null;
+            }
+
+            $reviews[] = [
+                'user_id'     => $userId,
+                'source_id'   => $sourceId,
+                'external_id' => $extId ?: null,
+                'author'      => $author,
+                'rating'      => $rating ?: null,
+                'content'     => $text,
+                'reviewed_at' => $date,
+                'source_lang' => null,
+            ];
+        }
+
+        $new = ScrapedReview::insertReviews($reviews);
+
+        // Aktualizuj last_scraped_at
+        $db = \ShopCode\Core\Database::getInstance();
+        $db->prepare("UPDATE scrape_sources SET last_scraped_at=NOW() WHERE id=?")->execute([$sourceId]);
+
+        Session::flash('success', "Import dokončen. Nových recenzí: {$new}.");
+        $this->redirect('/scraped-reviews');
+    }
+
+    private function parseXlsx(string $file): array|false
+    {
+        if (!class_exists('ZipArchive')) return false;
+        $zip = new \ZipArchive();
+        if ($zip->open($file) !== true) return false;
+
+        // Načti shared strings
+        $strings = [];
+        $ssXml = $zip->getFromName('xl/sharedStrings.xml');
+        if ($ssXml) {
+            $ss = simplexml_load_string($ssXml);
+            if ($ss) {
+                foreach ($ss->si as $si) {
+                    // Složené stringy (r elementy)
+                    if (isset($si->r)) {
+                        $val = '';
+                        foreach ($si->r as $r) {
+                            $val .= (string)($r->t ?? '');
+                        }
+                        $strings[] = $val;
+                    } else {
+                        $strings[] = (string)($si->t ?? '');
+                    }
+                }
+            }
+        }
+
+        // Načti první sheet
+        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        if (!$sheetXml) return false;
+
+        $sheet = simplexml_load_string($sheetXml);
+        if (!$sheet) return false;
+
+        $rows = [];
+        foreach ($sheet->sheetData->row as $row) {
+            $rowData = [];
+            $prevIdx = -1;
+            foreach ($row->c as $cell) {
+                // Zjisti index sloupce z ref (A1, B1...)
+                $ref = (string)$cell['r'];
+                preg_match('/^([A-Z]+)/', $ref, $m);
+                $colIdx = 0;
+                foreach (str_split($m[1]) as $ch) {
+                    $colIdx = $colIdx * 26 + (ord($ch) - ord('A') + 1);
+                }
+                $colIdx--; // 0-based
+
+                // Doplň prázdné buňky
+                while (count($rowData) < $colIdx) $rowData[] = '';
+
+                $t = (string)($cell['t'] ?? '');
+                $v = (string)($cell->v ?? '');
+                if ($t === 's') {
+                    $rowData[] = $strings[(int)$v] ?? '';
+                } elseif ($t === 'inlineStr') {
+                    $rowData[] = (string)($cell->is->t ?? '');
+                } else {
+                    $rowData[] = $v;
+                }
+            }
+            $rows[] = $rowData;
+        }
+
+        return $rows;
+    }
 }
