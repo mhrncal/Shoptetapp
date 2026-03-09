@@ -340,8 +340,10 @@ class ScrapedReviewController extends BaseController
         if ($source['platform'] === 'shoptet') {
             $script  = dirname(__DIR__, 2) . '/cron/scrape_one.php';
             $logFile = dirname(__DIR__, 2) . '/public/logs/scrape-' . $sourceId . '.log';
+            $phpBin = str_replace('php-fpm', 'php', PHP_BINARY ?: '/usr/bin/php');
             $cmd = sprintf(
-                'php %s %d %d > %s 2>&1 &',
+                '%s %s %d %d > %s 2>&1 &',
+                escapeshellarg($phpBin),
                 escapeshellarg($script),
                 $userId,
                 $sourceId,

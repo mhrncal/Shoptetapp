@@ -587,7 +587,10 @@ class DiagController extends BaseController
         echo "PHP binary: " . (PHP_BINARY ?: 'neznámý') . "\n";
 
         $logFile = dirname(__DIR__, 2) . '/public/logs/diag-exec-test.log';
-        $cmd = sprintf('php %s > %s 2>&1 &', escapeshellarg($script), escapeshellarg($logFile));
+        $phpBin = PHP_BINARY ?: '/usr/bin/php';
+        // PHP_BINARY je php-fpm, potřebujeme php CLI
+        $phpBin = str_replace('php-fpm', 'php', $phpBin);
+        $cmd = sprintf('%s %s > %s 2>&1 &', escapeshellarg($phpBin), escapeshellarg($script), escapeshellarg($logFile));
         echo "CMD: $cmd\n";
         exec($cmd, $out2, $ret2);
         echo "exec ret: $ret2\n\n";
