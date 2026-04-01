@@ -128,28 +128,6 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
     <!-- Pravý sloupec: DeepL klíč + jazyky -->
     <div class="col-12 col-lg-7 d-flex flex-column gap-3">
 
-        <!-- Outscraper API klíč -->
-<div class="card mb-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="mb-0 fw-semibold"><i class="bi bi-google me-1"></i>Outscraper API klíč</h6>
-        <?php if ($outscraperKey): ?>
-            <span class="badge bg-success">Aktivní</span>
-        <?php else: ?>
-            <span class="badge bg-secondary">Nenastaveno</span>
-        <?php endif; ?>
-    </div>
-    <div class="card-body">
-        <form method="POST" action="/scraped-reviews/save-outscraper-api-key">
-            <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-            <div class="input-group input-group-sm">
-                <input type="password" name="outscraper_api_key" class="form-control font-monospace"
-                       placeholder="YOUR-API-KEY..." value="<?= $e($outscraperKey) ?>" autocomplete="new-password">
-                <button class="btn btn-outline-primary" type="submit">Uložit</button>
-            </div>
-            <div class="form-text">Klíč z <a href="https://outscraper.com" target="_blank">outscraper.com</a>. Jako URL zdroje zadej Google Maps URL obchodu.</div>
-        </form>
-    </div>
-</div>
 
 <!-- DeepL API klíč -->
         <div class="card">
@@ -182,34 +160,6 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
             </div>
         </div>
 
-        <!-- Google Places API klíč -->
-        <div class="card">
-            <div class="card-header d-flex align-items-center gap-2">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-geo-alt me-1"></i>Google Places API klíč</h6>
-                <?php if ($hasGoogleKey): ?>
-                <span class="badge bg-success ms-auto">Aktivní</span>
-                <?php else: ?>
-                <span class="badge bg-warning text-dark ms-auto">Nenastaveno</span>
-                <?php endif; ?>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="/scraped-reviews/save-google-api-key">
-                    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-                    <div class="input-group input-group-sm">
-                        <input type="password" name="google_places_api_key" class="form-control font-monospace"
-                               placeholder="AIza..."
-                               value="<?= $hasGoogleKey ? '••••••••••••••••' : '' ?>">
-                        <button type="submit" class="btn btn-primary">Uložit</button>
-                        <?php if ($hasGoogleKey): ?>
-                        <button type="submit" name="google_places_api_key" value="" class="btn btn-outline-danger" onclick="return confirm('Odstranit klíč?')"><i class="bi bi-trash"></i></button>
-                        <?php endif; ?>
-                    </div>
-                    <div class="text-muted mt-1" style="font-size:.75rem;">
-                        Zdarma na <a href="https://console.cloud.google.com/" target="_blank">console.cloud.google.com</a> — Places API. Jako URL zdroje zadejte <strong>Place ID</strong> (např. <code>ChIJN1t_tDeuEmsR...</code>).
-                    </div>
-                </form>
-            </div>
-        </div>
 
         <!-- Jazyky překladů -->
         <div class="card">
