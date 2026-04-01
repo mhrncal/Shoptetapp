@@ -94,11 +94,6 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
                 </a>
             </li>
             <li>
-                <a href="<?= APP_URL ?>/scraped-reviews" class="nav-link <?= $active('/scraped-reviews') ?>">
-                    <i class="bi bi-search"></i> Scrapované recenze
-                </a>
-            </li>
-            <li>
                 <a href="<?= APP_URL ?>/watermark/settings" class="nav-link <?= $active('/watermark') ?>">
                     <i class="bi bi-droplet"></i> Watermark
                 </a>
@@ -106,6 +101,14 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
             <li>
                 <a href="<?= APP_URL ?>/feeds" class="nav-link <?= $active('/feeds') ?>">
                     <i class="bi bi-cloud-download"></i> Importy produktů
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <?php if ($hasModule('scraped_reviews')): ?>
+            <li>
+                <a href="<?= APP_URL ?>/scraped-reviews" class="nav-link <?= $active('/scraped-reviews') ?>">
+                    <i class="bi bi-search"></i> Scrapované recenze
                 </a>
             </li>
             <?php endif; ?>
