@@ -170,11 +170,15 @@ class ApiController
         $items = ScrapedReview::getReviews($userId, $page, $perPage, $filters);
         $total = ScrapedReview::countReviews($userId, $filters);
 
-        // Přidej CS překlad jako display_content
+        // Načti překlady pro všechny recenze najednou
+        $ids = array_column($items, 'id');
+        $translations = ScrapedReview::getTranslationsForIds($ids);
+
         foreach ($items as &$r) {
             $r['display_content'] = !empty($r['cs_content']) ? $r['cs_content'] : $r['content'];
             $r['has_cs_translation'] = !empty($r['cs_content']);
-            unset($r['cs_is_deepl']); // interní pole
+            $r['translations'] = $translations[$r['id']] ?? [];
+            unset($r['cs_is_deepl']);
         }
 
         $this->json([

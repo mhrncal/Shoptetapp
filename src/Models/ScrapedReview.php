@@ -162,6 +162,21 @@ class ScrapedReview
         return (int)$stmt->fetchColumn();
     }
 
+    /** Načte překlady pro pole review ID najednou — vrací [review_id => [lang => content]] */
+    public static function getTranslationsForIds(array $ids): array
+    {
+        if (empty($ids)) return [];
+        $db = Database::getInstance();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $db->prepare("SELECT review_id, lang, content FROM scraped_review_translations WHERE review_id IN ($placeholders) ORDER BY review_id, lang");
+        $stmt->execute($ids);
+        $result = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $result[$row['review_id']][$row['lang']] = $row['content'];
+        }
+        return $result;
+    }
+
     public static function getReviewWithTranslations(int $id, int $userId): ?array
     {
         $db   = Database::getInstance();
