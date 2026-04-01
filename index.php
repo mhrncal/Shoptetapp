@@ -2,6 +2,17 @@
 
 declare(strict_types=1);
 
+// CORS pro API — musí být před vším ostatním včetně OPTIONS preflight
+if (isset($_SERVER['REQUEST_URI']) && str_starts_with($_SERVER['REQUEST_URI'], '/api/')) {
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Headers: Authorization, Content-Type');
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(204);
+        exit;
+    }
+}
+
 if (!defined('ROOT')) {
     define('ROOT', __DIR__);
 }
