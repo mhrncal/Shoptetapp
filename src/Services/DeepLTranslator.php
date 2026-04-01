@@ -26,6 +26,7 @@ class DeepLTranslator
 
     private string $apiKey;
     public ?string $lastDetectedLang = null;
+    public int $lastHttpCode = 0;
 
     public function __construct(string $apiKey)
     {
@@ -76,9 +77,13 @@ class DeepLTranslator
         $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($code !== 200 || !$response) return null;
+        if ($code !== 200 || !$response) {
+            $this->lastHttpCode = $code;
+            return null;
+        }
 
         $data = @json_decode($response, true);
+        $this->lastHttpCode = $code;
         return $data['translations'][0]['text'] ?? null;
     }
 

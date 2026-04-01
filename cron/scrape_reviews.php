@@ -131,7 +131,14 @@ foreach ($users as $user) {
         $srcLang = $review['source_lang'] ?? null;
         if (!$srcLang) {
             $srcLang = $deepl->detectLang($review['content']);
-            if ($srcLang) ScrapedReview::updateSourceLang($review['id'], $srcLang);
+            if ($srcLang) {
+                ScrapedReview::updateSourceLang($review['id'], $srcLang);
+            } else {
+                // Nelze detekovat jazyk — prázdný nebo nerozpoznatelný obsah, přeskoč
+                $skipped++;
+                usleep(100000);
+                continue;
+            }
             usleep(100000);
         }
 
@@ -158,7 +165,13 @@ foreach ($users as $user) {
                 $translated++;
             } else {
                 $errors++;
-                $log("   WARN: preklad selhal review_id={$review['id']} lang=$lang src=$srcLang");
+                $httpCode = $deepl->lastHttpCode;
+                $log("   WARN: preklad selhal review_id={$review['id']} lang=$lang src=$srcLang http=$httpCode");
+                // Při rate limitu (429) nebo server error (5xx) zastav překlad
+                if ($httpCode === 429 || $httpCode >= 500) {
+                    $log("   ERROR: DeepL API nedostupne (HTTP $httpCode), preruseni prekladu.");
+                    break 2;
+                }
             }
             usleep(200000);
         }
