@@ -243,6 +243,8 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
     </div>
 </div>
 
+<?php endif; ?>
+
 <script>
 (function() {
     const csrf = <?= json_encode($csrfToken) ?>;
@@ -394,7 +396,6 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
     };
 })();
 </script>
-<?php endif; ?>
 
 <!-- Filtr zdrojů -->
 <?php if (count($sources) > 1): ?>
