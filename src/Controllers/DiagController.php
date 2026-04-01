@@ -486,6 +486,23 @@ class DiagController extends BaseController
         exit;
     }
 
+    public function resetUiLimits(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
+        header('Content-Type: text/plain; charset=utf-8');
+        $db = \ShopCode\Core\Database::getInstance();
+        $userId = (int)($_GET['user_id'] ?? 0);
+        if ($userId) {
+            $db->prepare("UPDATE users SET last_ui_sync_at = NULL, last_ui_translate_at = NULL WHERE id = ?")->execute([$userId]);
+            echo "Reset limitů pro user_id=$userId.\n";
+        } else {
+            $db->exec("UPDATE users SET last_ui_sync_at = NULL, last_ui_translate_at = NULL");
+            echo "Reset limitů pro všechny uživatele.\n";
+        }
+        exit;
+    }
+
+
         public function testDeepL(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }

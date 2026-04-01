@@ -13,6 +13,7 @@ return [
     ['GET', '/diag/delete-outscraper-bad', 'DiagController@deleteOutscraperBad', []],
     ['GET', '/diag/test-deepl',   'DiagController@testDeepL',         []],
     ['GET', '/diag/unlock-scrape', 'DiagController@unlockScrape',      []],
+    ['GET', '/diag/reset-ui-limits', 'DiagController@resetUiLimits',  []],
     ['GET', '/diag/detect-langs',   'DiagController@detectLangs',      []],
     ['GET', '/diag/fix-cs',         'DiagController@fixCsTranslations', []],
     ['GET', '/diag/test-heureka',   'DiagController@testHeureka',       []],
