@@ -284,7 +284,7 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
             if (!d.ok) {
                 if (d.limit) {
                     setProgress(100, '⏰ ' + d.error, 'warning');
-                    break; // zastav frontu
+                    return true; // signál pro zastavení fronty
                 }
                 setProgress(pct, '⚠ ' + sourceName + ': ' + (d.error || 'chyba'), 'warning');
             } else if (d.background) {
@@ -296,11 +296,13 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
             syncDone++;
             setProgress(Math.round((syncDone / syncTotal) * 100), '⚠ Chyba sítě: ' + sourceName, 'danger');
         }
+        return false;
     }
 
     async function processQueue() {
         for (const item of syncQueue) {
-            await runSync(item.id, item.name);
+            const stop = await runSync(item.id, item.name);
+            if (stop) break;
         }
         // Ulož denní limit po dokončení celé fronty
         await fetch('/scraped-reviews/sync-done', {
