@@ -189,7 +189,7 @@ class ScrapedReview
         return $review;
     }
 
-    public static function getUntranslated(int $userId, array $langs): array
+    public static function getUntranslated(int $userId, array $langs, int $limit = 50): array
     {
         if (empty($langs)) return [];
         $db = Database::getInstance();
@@ -206,7 +206,7 @@ class ScrapedReview
               AND sr.content IS NOT NULL AND sr.content != ''
             GROUP BY sr.id, sr.content, sr.source_lang
             HAVING COUNT(DISTINCT srt.lang) < ?
-            LIMIT 50
+            LIMIT $limit
         ");
         $stmt->execute(array_merge($langs, [$userId], [count($langs)]));
         $rows = $stmt->fetchAll();

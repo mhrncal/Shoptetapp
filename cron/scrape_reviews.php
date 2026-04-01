@@ -114,7 +114,7 @@ foreach ($users as $user) {
     $deepl  = new DeepLTranslator($user['deepl_api_key']);
     $langs  = ScrapedReview::getUserLangs($userId);
     $allLangs = array_unique(array_merge(['CS'], $langs));
-    $pending  = ScrapedReview::getUntranslated($userId, $allLangs);
+    $pending  = ScrapedReview::getUntranslated($userId, $allLangs, 10000);
 
     if (empty($pending)) { $log("User $userId: vse prelozeno"); continue; }
     $log("User $userId: " . count($pending) . " recenzi -> " . implode(', ', $allLangs));
