@@ -14,9 +14,20 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
         <p class="text-muted small mb-0">Celkem: <strong><?= $total ?></strong></p>
     </div>
     <?php if (!empty($userLangs) && $hasDeepL): ?>
-    <button id="btnTranslate" class="btn btn-sm btn-outline-primary" onclick="startTranslate()">
-        <i class="bi bi-translate me-1"></i>Přeložit nepřeložené
-    </button>
+    <div class="d-flex align-items-center gap-2">
+        <?php if ($translateLimitUsed): ?>
+        <span class="badge bg-warning text-dark" title="Obnoví se po půlnoci">
+            <i class="bi bi-clock me-1"></i>Překlad — limit vyčerpán, obnoví se po půlnoci
+        </span>
+        <button id="btnTranslate" class="btn btn-sm btn-outline-secondary" disabled>
+            <i class="bi bi-translate me-1"></i>Přeložit nepřeložené
+        </button>
+        <?php else: ?>
+        <button id="btnTranslate" class="btn btn-sm btn-outline-primary" onclick="startTranslate()">
+            <i class="bi bi-translate me-1"></i>Přeložit nepřeložené
+        </button>
+        <?php endif; ?>
+    </div>
     <?php endif; ?>
 </div>
 
@@ -194,6 +205,21 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
 <?php if (!empty($sources)): ?>
 <div class="card mb-3" id="syncCard">
     <div class="card-body py-2 px-3">
+        <?php if ($syncLimitUsed): ?>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="badge bg-warning text-dark">
+                <i class="bi bi-clock me-1"></i>Synchronizace — denní limit vyčerpán, obnoví se po půlnoci
+            </span>
+            <button class="btn btn-sm btn-secondary" disabled>
+                <i class="bi bi-arrow-repeat me-1"></i>Synchronizovat vše
+            </button>
+            <?php foreach ($sources as $s): ?>
+            <button class="btn btn-sm btn-outline-secondary" disabled>
+                <i class="bi bi-arrow-clockwise me-1"></i><?= $e($s['name']) ?>
+            </button>
+            <?php endforeach; ?>
+        </div>
+        <?php else: ?>
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <button id="btnSyncAll" class="btn btn-sm btn-primary" onclick="startSyncAll()">
                 <i class="bi bi-arrow-repeat me-1"></i>Synchronizovat vše
@@ -206,6 +232,7 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
             </button>
             <?php endforeach; ?>
         </div>
+        <?php endif; ?>
         <!-- Progress bar -->
         <div id="syncProgress" class="mt-2" style="display:none;">
             <div class="progress" style="height:6px;">
@@ -255,6 +282,10 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
             syncDone++;
             const pct = Math.round((syncDone / syncTotal) * 100);
             if (!d.ok) {
+                if (d.limit) {
+                    setProgress(100, '⏰ ' + d.error, 'warning');
+                    break; // zastav frontu
+                }
                 setProgress(pct, '⚠ ' + sourceName + ': ' + (d.error || 'chyba'), 'warning');
             } else if (d.background) {
                 setProgress(pct, '⏳ ' + sourceName + ': ' + (d.msg || 'scraping na pozadí…'));
@@ -331,11 +362,17 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
             const d = await r.json();
             if (prog) {
                 document.getElementById('syncProgressBar').style.width = '100%';
-                document.getElementById('syncProgressBar').className = 'progress-bar bg-success';
-                document.getElementById('syncProgressMsg').textContent = d.ok
-                    ? '✓ Přeloženo ' + d.translated + ' textů do ' + d.langs + ' jazyků.'
-                    : '⚠ Chyba překladu.';
-                setTimeout(() => { prog.style.display = 'none'; location.reload(); }, 2500);
+                if (d.limit) {
+                    document.getElementById('syncProgressBar').className = 'progress-bar bg-warning';
+                    document.getElementById('syncProgressMsg').textContent = '⏰ ' + d.error;
+                    setTimeout(() => { prog.style.display = 'none'; location.reload(); }, 3000);
+                } else {
+                    document.getElementById('syncProgressBar').className = d.ok ? 'progress-bar bg-success' : 'progress-bar bg-danger';
+                    document.getElementById('syncProgressMsg').textContent = d.ok
+                        ? '✓ Přeloženo ' + d.translated + ' textů do ' + d.langs + ' jazyků.'
+                        : '⚠ ' + (d.error || 'Chyba překladu.');
+                    setTimeout(() => { prog.style.display = 'none'; location.reload(); }, 2500);
+                }
             }
         } catch(e) {
             if (prog) {

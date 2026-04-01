@@ -57,6 +57,24 @@ class ScrapedReviewController extends BaseController
         return (bool)$this->getDeeplKey();
     }
 
+    /** Vrátí true pokud uživatel již dnes použil danou akci (sync/translate) */
+    private function dailyLimitUsed(string $col): bool
+    {
+        $db   = \ShopCode\Core\Database::getInstance();
+        $stmt = $db->prepare("SELECT $col FROM users WHERE id = ?");
+        $stmt->execute([$this->user['id']]);
+        $val  = $stmt->fetchColumn();
+        if (!$val) return false;
+        return date('Y-m-d', strtotime($val)) === date('Y-m-d');
+    }
+
+    /** Zapíše timestamp použití denního limitu */
+    private function dailyLimitSet(string $col): void
+    {
+        $db = \ShopCode\Core\Database::getInstance();
+        $db->prepare("UPDATE users SET $col = NOW() WHERE id = ?")->execute([$this->user['id']]);
+    }
+
     // Seznam recenzí + správa zdrojů
     public function index(): void
     {
@@ -85,6 +103,8 @@ class ScrapedReviewController extends BaseController
             'outscraperKey'      => $this->getOutscraperApiKey() ?? '',
             'googlePlacesKey'    => $this->getGoogleApiKey() ?? '',
             'deeplKey'   => !empty($this->user['deepl_api_key']),
+            'syncLimitUsed'      => $this->dailyLimitUsed('last_ui_sync_at'),
+            'translateLimitUsed' => $this->dailyLimitUsed('last_ui_translate_at'),
         ]);
     }
 
@@ -222,6 +242,12 @@ class ScrapedReviewController extends BaseController
             Session::flash('error', 'DeepL API klíč není nastaven.'); $this->redirect('/scraped-reviews');
         }
 
+        if ($this->dailyLimitUsed('last_ui_translate_at')) {
+            if ($isAjax) { header('Content-Type: application/json'); echo json_encode(['ok' => false, 'limit' => true, 'error' => 'Denní limit překladu byl vyčerpán. Obnoví se po půlnoci.']); exit; }
+            Session::flash('error', 'Denní limit překladu byl vyčerpán. Obnoví se po půlnoci.');
+            $this->redirect('/scraped-reviews');
+        }
+
         $langs    = ScrapedReview::getUserLangs($userId);
         $allLangs = array_unique(array_merge(['CS'], $langs));
         $reviews  = ScrapedReview::getUntranslated($userId, $allLangs);
@@ -263,9 +289,11 @@ class ScrapedReviewController extends BaseController
 
         if ($isAjax) {
             header('Content-Type: application/json');
+            $this->dailyLimitSet('last_ui_translate_at');
             echo json_encode(['ok' => true, 'translated' => $count, 'langs' => count($allLangs), 'reviews' => count($reviews)]);
             exit;
         }
+        $this->dailyLimitSet('last_ui_translate_at');
         Session::flash('success', "Přeloženo {$count} textů.");
         $this->redirect('/scraped-reviews');
     }
@@ -349,6 +377,12 @@ class ScrapedReviewController extends BaseController
         $sourceId = (int)$this->request->post('source_id', 0);
         $lockKey  = "sync_lock_{$userId}";
         $progKey  = "sync_progress_{$userId}";
+
+        if ($this->dailyLimitUsed('last_ui_sync_at')) {
+            echo json_encode(['ok' => false, 'limit' => true, 'error' => 'Denní limit synchronizace byl vyčerpán. Obnoví se po půlnoci.']);
+            exit;
+        }
+
         // Zkontroluj lock
         $lock = $_SESSION[$lockKey] ?? null;
         if ($lock && (time() - ($lock['started'] ?? 0)) < 300) {
@@ -442,6 +476,7 @@ class ScrapedReviewController extends BaseController
         $_SESSION[$progKey] = ['step' => 'done', 'msg' => "Hotovo. Nových: {$new}, přeloženo: {$translated}.", 'new' => $new, 'translated' => $translated];
         session_write_close();
 
+        $this->dailyLimitSet('last_ui_sync_at');
         echo json_encode(['ok' => true, 'new' => $new, 'translated' => $translated]);
         exit;
     }
@@ -451,6 +486,12 @@ class ScrapedReviewController extends BaseController
     {
         header('Content-Type: application/json');
         $userId  = $this->user['id'];
+
+        if ($this->dailyLimitUsed('last_ui_sync_at')) {
+            echo json_encode(['ok' => false, 'limit' => true, 'error' => 'Denní limit synchronizace byl vyčerpán. Obnoví se po půlnoci.']);
+            exit;
+        }
+
         $sources = ScrapedReview::getSources($userId);
         $active  = array_filter($sources, fn($s) => $s['is_active']);
         echo json_encode(['ok' => true, 'sources' => array_values(array_map(fn($s) => ['id' => $s['id'], 'name' => $s['name'], 'platform' => $s['platform']], $active))]);

@@ -43,6 +43,8 @@ class DiagController extends BaseController
                 "ALTER TABLE scraped_review_translations ADD COLUMN IF NOT EXISTS is_deepl TINYINT(1) DEFAULT 1",
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS outscraper_api_key VARCHAR(255) DEFAULT NULL",
                 "ALTER TABLE scrape_sources MODIFY COLUMN platform ENUM('heureka','trustedshops','shoptet','google','outscraper') NOT NULL",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_ui_sync_at DATETIME DEFAULT NULL",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_ui_translate_at DATETIME DEFAULT NULL",
             ];
             foreach ($sqls as $sql) {
                 try { $db->exec($sql); echo "OK: " . substr($sql, 0, 60) . "...\n"; }
