@@ -302,6 +302,12 @@ $platformColors = ['heureka' => 'warning', 'trustedshops' => 'success',
         for (const item of syncQueue) {
             await runSync(item.id, item.name);
         }
+        // Ulož denní limit po dokončení celé fronty
+        await fetch('/scraped-reviews/sync-done', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: '_csrf=' + encodeURIComponent(csrf)
+        }).catch(() => {});
         setProgress(100, '✓ Synchronizace dokončena. Stránka se obnoví…', 'success');
         setButtons(false);
         hideProgress();

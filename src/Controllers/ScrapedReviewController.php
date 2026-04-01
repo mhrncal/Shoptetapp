@@ -476,12 +476,24 @@ class ScrapedReviewController extends BaseController
         $_SESSION[$progKey] = ['step' => 'done', 'msg' => "Hotovo. Nových: {$new}, přeloženo: {$translated}.", 'new' => $new, 'translated' => $translated];
         session_write_close();
 
-        $this->dailyLimitSet('last_ui_sync_at');
+        if ((int)$this->request->post('save_limit', 0)) {
+            $this->dailyLimitSet('last_ui_sync_at');
+        }
         echo json_encode(['ok' => true, 'new' => $new, 'translated' => $translated]);
         exit;
     }
 
     // Synchronizuj všechny zdroje postupně (AJAX — volá se per-source)
+    // Zavolá JS po dokončení celé sync fronty — uloží denní limit
+    public function syncDone(): void
+    {
+        header('Content-Type: application/json');
+        $this->validateCsrf();
+        $this->dailyLimitSet('last_ui_sync_at');
+        echo json_encode(['ok' => true]);
+        exit;
+    }
+
     public function syncAll(): void
     {
         header('Content-Type: application/json');
