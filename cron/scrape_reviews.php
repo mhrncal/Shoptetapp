@@ -119,9 +119,13 @@ foreach ($users as $user) {
     if (empty($pending)) { $log("User $userId: vse prelozeno"); continue; }
     $log("User $userId: " . count($pending) . " recenzi -> " . implode(', ', $allLangs));
     $translated = 0;
+    $errors = 0;
+    $skipped = 0;
+    $i = 0;
 
     foreach ($pending as $review) {
-        if (empty(trim($review['content']))) continue;
+        $i++;
+        if (empty(trim($review['content']))) { $skipped++; continue; }
         $missingLangs = $review['missing_langs'] ?? $allLangs;
 
         $srcLang = $review['source_lang'] ?? null;
@@ -129,6 +133,11 @@ foreach ($users as $user) {
             $srcLang = $deepl->detectLang($review['content']);
             if ($srcLang) ScrapedReview::updateSourceLang($review['id'], $srcLang);
             usleep(100000);
+        }
+
+        // Log každých 50 recenzí
+        if ($i % 50 === 0) {
+            $log("   ... zpracovano $i/" . count($pending) . ", prelozeno: $translated, chyb: $errors");
         }
 
         foreach ($missingLangs as $lang) {
@@ -147,13 +156,16 @@ foreach ($users as $user) {
             if ($text) {
                 ScrapedReview::saveTranslation($review['id'], $lang, $text, true);
                 $translated++;
+            } else {
+                $errors++;
+                $log("   WARN: preklad selhal review_id={$review['id']} lang=$lang src=$srcLang");
             }
             usleep(200000);
         }
         usleep(100000);
     }
 
-    $log("User $userId: prelozeno $translated textu");
+    $log("User $userId: hotovo. Recenzi: $i, prelozeno: $translated, preskoceno: $skipped, chyb: $errors");
     sleep(1);
 }
 
