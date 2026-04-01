@@ -181,7 +181,7 @@ class ScrapedReviewController extends BaseController
         $deepl = $this->getDeepL();
         $langs = ScrapedReview::getUserLangs($userId);
         if ($deepl && $new > 0) {
-            $pending = ScrapedReview::getUntranslated($userId, array_unique(array_merge(['CS'], $langs)));
+            $pending = ScrapedReview::getUntranslated($userId, array_unique(array_merge(['CS'], $langs)), 20);
             foreach ($pending as $review) {
                 if (empty(trim($review['content']))) continue;
                 // CS vždy — detekuj zdrojový jazyk
@@ -250,7 +250,7 @@ class ScrapedReviewController extends BaseController
 
         $langs    = ScrapedReview::getUserLangs($userId);
         $allLangs = array_unique(array_merge(['CS'], $langs));
-        $reviews  = ScrapedReview::getUntranslated($userId, $allLangs);
+        $reviews  = ScrapedReview::getUntranslated($userId, $allLangs, 20); // UI limit — zbytek řeší cron
         $count    = 0;
 
         foreach ($reviews as $review) {
@@ -447,7 +447,7 @@ class ScrapedReviewController extends BaseController
         $deepl = $this->getDeepL();
         $langs = ScrapedReview::getUserLangs($userId);
         if ($deepl && $new > 0) {
-            $pending = ScrapedReview::getUntranslated($userId, array_unique(array_merge(['CS'], $langs)));
+            $pending = ScrapedReview::getUntranslated($userId, array_unique(array_merge(['CS'], $langs)), 20);
             foreach ($pending as $review) {
                 if (empty(trim($review['content']))) continue;
                 $missingLangs = $review['missing_langs'] ?? array_unique(array_merge(['CS'], $langs));
