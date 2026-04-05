@@ -161,10 +161,12 @@ class ApiController
         $this->requirePermission('scraped_reviews:read');
         $userId  = ApiAuthMiddleware::userId();
         $page    = max(1, (int)($this->request->get('page', 1)));
-        $perPage = min(200, max(1, (int)($this->request->get('per_page', 25))));
+        $perPage = min(200, max(1, (int)($this->request->get('per_page', 28))));
 
         $filters = array_filter([
             'source_id' => $this->request->get('source_id') ? (int)$this->request->get('source_id') : null,
+            'rating'    => $this->request->get('rating')    ? (int)$this->request->get('rating')    : null,
+            'lang'      => $this->request->get('lang')      ? strtoupper($this->request->get('lang')) : null,
         ]);
 
         $items = ScrapedReview::getReviews($userId, $page, $perPage, $filters);
@@ -182,12 +184,18 @@ class ApiController
         }
 
         $this->json([
+            'stats'      => ScrapedReview::getStats($userId, $filters),
             'data'       => $items,
             'pagination' => [
                 'total'    => $total,
                 'page'     => $page,
                 'per_page' => $perPage,
                 'pages'    => (int)ceil($total / $perPage),
+            ],
+            'filters'    => [
+                'source_id' => $filters['source_id'] ?? null,
+                'rating'    => $filters['rating']    ?? null,
+                'lang'      => $filters['lang']      ?? null,
             ],
         ]);
     }

@@ -129,8 +129,15 @@ class ScrapedReview
             $where[] = 'sr.source_id = ?';
             $params[] = (int)$filters['source_id'];
         }
+        if (!empty($filters['rating'])) {
+            $where[] = 'sr.rating = ?';
+            $params[] = (int)$filters['rating'];
+        }
+
+        $langJoin = '';
         if (!empty($filters['lang'])) {
-            // Filtr jen přeložené
+            $lang = strtoupper($filters['lang']);
+            $langJoin = "JOIN scraped_review_translations lang_t ON lang_t.review_id = sr.id AND lang_t.lang = " . $db->quote($lang);
         }
 
         $sql = "
@@ -139,6 +146,7 @@ class ScrapedReview
             FROM scraped_reviews sr
             JOIN scrape_sources ss ON ss.id = sr.source_id
             LEFT JOIN scraped_review_translations cs_t ON cs_t.review_id = sr.id AND cs_t.lang = 'CS'
+            $langJoin
             WHERE " . implode(' AND ', $where) . "
             ORDER BY sr.reviewed_at DESC, sr.scraped_at DESC
             LIMIT $perPage OFFSET $offset
@@ -157,36 +165,54 @@ class ScrapedReview
             $where[] = 'sr.source_id = ?';
             $params[] = (int)$filters['source_id'];
         }
-        $stmt = $db->prepare("SELECT COUNT(*) FROM scraped_reviews sr WHERE " . implode(' AND ', $where));
+        if (!empty($filters['rating'])) {
+            $where[] = 'sr.rating = ?';
+            $params[] = (int)$filters['rating'];
+        }
+        $langJoin = '';
+        if (!empty($filters['lang'])) {
+            $lang = strtoupper($filters['lang']);
+            $langJoin = "JOIN scraped_review_translations lang_t ON lang_t.review_id = sr.id AND lang_t.lang = " . $db->quote($lang);
+        }
+        $stmt = $db->prepare("SELECT COUNT(*) FROM scraped_reviews sr $langJoin WHERE " . implode(' AND ', $where));
         $stmt->execute($params);
         return (int)$stmt->fetchColumn();
     }
 
-    public static function getStats(int $userId): array
+    public static function getStats(int $userId, array $filters = []): array
     {
         $db = Database::getInstance();
+        $where  = ['user_id = ?'];
+        $params = [$userId];
+        if (!empty($filters['source_id'])) {
+            $where[] = 'source_id = ?';
+            $params[] = (int)$filters['source_id'];
+        }
+        if (!empty($filters['rating'])) {
+            $where[] = 'rating = ?';
+            $params[] = (int)$filters['rating'];
+        }
+        $whereStr = implode(' AND ', $where) . ' AND rating IS NOT NULL';
 
-        // Celkový počet, průměr, distribuce hodnocení
         $stmt = $db->prepare("
             SELECT
-                COUNT(*)                                        AS total,
-                ROUND(AVG(rating), 2)                          AS average_rating,
-                SUM(rating = 5)                                AS stars_5,
-                SUM(rating = 4)                                AS stars_4,
-                SUM(rating = 3)                                AS stars_3,
-                SUM(rating = 2)                                AS stars_2,
-                SUM(rating = 1)                                AS stars_1,
-                COUNT(DISTINCT source_id)                      AS sources_count
+                COUNT(*)            AS total,
+                ROUND(AVG(rating), 2) AS average_rating,
+                SUM(rating = 5)     AS stars_5,
+                SUM(rating = 4)     AS stars_4,
+                SUM(rating = 3)     AS stars_3,
+                SUM(rating = 2)     AS stars_2,
+                SUM(rating = 1)     AS stars_1,
+                COUNT(DISTINCT source_id) AS sources_count
             FROM scraped_reviews
-            WHERE user_id = ? AND rating IS NOT NULL
+            WHERE $whereStr
         ");
-        $stmt->execute([$userId]);
+        $stmt->execute($params);
         $row = $stmt->fetch();
 
-        // Per-source stats
         $stmt2 = $db->prepare("
             SELECT ss.id, ss.name, ss.platform,
-                COUNT(sr.id)          AS total,
+                COUNT(sr.id)             AS total,
                 ROUND(AVG(sr.rating), 2) AS average_rating
             FROM scrape_sources ss
             LEFT JOIN scraped_reviews sr ON sr.source_id = ss.id AND sr.rating IS NOT NULL
