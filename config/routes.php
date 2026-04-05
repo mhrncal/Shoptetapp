@@ -15,6 +15,7 @@ return [
     ['GET', '/diag/unlock-scrape', 'DiagController@unlockScrape',      []],
     ['GET', '/diag/reset-ui-limits', 'DiagController@resetUiLimits',  []],
     ['GET', '/diag/fill-source-lang', 'DiagController@fillMissingSourceLang', []],
+    ['GET', '/diag/clean-authors', 'DiagController@cleanAnonymousAuthors', []],
     ['GET', '/diag/detect-langs',   'DiagController@detectLangs',      []],
     ['GET', '/diag/fix-cs',         'DiagController@fixCsTranslations', []],
     ['GET', '/diag/test-heureka',   'DiagController@testHeureka',       []],
