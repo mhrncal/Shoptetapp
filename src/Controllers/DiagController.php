@@ -486,6 +486,59 @@ class DiagController extends BaseController
         exit;
     }
 
+    /** Odvodí source_lang ze jména/URL zdroje pro recenze bez textu */
+    public function fillMissingSourceLang(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
+        header('Content-Type: text/plain; charset=utf-8');
+        $db = \ShopCode\Core\Database::getInstance();
+
+        // Pravidla: klíčové slovo v názvu zdroje → jazyk
+        $rules = [
+            '/\bcz\b/i'  => 'CS', '/czech/i'   => 'CS', '/heureka/i' => 'CS', '/shoptet/i' => 'CS',
+            '/\bsk\b/i'  => 'SK', '/slovak/i'  => 'SK',
+            '/\bde\b/i'  => 'DE', '/deutsch/i' => 'DE',
+            '/\bat\b/i'  => 'DE', '/austria/i' => 'DE',
+            '/\bpl\b/i'  => 'PL', '/polish/i'  => 'PL',
+            '/\bnl\b/i'  => 'NL', '/dutch/i'   => 'NL', '/holland/i' => 'NL',
+            '/\ben\b/i'  => 'EN-GB', '/english/i' => 'EN-GB',
+        ];
+
+        // Načti všechny zdroje
+        $sources = $db->query("SELECT id, name, url FROM scrape_sources")->fetchAll();
+        $sourceMap = []; // source_id => lang
+        foreach ($sources as $src) {
+            foreach ($rules as $pattern => $lang) {
+                if (preg_match($pattern, $src['name']) || preg_match($pattern, $src['url'])) {
+                    $sourceMap[$src['id']] = $lang;
+                    break;
+                }
+            }
+        }
+
+        echo "Mapování zdrojů:\n";
+        foreach ($sourceMap as $id => $lang) {
+            $name = array_column($sources, 'name', 'id')[$id] ?? '?';
+            echo "  source_id=$id ($name) → $lang\n";
+        }
+        echo "\n";
+
+        // Recenze bez source_lang (prázdný nebo null content)
+        $stmt = $db->query("SELECT id, source_id FROM scraped_reviews WHERE source_lang IS NULL");
+        $rows = $stmt->fetchAll();
+        echo "Recenzí bez source_lang: " . count($rows) . "\n";
+
+        $updated = 0;
+        foreach ($rows as $r) {
+            if (isset($sourceMap[$r['source_id']])) {
+                $db->prepare("UPDATE scraped_reviews SET source_lang = ? WHERE id = ?")->execute([$sourceMap[$r['source_id']], $r['id']]);
+                $updated++;
+            }
+        }
+        echo "Aktualizováno: $updated\n";
+        exit;
+    }
+
     public function resetUiLimits(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
