@@ -487,27 +487,6 @@ class DiagController extends BaseController
     }
 
     /** Odvodí source_lang ze jména/URL zdroje pro recenze bez textu */
-    public function cleanAnonymousAuthors(): void
-    {
-        if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
-        header('Content-Type: text/plain; charset=utf-8');
-        $db = \ShopCode\Core\Database::getInstance();
-
-        $anonymous = ['Zákazník Heureka', 'Community Member', 'Anonymní', 'Anonymous', 'Google zákazník', 'Zákazník', 'Kunde', 'Klient'];
-        $updated = 0;
-        foreach ($anonymous as $name) {
-            $stmt = $db->prepare("UPDATE scraped_reviews SET author = '' WHERE LOWER(author) = LOWER(?)");
-            $stmt->execute([$name]);
-            $rows = $stmt->rowCount();
-            if ($rows > 0) {
-                echo "\"$name\" → '' : $rows záznamů\n";
-                $updated += $rows;
-            }
-        }
-        echo "\nCelkem aktualizováno: $updated\n";
-        exit;
-    }
-
     public function fillMissingSourceLang(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }

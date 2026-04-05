@@ -68,20 +68,6 @@ class ScrapedReview
         }
     }
 
-    // Generičtí autoři které nahrazujeme prázdným řetězcem (zobrazí se jako "Zákazník")
-    private static $ANONYMOUS_AUTHORS = [
-        'zákazník heureka', 'community member', 'anonymní', 'anonymous',
-        'google zákazník', 'zákazník', 'kunde', 'klient',
-    ];
-
-    private static function normalizeAuthor(string $author): string
-    {
-        if (in_array(mb_strtolower(trim($author)), self::$ANONYMOUS_AUTHORS, true)) {
-            return '';
-        }
-        return trim($author);
-    }
-
     /**
      * Batch INSERT — vloží pole recenzí najednou, vrátí počet nových
      */
@@ -99,7 +85,7 @@ class ScrapedReview
                 $params[] = $userId;
                 $params[] = $sourceId;
                 $params[] = $r['external_id'];
-                $params[] = self::normalizeAuthor($r['author'] ?? '');
+                $params[] = $r['author'];
                 $params[] = $r['rating'];
                 $params[] = $r['content'];
                 $params[] = $r['date'] ?? null;
@@ -116,7 +102,7 @@ class ScrapedReview
             } catch (\Exception $e) {
                 // fallback: jednotlivě
                 foreach ($chunk as $r) {
-                    if (self::insertReview($userId, $sourceId, $r['external_id'], self::normalizeAuthor($r['author'] ?? ''), $r['rating'], $r['content'], $r['date'] ?? null)) {
+                    if (self::insertReview($userId, $sourceId, $r['external_id'], $r['author'], $r['rating'], $r['content'], $r['date'] ?? null)) {
                         $new++;
                     }
                 }
