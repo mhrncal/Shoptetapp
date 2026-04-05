@@ -223,6 +223,13 @@ class ApiController
         $this->json(['data' => $sources, 'total' => count($sources)]);
     }
 
+    public function scrapedStats(): void
+    {
+        $this->requirePermission('scraped_reviews:read');
+        $userId = ApiAuthMiddleware::userId();
+        $this->json(['data' => ScrapedReview::getStats($userId)]);
+    }
+
     // ---- Helpers ----
 
     private function requirePermission(string $perm): void

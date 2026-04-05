@@ -162,6 +162,56 @@ class ScrapedReview
         return (int)$stmt->fetchColumn();
     }
 
+    public static function getStats(int $userId): array
+    {
+        $db = Database::getInstance();
+
+        // Celkový počet, průměr, distribuce hodnocení
+        $stmt = $db->prepare("
+            SELECT
+                COUNT(*)                                        AS total,
+                ROUND(AVG(rating), 2)                          AS average_rating,
+                SUM(rating = 5)                                AS stars_5,
+                SUM(rating = 4)                                AS stars_4,
+                SUM(rating = 3)                                AS stars_3,
+                SUM(rating = 2)                                AS stars_2,
+                SUM(rating = 1)                                AS stars_1,
+                COUNT(DISTINCT source_id)                      AS sources_count
+            FROM scraped_reviews
+            WHERE user_id = ? AND rating IS NOT NULL
+        ");
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch();
+
+        // Per-source stats
+        $stmt2 = $db->prepare("
+            SELECT ss.id, ss.name, ss.platform,
+                COUNT(sr.id)          AS total,
+                ROUND(AVG(sr.rating), 2) AS average_rating
+            FROM scrape_sources ss
+            LEFT JOIN scraped_reviews sr ON sr.source_id = ss.id AND sr.rating IS NOT NULL
+            WHERE ss.user_id = ?
+            GROUP BY ss.id, ss.name, ss.platform
+            ORDER BY ss.name
+        ");
+        $stmt2->execute([$userId]);
+        $sources = $stmt2->fetchAll();
+
+        return [
+            'total'          => (int)$row['total'],
+            'average_rating' => $row['average_rating'] ? (float)$row['average_rating'] : null,
+            'distribution'   => [
+                5 => (int)$row['stars_5'],
+                4 => (int)$row['stars_4'],
+                3 => (int)$row['stars_3'],
+                2 => (int)$row['stars_2'],
+                1 => (int)$row['stars_1'],
+            ],
+            'sources_count'  => (int)$row['sources_count'],
+            'per_source'     => $sources,
+        ];
+    }
+
     /** Načte překlady pro pole review ID najednou — vrací [review_id => [lang => content]] */
     public static function getTranslationsForIds(array $ids): array
     {

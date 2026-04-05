@@ -129,6 +129,7 @@ return [
     ['GET', '/api/v1/branches',      'ApiController@branches', []],
     ['GET', '/api/v1/events',        'ApiController@events',   []],
     ['GET', '/api/v1/scraped-reviews',       'ApiController@scrapedReviews', []],
+    ['GET', '/api/v1/scraped-reviews/stats', 'ApiController@scrapedStats',   []],
     ['GET', '/api/v1/scraped-reviews/{id}',  'ApiController@scrapedReview',  []],
     ['GET', '/api/v1/scraped-sources',       'ApiController@scrapedSources', []],
 
