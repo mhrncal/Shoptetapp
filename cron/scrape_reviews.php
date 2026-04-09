@@ -97,6 +97,32 @@ foreach ($sources as $source) {
 $log("Scraping hotov. Novych: $scraped, chyb: $errors");
 $log('');
 
+// 1b. DOPLNIT SOURCE_LANG ze zdrojů (pro recenze bez textu)
+$log('-- Doplnuji source_lang ze zdrojů');
+$rules = [
+    '/heureka/i'   => 'CS', '/\bcz\b/i'  => 'CS', '/czech/i'   => 'CS', '/shoptet/i' => 'CS',
+    '/\bsk\b/i'    => 'SK', '/slovak/i'  => 'SK',
+    '/\bde\b/i'    => 'DE', '/deutsch/i' => 'DE',
+    '/\bat\b/i'    => 'DE', '/austria/i' => 'DE',
+    '/\bpl\b/i'    => 'PL', '/polish/i'  => 'PL',
+    '/\bnl\b/i'    => 'NL', '/dutch/i'   => 'NL', '/holland/i' => 'NL',
+    '/\ben\b/i'    => 'EN-GB', '/english/i' => 'EN-GB',
+];
+$sources = $db->query("SELECT id, name, url FROM scrape_sources")->fetchAll();
+$filledLang = 0;
+foreach ($sources as $src) {
+    foreach ($rules as $pattern => $lang) {
+        if (preg_match($pattern, $src['name']) || preg_match($pattern, $src['url'])) {
+            $stmt = $db->prepare("UPDATE scraped_reviews SET source_lang = ? WHERE source_id = ? AND source_lang IS NULL");
+            $stmt->execute([$lang, $src['id']]);
+            $filledLang += $stmt->rowCount();
+            break;
+        }
+    }
+}
+$log("Source_lang doplnen pro $filledLang recenzi");
+$log('');
+
 // 2. PREKLAD
 $log('-- Preklad neprelozenych recenzi');
 
