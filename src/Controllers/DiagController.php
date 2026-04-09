@@ -500,7 +500,6 @@ class DiagController extends BaseController
             '/\\bat\\b/i'  => 'DE', '/austria/i'  => 'DE',
             '/\\bpl\\b/i'  => 'PL', '/polish/i'   => 'PL',
             '/\\bnl\\b/i'  => 'NL', '/dutch/i'    => 'NL', '/holland/i'  => 'NL',
-            '/google/i'      => 'CS', '/outscraper/i' => 'CS',
             '/\\ben\\b/i'  => 'EN-GB', '/english/i' => 'EN-GB',
         ];
 
