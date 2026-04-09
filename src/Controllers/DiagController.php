@@ -493,20 +493,19 @@ class DiagController extends BaseController
         header('Content-Type: text/plain; charset=utf-8');
         $db = \ShopCode\Core\Database::getInstance();
 
-        // Pravidla: klíčové slovo v názvu zdroje → jazyk
         $rules = [
-            '/\bcz\b/i'  => 'CS', '/czech/i'   => 'CS', '/heureka/i' => 'CS', '/shoptet/i' => 'CS',
-            '/\bsk\b/i'  => 'SK', '/slovak/i'  => 'SK',
-            '/\bde\b/i'  => 'DE', '/deutsch/i' => 'DE',
-            '/\bat\b/i'  => 'DE', '/austria/i' => 'DE',
-            '/\bpl\b/i'  => 'PL', '/polish/i'  => 'PL',
-            '/\bnl\b/i'  => 'NL', '/dutch/i'   => 'NL', '/holland/i' => 'NL',
-            '/\ben\b/i'  => 'EN-GB', '/english/i' => 'EN-GB',
+            '/heureka/i'     => 'CS', '/\\bcz\\b/i'  => 'CS', '/czech/i'    => 'CS', '/shoptet/i'    => 'CS',
+            '/\\bsk\\b/i'  => 'SK', '/slovak/i'   => 'SK',
+            '/\\bde\\b/i'  => 'DE', '/deutsch/i'  => 'DE',
+            '/\\bat\\b/i'  => 'DE', '/austria/i'  => 'DE',
+            '/\\bpl\\b/i'  => 'PL', '/polish/i'   => 'PL',
+            '/\\bnl\\b/i'  => 'NL', '/dutch/i'    => 'NL', '/holland/i'  => 'NL',
+            '/google/i'      => 'CS', '/outscraper/i' => 'CS',
+            '/\\ben\\b/i'  => 'EN-GB', '/english/i' => 'EN-GB',
         ];
 
-        // Načti všechny zdroje
         $sources = $db->query("SELECT id, name, url FROM scrape_sources")->fetchAll();
-        $sourceMap = []; // source_id => lang
+        $sourceMap = [];
         foreach ($sources as $src) {
             foreach ($rules as $pattern => $lang) {
                 if (preg_match($pattern, $src['name']) || preg_match($pattern, $src['url'])) {
@@ -521,24 +520,26 @@ class DiagController extends BaseController
             $name = array_column($sources, 'name', 'id')[$id] ?? '?';
             echo "  source_id=$id ($name) → $lang\n";
         }
-        echo "\n";
 
-        // Recenze bez source_lang (prázdný nebo null content)
-        $stmt = $db->query("SELECT id, source_id FROM scraped_reviews WHERE source_lang IS NULL");
-        $rows = $stmt->fetchAll();
-        echo "Recenzí bez source_lang: " . count($rows) . "\n";
+        $total = (int)$db->query("SELECT COUNT(*) FROM scraped_reviews WHERE source_lang IS NULL")->fetchColumn();
+        echo "\nRecenzí bez source_lang: $total\n";
 
         $updated = 0;
-        foreach ($rows as $r) {
-            if (isset($sourceMap[$r['source_id']])) {
-                $db->prepare("UPDATE scraped_reviews SET source_lang = ? WHERE id = ?")->execute([$sourceMap[$r['source_id']], $r['id']]);
-                $updated++;
+        foreach ($sourceMap as $sourceId => $lang) {
+            $stmt = $db->prepare("UPDATE scraped_reviews SET source_lang = ? WHERE source_id = ? AND source_lang IS NULL");
+            $stmt->execute([$lang, $sourceId]);
+            $rows = $stmt->rowCount();
+            if ($rows > 0) {
+                echo "  source_id=$sourceId → $lang: $rows recenzí\n";
+                $updated += $rows;
             }
         }
-        echo "Aktualizováno: $updated\n";
+
+        echo "\nAktualizováno: $updated\n";
+        $remaining = (int)$db->query("SELECT COUNT(*) FROM scraped_reviews WHERE source_lang IS NULL")->fetchColumn();
+        echo "Zbývá bez source_lang: $remaining (spusť /diag/detect-langs pro zbytek s textem)\n";
         exit;
     }
-
     public function resetUiLimits(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') { http_response_code(403); die('Forbidden'); }
