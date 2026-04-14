@@ -783,3 +783,49 @@ class DiagController extends BaseController
         }
     }
 }
+
+    public function testXml(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $userId = (int)($_GET['user_id'] ?? 1);
+
+        echo "=== XML Feed Test (user_id=$userId) ===\n\n";
+
+        $reviews = \ShopCode\Models\Review::allApproved($userId);
+        echo "Schválené recenze: " . count($reviews) . "\n";
+        foreach ($reviews as $r) {
+            echo "  SKU={$r['sku']} photos=" . count($r['photos']) . "\n";
+            foreach ($r['photos'] as $p) {
+                echo "    path={$p['path']}\n";
+            }
+        }
+
+        echo "\nShoptet product images:\n";
+        $db = \ShopCode\Core\Database::getInstance();
+        $stmt = $db->prepare('SELECT sku, JSON_LENGTH(image_urls) as cnt FROM shoptet_product_images WHERE user_id = ? LIMIT 5');
+        $stmt->execute([$userId]);
+        foreach ($stmt->fetchAll() as $row) {
+            echo "  SKU={$row['sku']} urls={$row['cnt']}\n";
+        }
+
+        echo "\nGeneruji XML...\n";
+        try {
+            $gen  = new \ShopCode\Services\XmlFeedGenerator();
+            $url  = $gen->generatePermanentFeed($userId, $reviews);
+            $path = ROOT . '/public/feeds/user_' . $userId . '_reviews.xml';
+            echo "OK - uloženo: $path\n";
+            echo "Velikost: " . filesize($path) . " b\n";
+            echo "Čas: " . date('Y-m-d H:i:s', filemtime($path)) . "\n\n";
+            echo "Obsah (prvních 2000 znaků):\n";
+            echo substr(file_get_contents($path), 0, 2000) . "\n";
+        } catch (\Throwable $e) {
+            echo "CHYBA: " . $e->getMessage() . "\n";
+            echo $e->getTraceAsString() . "\n";
+        }
+
+        exit;
+    }
