@@ -27,6 +27,7 @@ class ReviewController extends BaseController
         $xmlFeedExists = file_exists($feedPath);
 
         $expiry = self::photoExpiryStatus($userId);
+        $importConfig = \ShopCode\Services\ShoptetCsvImporter::getImportConfig($userId);
 
         $this->view('reviews/index', [
             'pageTitle' => 'Fotorecenze',
@@ -40,7 +41,7 @@ class ReviewController extends BaseController
             'search'    => $search,
             'xmlFeedUrl'    => $xmlFeedUrl,
             'xmlFeedExists' => $xmlFeedExists ?? false,
-            // csrfToken je automaticky dostupný z View::render()
+            'importConfig'  => $importConfig,
         ]);
     }
 

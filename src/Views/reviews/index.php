@@ -31,9 +31,6 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
     <a href="<?= APP_URL ?>/reviews/export-photos" class="btn btn-sm btn-<?= $alertType ?> flex-shrink-0">
         <i class="bi bi-download me-1"></i><span class="d-none d-sm-inline">Stáhnout zálohu</span>
     </a>
-    <a href="<?= APP_URL ?>/reviews/photo-import" class="btn btn-sm btn-outline-secondary flex-shrink-0">
-        <i class="bi bi-cloud-download me-1"></i><span class="d-none d-sm-inline">Import fotek</span>
-    </a>
 </div>
 
 <?php if ($blocked): ?>
@@ -54,26 +51,83 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
     </a>
 </div>
 
-<!-- XML Feed karta -->
-<div class="card mb-3">
-    <div class="card-body py-2">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <span class="small fw-semibold flex-shrink-0"><i class="bi bi-rss me-1 text-warning"></i>XML feed:</span>
-            <?php if ($xmlFeedExists ?? false): ?>
-            <div class="input-group input-group-sm flex-grow-1">
-                <input type="text" class="form-control form-control-sm font-monospace" value="<?= $e($xmlFeedUrl) ?>" readonly id="feedUrl">
-                <button class="btn btn-outline-secondary" type="button" id="copyFeedUrl" title="Kopírovat URL">
-                    <i class="bi bi-clipboard"></i>
-                </button>
-                <a href="<?= $e($xmlFeedUrl) ?>" target="_blank" class="btn btn-outline-secondary" title="Otevřít">
-                    <i class="bi bi-box-arrow-up-right"></i>
-                </a>
+<!-- XML Feed + Import fotek ze Shoptetu -->
+<div class="row g-3 mb-3">
+
+    <!-- XML Feed -->
+    <div class="col-12 col-lg-6">
+        <div class="card h-100">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="small fw-semibold flex-shrink-0"><i class="bi bi-rss me-1 text-warning"></i>XML feed:</span>
+                    <?php if ($xmlFeedExists ?? false): ?>
+                    <div class="input-group input-group-sm flex-grow-1">
+                        <input type="text" class="form-control form-control-sm font-monospace" value="<?= $e($xmlFeedUrl) ?>" readonly id="feedUrl">
+                        <button class="btn btn-outline-secondary" type="button" id="copyFeedUrl" title="Kopírovat URL">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                        <a href="<?= $e($xmlFeedUrl) ?>" target="_blank" class="btn btn-outline-secondary" title="Otevřít">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                        </a>
+                    </div>
+                    <?php else: ?>
+                    <span class="text-muted small">Zatím nevygenerováno — klikněte Generovat XML.</span>
+                    <?php endif; ?>
+                </div>
             </div>
-            <?php else: ?>
-            <span class="text-muted small">Zatím nevygenerováno — klikněte Generovat XML.</span>
-            <?php endif; ?>
         </div>
     </div>
+
+    <!-- Import fotek ze Shoptetu -->
+    <div class="col-12 col-lg-6">
+        <div class="card h-100">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="small fw-semibold flex-shrink-0">
+                        <i class="bi bi-cloud-download me-1 text-primary"></i>Shoptet fotky:
+                    </span>
+                    <?php if ($importConfig && !empty($importConfig['csv_url'])): ?>
+                        <div class="input-group input-group-sm flex-grow-1">
+                            <input type="text" class="form-control form-control-sm font-monospace"
+                                   value="<?= $e($importConfig['csv_url']) ?>"
+                                   id="importCsvUrl" readonly>
+                            <button class="btn btn-outline-secondary" type="button"
+                                    onclick="document.getElementById('importUrlForm').classList.toggle('d-none')"
+                                    title="Změnit URL">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </div>
+                        <form method="post" action="/reviews/photo-import/run" class="flex-shrink-0">
+                            <input type="hidden" name="csrf_token" value="<?= $e($csrfToken) ?>">
+                            <button type="submit" class="btn btn-sm btn-primary"
+                                    onclick="this.disabled=true;this.innerHTML='<span class=\'spinner-border spinner-border-sm\'></span>';this.form.submit();">
+                                <i class="bi bi-arrow-repeat me-1"></i>Importovat
+                            </button>
+                        </form>
+                        <?php if ($importConfig['last_imported_at']): ?>
+                        <span class="text-muted small flex-shrink-0">
+                            <?= number_format((int)$importConfig['last_row_count'], 0, ',', ' ') ?> prod.
+                            · <?= date('d.m.', strtotime($importConfig['last_imported_at'])) ?>
+                        </span>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <span class="text-muted small">URL exportu nenastavena.</span>
+                    <?php endif; ?>
+                </div>
+                <!-- Formulář pro změnu/zadání URL (skrytý) -->
+                <div id="importUrlForm" class="mt-2 <?= ($importConfig && !empty($importConfig['csv_url'])) ? 'd-none' : '' ?>">
+                    <form method="post" action="/reviews/photo-import/save-url" class="d-flex gap-2">
+                        <input type="hidden" name="csrf_token" value="<?= $e($csrfToken) ?>">
+                        <input type="url" name="csv_url" class="form-control form-control-sm font-monospace"
+                               placeholder="https://vas-eshop.cz/export/products.csv?patternId=...&hash=..."
+                               value="<?= $e($importConfig['csv_url'] ?? '') ?>" required>
+                        <button type="submit" class="btn btn-sm btn-success flex-shrink-0">Uložit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 <script>
 document.getElementById('copyFeedUrl')?.addEventListener('click', function() {
