@@ -117,19 +117,8 @@ try {
         $userStart = microtime(true);
         
         try {
-            // Načteme všechny schválené recenze (včetně již importovaných)
-            $stmt = $db->prepare("
-                SELECT * FROM reviews
-                WHERE user_id = ? AND status = 'approved'
-                ORDER BY created_at DESC
-            ");
-            $stmt->execute([$userId]);
-            $reviews = $stmt->fetchAll();
-            
-            // Dekódujeme photos JSON
-            foreach ($reviews as &$r) {
-                $r['photos'] = $r['photos'] ? json_decode($r['photos'], true) : [];
-            }
+            // Načteme schválené recenze se fotkami (přes model stejně jako UI)
+            $reviews = \ShopCode\Models\Review::allApproved($userId);
 
             $reviewCount = count($reviews);
             $log("Uživatel #{$userId} ({$shopName}): {$reviewCount} schválených recenzí.");
