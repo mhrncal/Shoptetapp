@@ -136,8 +136,8 @@ class PhotoController extends BaseController
             
             $basename = $uuid;
             $originalPath = $photoDir . '/' . $basename . '_original.' . $ext;
-            $displayPath = $photoDir . '/' . $basename . '.' . $ext;
-            $thumbPath = $photoDir . '/thumb_' . $basename . '.' . $ext;
+            $displayPath  = $photoDir . '/' . $basename . '.' . $ext;
+            $thumbPath    = $photoDir . '/' . $basename . '_thumb.' . $ext;
             
             match($ext) {
                 'jpg' => [
@@ -162,16 +162,11 @@ class PhotoController extends BaseController
             imagedestroy($display);
             imagedestroy($thumb);
             
-            // Updatuj DB (cesty zůstávají stejné, jen mime_type)
-            $stmt = $db->prepare('
-                UPDATE review_photos 
-                SET mime_type = ?
-                WHERE id = ?
-            ');
-            $stmt->execute([
-                $mimeType,
-                $id
-            ]);
+            // Updatuj DB – cesty i mime_type, reset shoptet_url
+            $newPath  = $userId . '/' . $uuid . '/' . $basename . '.' . $ext;
+            $newThumb = $userId . '/' . $uuid . '/' . $basename . '_thumb.' . $ext;
+            $stmt = $db->prepare('UPDATE review_photos SET path = ?, thumb = ?, mime_type = ?, shoptet_url = NULL WHERE id = ?');
+            $stmt->execute([$newPath, $newThumb, $mimeType, $id]);
             
             Session::flash('success', 'Fotka byla nahrazena');
             
