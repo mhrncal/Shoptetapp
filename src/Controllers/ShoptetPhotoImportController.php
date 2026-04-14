@@ -32,12 +32,12 @@ class ShoptetPhotoImportController extends BaseController
 
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
             Session::flash('error', 'Zadejte platnou URL adresu.');
-            $this->redirect('/reviews/photo-import');
+            $this->redirect('/reviews');
         }
 
         ShoptetCsvImporter::saveImportUrl($userId, $url);
         Session::flash('success', 'URL exportu byla uložena.');
-        $this->redirect('/reviews/photo-import');
+        $this->redirect('/reviews');
     }
 
     /**
@@ -52,7 +52,7 @@ class ShoptetPhotoImportController extends BaseController
 
         if (!$config || empty($config['csv_url'])) {
             Session::flash('error', 'Nejprve nastavte URL exportu fotek.');
-            $this->redirect('/reviews/photo-import');
+            $this->redirect('/reviews');
         }
 
         try {
@@ -71,6 +71,6 @@ class ShoptetPhotoImportController extends BaseController
             Session::flash('error', 'Chyba importu: ' . $e->getMessage());
         }
 
-        $this->redirect('/reviews/photo-import');
+        $this->redirect('/reviews');
     }
 }
