@@ -165,6 +165,7 @@ return [
     ['GET',    '/reviews/photo-import',       'ShoptetPhotoImportController@index',    ['auth','approved','module:reviews']],
     ['POST',   '/reviews/photo-import/save-url', 'ShoptetPhotoImportController@saveUrl', ['auth','approved','module:reviews']],
     ['POST',   '/reviews/photo-import/run',   'ShoptetPhotoImportController@runImport', ['auth','approved','module:reviews']],
+    ['GET',    '/reviews/photo-import/stream', 'ShoptetPhotoImportController@runImportStream', ['auth','approved','module:reviews']],
     ['GET',    '/watermark/settings',         'WatermarkController@settings', ['auth','approved']],
     ['POST',   '/watermark/update',           'WatermarkController@update',   ['auth','approved']],
     ['POST',   '/watermark/regenerate',       'WatermarkController@regenerate', ['auth','approved']],

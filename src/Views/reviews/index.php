@@ -104,19 +104,25 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
                         <span class="badge bg-secondary flex-shrink-0">Nenastaveno</span>
                     <?php endif; ?>
                     <?php if ($hasUrl): ?>
-                        <form method="post" action="/reviews/photo-import/run" class="flex-shrink-0 ms-auto">
-                            <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-                            <button type="submit" class="btn btn-sm <?= $hasImported ? 'btn-outline-primary' : 'btn-primary' ?>"
-                                    onclick="this.disabled=true;this.innerHTML='<span class='spinner-border spinner-border-sm'></span> Importuji…';this.form.submit();">
-                                <i class="bi bi-arrow-repeat me-1"></i><?= $hasImported ? 'Reimportovat' : 'Importovat' ?>
-                            </button>
-                        </form>
+                        <button id="importBtn" class="btn btn-sm <?= $hasImported ? 'btn-outline-primary' : 'btn-primary' ?> flex-shrink-0 ms-auto"
+                                onclick="startImport()">
+                            <i class="bi bi-arrow-repeat me-1"></i><?= $hasImported ? 'Reimportovat' : 'Importovat' ?>
+                        </button>
                         <button class="btn btn-sm btn-outline-secondary flex-shrink-0" type="button"
                                 onclick="document.getElementById('importUrlForm').classList.toggle('d-none')"
                                 title="Změnit URL">
                             <i class="bi bi-pencil"></i>
                         </button>
                     <?php endif; ?>
+                </div>
+                <!-- Live progress -->
+                <div id="importProgress" class="d-none mt-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="progress flex-grow-1" style="height:6px;">
+                            <div id="importProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:100%"></div>
+                        </div>
+                        <span id="importProgressText" class="small text-muted flex-shrink-0" style="min-width:120px">Stahuji CSV…</span>
+                    </div>
                 </div>
                 <!-- Formulář pro změnu/zadání URL -->
                 <div id="importUrlForm" class="mt-2 <?= $hasUrl ? 'd-none' : '' ?>">
@@ -403,3 +409,53 @@ document.getElementById('copyFeedUrl')?.addEventListener('click', function() {
 <?php endif; ?>
 
 <?php endif; ?>
+
+<script>
+function startImport() {
+    const btn      = document.getElementById('importBtn');
+    const progress = document.getElementById('importProgress');
+    const bar      = document.getElementById('importProgressBar');
+    const text     = document.getElementById('importProgressText');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importuji…';
+    progress.classList.remove('d-none');
+    text.textContent = 'Stahuji CSV…';
+
+    const es = new EventSource('/reviews/photo-import/stream');
+
+    es.addEventListener('start', () => {
+        text.textContent = 'Stahuji CSV…';
+    });
+
+    es.addEventListener('progress', e => {
+        const d = JSON.parse(e.data);
+        text.textContent = d.rows.toLocaleString('cs') + ' prod. / ' + d.images.toLocaleString('cs') + ' fotek';
+    });
+
+    es.addEventListener('done', e => {
+        const d = JSON.parse(e.data);
+        es.close();
+        bar.classList.remove('progress-bar-animated', 'progress-bar-striped');
+        bar.classList.add('bg-success');
+        text.textContent = '✓ ' + d.rows.toLocaleString('cs') + ' produktů, ' + d.images.toLocaleString('cs') + ' fotek';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Reimportovat';
+        setTimeout(() => location.reload(), 1500);
+    });
+
+    es.addEventListener('error', e => {
+        es.close();
+        bar.classList.add('bg-danger');
+        bar.classList.remove('progress-bar-animated');
+        try {
+            const d = JSON.parse(e.data);
+            text.textContent = '✗ ' + d.message;
+        } catch {
+            text.textContent = '✗ Chyba importu';
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Zkusit znovu';
+    });
+}
+</script>

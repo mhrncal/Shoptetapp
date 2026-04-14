@@ -31,7 +31,7 @@ class ShoptetCsvImporter
      * Stáhne CSV z URL streamově a importuje do DB.
      * @return array{rows: int, images: int, errors: string[]}
      */
-    public function importFromUrl(string $url): array
+    public function importFromUrl(string $url, ?callable $onProgress = null): array
     {
         if (!function_exists('curl_init')) {
             throw new \RuntimeException('cURL není dostupné.');
@@ -70,7 +70,7 @@ class ShoptetCsvImporter
 
         try {
             $stream = fopen($tmpFile, 'r');
-            return $this->processStream($stream);
+            return $this->processStream($stream, $onProgress);
         } finally {
             if (isset($stream) && is_resource($stream)) fclose($stream);
             @unlink($tmpFile);
@@ -79,8 +79,9 @@ class ShoptetCsvImporter
 
     /**
      * Zpracuje již otevřený stream (pro testování nebo lokální soubory).
+     * @param callable|null $onProgress Callback(int $rows, int $images) volaný po každém batch
      */
-    public function processStream($stream): array
+    public function processStream($stream, ?callable $onProgress = null): array
     {
         $rowCount   = 0;
         $imgCount   = 0;
@@ -88,7 +89,7 @@ class ShoptetCsvImporter
         $headerMap  = null;
         $buffer     = '';
         $batch      = [];
-        $encoding   = null; // detekuje se z prvního chunku
+        $encoding   = null;
 
         // Vymažeme staré záznamy uživatele před importem
         $this->db->prepare('DELETE FROM shoptet_product_images WHERE user_id = ?')
@@ -98,23 +99,19 @@ class ShoptetCsvImporter
             $chunk  = fread($stream, self::CHUNK_SIZE);
             if ($chunk === false) break;
 
-            // Detekce kódování z prvního chunku (BOM nebo heuristika)
             if ($encoding === null) {
                 $encoding = $this->detectEncoding($chunk);
             }
 
-            // Konverze kódování pouze pokud není UTF-8
             if ($encoding !== 'UTF-8') {
                 $converted = @iconv($encoding, 'UTF-8//IGNORE', $chunk);
                 $chunk = ($converted !== false) ? $converted : $chunk;
             }
-            // Odstraň UTF-8 BOM pokud přítomen
             if ($buffer === '') {
                 $chunk = ltrim($chunk, "\xEF\xBB\xBF");
             }
             $buffer .= $chunk;
 
-            // Zpracuj kompletní řádky z bufferu
             while (($pos = strpos($buffer, "\n")) !== false) {
                 $line   = rtrim(substr($buffer, 0, $pos), "\r\n");
                 $buffer = substr($buffer, $pos + 1);
@@ -123,7 +120,6 @@ class ShoptetCsvImporter
 
                 $cols = str_getcsv($line, self::DELIMITER, '"', '\\');
 
-                // První řádek = hlavička
                 if ($headerMap === null) {
                     $headerMap = $this->buildHeaderMap($cols);
                     continue;
@@ -139,11 +135,11 @@ class ShoptetCsvImporter
                 if (count($batch) >= self::BATCH_SIZE) {
                     $this->flushBatch($batch);
                     $batch = [];
+                    if ($onProgress) $onProgress($rowCount, $imgCount);
                 }
             }
         }
 
-        // Zpracuj zbytek bufferu (poslední řádek bez \n)
         if (trim($buffer) !== '') {
             $cols = str_getcsv(rtrim($buffer, "\r\n"), self::DELIMITER, '"', '\\');
             if ($headerMap !== null) {
@@ -158,6 +154,7 @@ class ShoptetCsvImporter
 
         if (!empty($batch)) {
             $this->flushBatch($batch);
+            if ($onProgress) $onProgress($rowCount, $imgCount);
         }
 
         return [

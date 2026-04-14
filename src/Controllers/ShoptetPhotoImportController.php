@@ -41,8 +41,55 @@ class ShoptetPhotoImportController extends BaseController
     }
 
     /**
-     * Spustí import – streamově stáhne a zparsuje CSV.
-     * Běží synchronně (vhodné pro manuální spuštění, cron pro automatiku).
+     * SSE endpoint – live progress importu.
+     * Volá se přes fetch/EventSource, streamuje JSON events.
+     */
+    public function runImportStream(): void
+    {
+        $userId = $this->user['id'];
+        $config = ShoptetCsvImporter::getImportConfig($userId);
+
+        // SSE hlavičky
+        header('Content-Type: text/event-stream');
+        header('Cache-Control: no-cache');
+        header('X-Accel-Buffering: no'); // vypne nginx buffering
+        while (ob_get_level() > 0) ob_end_flush();
+
+        $send = function(string $event, array $data) {
+            echo "event: {$event}\n";
+            echo 'data: ' . json_encode($data) . "\n\n";
+            flush();
+        };
+
+        if (!$config || empty($config['csv_url'])) {
+            $send('error', ['message' => 'URL exportu není nastavena.']);
+            return;
+        }
+
+        try {
+            set_time_limit(300);
+            $send('start', ['message' => 'Stahuji CSV...']);
+
+            $importer = new ShoptetCsvImporter($userId);
+            $result   = $importer->importFromUrl(
+                $config['csv_url'],
+                function(int $rows, int $images) use ($send) {
+                    $send('progress', ['rows' => $rows, 'images' => $images]);
+                }
+            );
+
+            ShoptetCsvImporter::updateImportStats($userId, $result['rows'], $result['images']);
+            $send('done', [
+                'rows'   => $result['rows'],
+                'images' => $result['images'],
+            ]);
+        } catch (\Exception $e) {
+            $send('error', ['message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Spustí import synchronně (fallback, používá cron).
      */
     public function runImport(): void
     {
