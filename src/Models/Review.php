@@ -240,23 +240,40 @@ class Review
      */
     public static function allApproved(int $userId): array
     {
-        $db   = Database::getInstance();
+        $db = Database::getInstance();
+
+        // Načti recenze
         $stmt = $db->prepare("
-            SELECT r.*, GROUP_CONCAT(rp.path) as photo_paths
+            SELECT r.*
             FROM reviews r
-            LEFT JOIN review_photos rp ON rp.review_id = r.id AND rp.path IS NOT NULL
-            WHERE r.user_id = ? AND r.status = 'approved'
-            GROUP BY r.id
+            WHERE r.user_id = ? AND r.status = 'approved' AND r.sku IS NOT NULL AND r.sku != ''
             ORDER BY r.created_at ASC
         ");
         $stmt->execute([$userId]);
         $rows = $stmt->fetchAll();
+
+        if (empty($rows)) return [];
+
+        // Načti fotky pro všechny recenze najednou (bez GROUP_CONCAT limitu)
+        $ids         = array_column($rows, 'id');
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $pStmt       = $db->prepare("
+            SELECT review_id, path FROM review_photos
+            WHERE review_id IN ($placeholders) AND path IS NOT NULL
+            ORDER BY id ASC
+        ");
+        $pStmt->execute($ids);
+        $photosByReview = [];
+        foreach ($pStmt->fetchAll() as $p) {
+            $photosByReview[$p['review_id']][] = ['path' => $p['path']];
+        }
+
         foreach ($rows as &$r) {
-            // Kombinuj JSON photos + review_photos tabulku
+            $tablePaths = $photosByReview[$r['id']] ?? [];
             $jsonPhotos = $r['photos'] ? json_decode($r['photos'], true) : [];
-            $tablePaths = $r['photo_paths'] ? array_map(fn($p) => ['path' => $p], explode(',', $r['photo_paths'])) : [];
             $r['photos'] = !empty($tablePaths) ? $tablePaths : $jsonPhotos;
         }
+
         return $rows;
     }
 
