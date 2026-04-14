@@ -28,7 +28,28 @@ class XmlFeedGenerator
     }
 
     /**
-     * Seskupí fotky recenzí podle SKU a sloučí se stávajícími fotkami ze Shoptetu.
+     * Sestaví XML string ve formátu Shoptet:
+     * <SHOP><SHOPITEM><CODE>...</CODE><IMAGES><IMAGE>url</IMAGE></IMAGES></SHOPITEM></SHOP>
+     */
+    private function buildXml(array $bySku): string
+    {
+        $lines = ['<?xml version="1.0" encoding="UTF-8"?>', '<SHOP>'];
+        foreach ($bySku as $sku => $urls) {
+            if (empty($urls)) continue;
+            $lines[] = '  <SHOPITEM>';
+            $lines[] = '    <CODE>' . htmlspecialchars($sku, ENT_XML1, 'UTF-8') . '</CODE>';
+            $lines[] = '    <IMAGES>';
+            foreach ($urls as $url) {
+                $lines[] = '      <IMAGE>' . htmlspecialchars($url, ENT_XML1, 'UTF-8') . '</IMAGE>';
+            }
+            $lines[] = '    </IMAGES>';
+            $lines[] = '  </SHOPITEM>';
+        }
+        $lines[] = '</SHOP>';
+        return implode("\n", $lines) . "\n";
+    }
+
+    /** a sloučí se stávajícími fotkami ze Shoptetu.
      * Stávající fotky jsou první, nové zákaznické na konci. Bez duplikátů.
      */
     private function buildBySku(int $userId, array $reviews): array
@@ -73,28 +94,12 @@ class XmlFeedGenerator
             throw new \RuntimeException('Žádné fotky pro XML export.');
         }
 
-        // Vytvoříme XML soubor
-        $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><products></products>');
-
-        foreach ($bySku as $sku => $urls) {
-            if (empty($urls)) continue;
-            $product = $xml->addChild('product');
-            $product->addChild('code', htmlspecialchars($sku, ENT_XML1, 'UTF-8'));
-            $images = $product->addChild('images');
-            foreach ($urls as $url) {
-                $images->addChild('image', htmlspecialchars($url, ENT_XML1, 'UTF-8'));
-            }
-        }
+        // Vytvoříme XML soubor ve formátu Shoptet
+        $output = $this->buildXml($bySku);
 
         // Uložíme do tmp/ pro dočasný export
         $tmpFilename = $this->tmpDir . '/shoptet_export_' . date('YmdHis') . '_' . uniqid() . '.xml';
-        
-        // Naformátovaný XML s odsazením
-        $dom = new \DOMDocument('1.0', 'UTF-8');
-        $dom->preserveWhiteSpace = false;
-        $dom->formatOutput = true;
-        $dom->loadXML($xml->asXML());
-        $dom->save($tmpFilename);
+        file_put_contents($tmpFilename, $output);
 
         return $tmpFilename;
     }
@@ -109,31 +114,13 @@ class XmlFeedGenerator
      */
     public function generatePermanentFeed(int $userId, array $reviews): string
     {
-        $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><products></products>');
-
-        if (!empty($reviews)) {
-            $bySku = $this->buildBySku($userId, $reviews);
-            foreach ($bySku as $sku => $urls) {
-                if (empty($urls)) continue;
-                $product = $xml->addChild('product');
-                $product->addChild('code', htmlspecialchars($sku, ENT_XML1, 'UTF-8'));
-                $images = $product->addChild('images');
-                foreach ($urls as $url) {
-                    $images->addChild('image', htmlspecialchars($url, ENT_XML1, 'UTF-8'));
-                }
-            }
-        }
+        $bySku = !empty($reviews) ? $this->buildBySku($userId, $reviews) : [];
+        $output = $this->buildXml($bySku);
 
         // Uložíme do public/feeds/
         $filename = "user_{$userId}_reviews.xml";
         $filepath = $this->feedsDir . '/' . $filename;
-        
-        // Naformátovaný XML
-        $dom = new \DOMDocument('1.0', 'UTF-8');
-        $dom->preserveWhiteSpace = false;
-        $dom->formatOutput = true;
-        $dom->loadXML($xml->asXML());
-        $dom->save($filepath);
+        file_put_contents($filepath, $output);
 
         // Vrátíme veřejnou URL
         return $this->appUrl . '/public/feeds/' . $filename;
