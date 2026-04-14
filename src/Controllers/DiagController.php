@@ -782,7 +782,6 @@ class DiagController extends BaseController
             echo file_exists($log) ? file_get_contents($log) : "Soubor neexistuje\n";
         }
     }
-}
 
     public function testXml(): void
     {
@@ -792,7 +791,6 @@ class DiagController extends BaseController
         header('Content-Type: text/plain; charset=utf-8');
 
         $userId = (int)($_GET['user_id'] ?? 1);
-
         echo "=== XML Feed Test (user_id=$userId) ===\n\n";
 
         $reviews = \ShopCode\Models\Review::allApproved($userId);
@@ -804,8 +802,8 @@ class DiagController extends BaseController
             }
         }
 
-        echo "\nShoptet product images:\n";
-        $db = \ShopCode\Core\Database::getInstance();
+        echo "\nShoptet product images (prvních 5):\n";
+        $db   = \ShopCode\Core\Database::getInstance();
         $stmt = $db->prepare('SELECT sku, JSON_LENGTH(image_urls) as cnt FROM shoptet_product_images WHERE user_id = ? LIMIT 5');
         $stmt->execute([$userId]);
         foreach ($stmt->fetchAll() as $row) {
@@ -815,7 +813,7 @@ class DiagController extends BaseController
         echo "\nGeneruji XML...\n";
         try {
             $gen  = new \ShopCode\Services\XmlFeedGenerator();
-            $url  = $gen->generatePermanentFeed($userId, $reviews);
+            $gen->generatePermanentFeed($userId, $reviews);
             $path = ROOT . '/public/feeds/user_' . $userId . '_reviews.xml';
             echo "OK - uloženo: $path\n";
             echo "Velikost: " . filesize($path) . " b\n";
@@ -826,7 +824,6 @@ class DiagController extends BaseController
             echo "CHYBA: " . $e->getMessage() . "\n";
             echo $e->getTraceAsString() . "\n";
         }
-
         exit;
     }
 }
