@@ -121,7 +121,7 @@ class ShoptetCsvImporter
 
                 if (trim($line) === '') continue;
 
-                $cols = str_getcsv($line, self::DELIMITER, '"');
+                $cols = str_getcsv($line, self::DELIMITER, '"', '\\');
 
                 // První řádek = hlavička
                 if ($headerMap === null) {
@@ -145,7 +145,7 @@ class ShoptetCsvImporter
 
         // Zpracuj zbytek bufferu (poslední řádek bez \n)
         if (trim($buffer) !== '') {
-            $cols = str_getcsv(rtrim($buffer, "\r\n"), self::DELIMITER, '"');
+            $cols = str_getcsv(rtrim($buffer, "\r\n"), self::DELIMITER, '"', '\\');
             if ($headerMap !== null) {
                 $result = $this->processRow($cols, $headerMap);
                 if ($result !== null) {
