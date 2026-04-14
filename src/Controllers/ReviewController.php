@@ -448,7 +448,7 @@ class ReviewController extends BaseController
         $zip->close();
 
         // Zaznamenej export → reset timeru
-        $db->prepare("INSERT INTO photo_export_log (user_id, photo_count) VALUES (?, ?)")
+        $db->prepare("INSERT INTO photo_export_log (user_id, exported_at, photo_count) VALUES (?, NOW(), ?)")
            ->execute([$userId, $count]);
 
         // Pošli soubor
