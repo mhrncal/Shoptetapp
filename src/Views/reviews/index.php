@@ -82,40 +82,44 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
     <div class="col-12 col-lg-6">
         <div class="card h-100">
             <div class="card-body py-2">
+                <?php
+                $hasUrl      = $importConfig && !empty($importConfig['csv_url']);
+                $hasImported = $hasUrl && !empty($importConfig['last_imported_at']);
+                ?>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="small fw-semibold flex-shrink-0">
                         <i class="bi bi-cloud-download me-1 text-primary"></i>Shoptet fotky:
                     </span>
-                    <?php if ($importConfig && !empty($importConfig['csv_url'])): ?>
-                        <div class="input-group input-group-sm flex-grow-1">
-                            <input type="text" class="form-control form-control-sm font-monospace"
-                                   value="<?= $e($importConfig['csv_url']) ?>"
-                                   id="importCsvUrl" readonly>
-                            <button class="btn btn-outline-secondary" type="button"
-                                    onclick="document.getElementById('importUrlForm').classList.toggle('d-none')"
-                                    title="Změnit URL">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                        </div>
-                        <form method="post" action="/reviews/photo-import/run" class="flex-shrink-0">
+                    <?php if ($hasImported): ?>
+                        <span class="badge bg-success flex-shrink-0">
+                            <i class="bi bi-check-lg me-1"></i><?= number_format((int)$importConfig['last_row_count'], 0, ',', ' ') ?> produktů
+                        </span>
+                        <span class="text-muted small flex-shrink-0">
+                            <?= number_format((int)$importConfig['last_image_count'], 0, ',', ' ') ?> fotek
+                            · <?= date('d.m.Y H:i', strtotime($importConfig['last_imported_at'])) ?>
+                        </span>
+                    <?php elseif ($hasUrl): ?>
+                        <span class="badge bg-warning text-dark flex-shrink-0">Zatím neimportováno</span>
+                    <?php else: ?>
+                        <span class="badge bg-secondary flex-shrink-0">Nenastaveno</span>
+                    <?php endif; ?>
+                    <?php if ($hasUrl): ?>
+                        <form method="post" action="/reviews/photo-import/run" class="flex-shrink-0 ms-auto">
                             <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
-                            <button type="submit" class="btn btn-sm btn-primary"
-                                    onclick="this.disabled=true;this.innerHTML='<span class=\'spinner-border spinner-border-sm\'></span>';this.form.submit();">
-                                <i class="bi bi-arrow-repeat me-1"></i>Importovat
+                            <button type="submit" class="btn btn-sm <?= $hasImported ? 'btn-outline-primary' : 'btn-primary' ?>"
+                                    onclick="this.disabled=true;this.innerHTML='<span class='spinner-border spinner-border-sm'></span> Importuji…';this.form.submit();">
+                                <i class="bi bi-arrow-repeat me-1"></i><?= $hasImported ? 'Reimportovat' : 'Importovat' ?>
                             </button>
                         </form>
-                        <?php if ($importConfig['last_imported_at']): ?>
-                        <span class="text-muted small flex-shrink-0">
-                            <?= number_format((int)$importConfig['last_row_count'], 0, ',', ' ') ?> prod.
-                            · <?= date('d.m.', strtotime($importConfig['last_imported_at'])) ?>
-                        </span>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <span class="text-muted small">URL exportu nenastavena.</span>
+                        <button class="btn btn-sm btn-outline-secondary flex-shrink-0" type="button"
+                                onclick="document.getElementById('importUrlForm').classList.toggle('d-none')"
+                                title="Změnit URL">
+                            <i class="bi bi-pencil"></i>
+                        </button>
                     <?php endif; ?>
                 </div>
-                <!-- Formulář pro změnu/zadání URL (skrytý) -->
-                <div id="importUrlForm" class="mt-2 <?= ($importConfig && !empty($importConfig['csv_url'])) ? 'd-none' : '' ?>">
+                <!-- Formulář pro změnu/zadání URL -->
+                <div id="importUrlForm" class="mt-2 <?= $hasUrl ? 'd-none' : '' ?>">
                     <form method="post" action="/reviews/photo-import/save-url" class="d-flex gap-2">
                         <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                         <input type="url" name="csv_url" class="form-control form-control-sm font-monospace"
