@@ -16,7 +16,7 @@ class ShoptetCsvImporter
     private const CHUNK_SIZE = 8192; // 8 KB na chunk
     private const BATCH_SIZE = 500;  // řádků před DB flush
     private const DELIMITER  = ';';
-    private const ENCODING   = 'Windows-1250';
+    // Kódování se detekuje automaticky z BOM nebo prvního chunku
 
     private Database $db;
     private int      $userId;
@@ -70,6 +70,7 @@ class ShoptetCsvImporter
         $headerMap  = null;
         $buffer     = '';
         $batch      = [];
+        $encoding   = null; // detekuje se z prvního chunku
 
         // Vymažeme staré záznamy uživatele před importem
         $this->db->prepare('DELETE FROM shoptet_product_images WHERE user_id = ?')
@@ -79,8 +80,19 @@ class ShoptetCsvImporter
             $chunk  = fread($stream, self::CHUNK_SIZE);
             if ($chunk === false) break;
 
-            // Konverze kódování
-            $chunk  = mb_convert_encoding($chunk, 'UTF-8', self::ENCODING);
+            // Detekce kódování z prvního chunku (BOM nebo heuristika)
+            if ($encoding === null) {
+                $encoding = $this->detectEncoding($chunk);
+            }
+
+            // Konverze kódování pouze pokud není UTF-8
+            if ($encoding !== 'UTF-8') {
+                $chunk = mb_convert_encoding($chunk, 'UTF-8', $encoding);
+            }
+            // Odstraň UTF-8 BOM pokud přítomen
+            if ($buffer === '') {
+                $chunk = ltrim($chunk, "\xEF\xBB\xBF");
+            }
             $buffer .= $chunk;
 
             // Zpracuj kompletní řádky z bufferu
@@ -137,7 +149,24 @@ class ShoptetCsvImporter
     }
 
     /**
-     * Sestaví mapu název_sloupce → index z hlavičky.
+     * Detekuje kódování z prvního chunku dat.
+     * Kontroluje UTF-8 BOM, pak zkouší validitu UTF-8, jinak předpokládá Windows-1250.
+     */
+    private function detectEncoding(string $chunk): string
+    {
+        // UTF-8 BOM
+        if (str_starts_with($chunk, "\xEF\xBB\xBF")) {
+            return 'UTF-8';
+        }
+        // Validní UTF-8?
+        if (mb_check_encoding($chunk, 'UTF-8')) {
+            return 'UTF-8';
+        }
+        // Fallback na Windows-1250 (typické pro Shoptet CZ exporty)
+        return 'Windows-1250';
+    }
+
+    /**
      */
     private function buildHeaderMap(array $cols): array
     {
