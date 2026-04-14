@@ -31,6 +31,9 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
     <a href="<?= APP_URL ?>/reviews/export-photos" class="btn btn-sm btn-<?= $alertType ?> flex-shrink-0">
         <i class="bi bi-download me-1"></i><span class="d-none d-sm-inline">Stáhnout zálohu</span>
     </a>
+    <a href="<?= APP_URL ?>/reviews/photo-import" class="btn btn-sm btn-outline-secondary flex-shrink-0">
+        <i class="bi bi-cloud-download me-1"></i><span class="d-none d-sm-inline">Import fotek</span>
+    </a>
 </div>
 
 <?php if ($blocked): ?>
