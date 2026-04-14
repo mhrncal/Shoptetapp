@@ -1,4 +1,4 @@
-<?php \$pageTitle = 'Recenze #' . \$review['id']; ?>
+<?php $pageTitle = 'Recenze #' . $review['id']; ?>
 <?php $isPreview = !empty($review['xml_exported_at']); ?>
 <?php $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); ?>
 <?php $st = \ShopCode\Models\Review::STATUSES[$review['status']] ?? ['label'=>$review['status'],'color'=>'secondary']; ?>
