@@ -447,9 +447,20 @@ class ReviewController extends BaseController
         }
         $zip->close();
 
+        if ($count === 0) {
+            unlink($zipFile);
+            \ShopCode\Core\Session::flash('error', 'Fotky nebyly nalezeny na disku.');
+            $this->redirect('/reviews');
+        }
+
         // Zaznamenej export → reset timeru
         $db->prepare("INSERT INTO photo_export_log (user_id, exported_at, photo_count) VALUES (?, NOW(), ?)")
            ->execute([$userId, $count]);
+
+        // Vyčisti buffered output před odesláním souboru
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
 
         // Pošli soubor
         header('Content-Type: application/zip');
@@ -458,13 +469,6 @@ class ReviewController extends BaseController
         header('Cache-Control: no-cache');
         readfile($zipFile);
         unlink($zipFile);
-
-        // Zmenš originály na 300px náhled — záloha je u uživatele v ZIP
-        foreach ($photos as $photo) {
-            $abs = ROOT . '/public/uploads/' . ltrim($photo['path'], '/');
-            \ShopCode\Services\ImageHandler::downsizeToPreview($abs, 300);
-        }
-
         exit;
     }
 
