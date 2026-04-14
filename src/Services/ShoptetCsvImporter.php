@@ -105,7 +105,8 @@ class ShoptetCsvImporter
 
             // Konverze kódování pouze pokud není UTF-8
             if ($encoding !== 'UTF-8') {
-                $chunk = mb_convert_encoding($chunk, 'UTF-8', $encoding);
+                $converted = @iconv($encoding, 'UTF-8//IGNORE', $chunk);
+                $chunk = ($converted !== false) ? $converted : $chunk;
             }
             // Odstraň UTF-8 BOM pokud přítomen
             if ($buffer === '') {
@@ -180,8 +181,8 @@ class ShoptetCsvImporter
         if (mb_check_encoding($chunk, 'UTF-8')) {
             return 'UTF-8';
         }
-        // Fallback na CP1250 (Windows-1250, typické pro Shoptet CZ exporty)
-        return 'CP1250';
+        // Fallback na windows-1250 (typické pro Shoptet CZ exporty)
+        return 'windows-1250';
     }
 
     /**
