@@ -3,6 +3,7 @@
 namespace ShopCode\Services;
 
 use ShopCode\Models\Review;
+use ShopCode\Services\ShoptetCsvImporter;
 
 /**
  * Generuje XML feed ve formátu kompatibilním se Shoptet importem produktových fotek.
@@ -27,8 +28,35 @@ class XmlFeedGenerator
     }
 
     /**
+     * Seskupí fotky recenzí podle SKU a sloučí se stávajícími fotkami ze Shoptetu.
+     * Stávající fotky jsou první, nové zákaznické na konci. Bez duplikátů.
+     */
+    private function buildBySku(int $userId, array $reviews): array
+    {
+        $bySku = [];
+        foreach ($reviews as $review) {
+            $sku = $review['sku'] ?? $review['shoptet_id'] ?? null;
+            if (!$sku) continue;
+
+            if (!isset($bySku[$sku])) {
+                // Stávající fotky ze Shoptetu jako základ
+                $bySku[$sku] = ShoptetCsvImporter::getUrlsForSku($userId, $sku);
+            }
+
+            // Přidej nové zákaznické fotky na konec (bez duplikátů)
+            foreach ($review['photos'] as $photo) {
+                $url = $this->appUrl . '/public/uploads/' . ltrim($photo['path'], '/');
+                if (!in_array($url, $bySku[$sku], true)) {
+                    $bySku[$sku][] = $url;
+                }
+            }
+        }
+        return $bySku;
+    }
+
+    /**
      * Vygeneruje XML feed z pole recenzí.
-     * 
+     *
      * @param  int    $userId  ID uživatele (pro uložení do feeds/)
      * @param  array  $reviews Výsledek Review::getPendingImport()
      * @return string Cesta k souboru
@@ -39,17 +67,7 @@ class XmlFeedGenerator
             throw new \RuntimeException('Žádné recenze ke generování.');
         }
 
-        // Seskupíme fotky podle SKU
-        $bySku = [];
-        foreach ($reviews as $review) {
-            $sku = $review['sku'] ?? $review['shoptet_id'] ?? null;
-            if (!$sku) continue;
-
-            foreach ($review['photos'] as $photo) {
-                $url = $this->appUrl . '/public/uploads/' . $photo['path'];
-                $bySku[$sku][] = $url;
-            }
-        }
+        $bySku = $this->buildBySku($userId, $reviews);
 
         if (empty($bySku)) {
             throw new \RuntimeException('Žádné fotky pro XML export.');
@@ -59,9 +77,9 @@ class XmlFeedGenerator
         $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><products></products>');
 
         foreach ($bySku as $sku => $urls) {
+            if (empty($urls)) continue;
             $product = $xml->addChild('product');
             $product->addChild('code', htmlspecialchars($sku, ENT_XML1, 'UTF-8'));
-            
             $images = $product->addChild('images');
             foreach ($urls as $url) {
                 $images->addChild('image', htmlspecialchars($url, ENT_XML1, 'UTF-8'));
@@ -91,28 +109,14 @@ class XmlFeedGenerator
      */
     public function generatePermanentFeed(int $userId, array $reviews): string
     {
-        if (empty($reviews)) {
-            // Prázdný feed
-            $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><products></products>');
-        } else {
-            // Seskupíme fotky podle SKU
-            $bySku = [];
-            foreach ($reviews as $review) {
-                $sku = $review['sku'] ?? $review['shoptet_id'] ?? null;
-                if (!$sku) continue;
+        $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><products></products>');
 
-                foreach ($review['photos'] as $photo) {
-                    $url = $this->appUrl . '/public/uploads/' . $photo['path'];
-                    $bySku[$sku][] = $url;
-                }
-            }
-
-            $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><products></products>');
-
+        if (!empty($reviews)) {
+            $bySku = $this->buildBySku($userId, $reviews);
             foreach ($bySku as $sku => $urls) {
+                if (empty($urls)) continue;
                 $product = $xml->addChild('product');
                 $product->addChild('code', htmlspecialchars($sku, ENT_XML1, 'UTF-8'));
-                
                 $images = $product->addChild('images');
                 foreach ($urls as $url) {
                     $images->addChild('image', htmlspecialchars($url, ENT_XML1, 'UTF-8'));
