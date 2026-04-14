@@ -22,9 +22,9 @@ class ImageHandler
     private const MAX_SIZE = 1600;
     private const THUMB_SIZE = 300;
 
-    public function __construct(string $uploadDir)
+    public function __construct(string $uploadDir = '')
     {
-        $this->uploadDir = rtrim($uploadDir, '/');
+        $this->uploadDir = rtrim($uploadDir ?: (ROOT . '/public/uploads'), '/');
     }
 
     /**
@@ -420,5 +420,18 @@ class ImageHandler
         };
         imagedestroy($canvas);
         return (bool)$ok;
+    }
+
+    /**
+     * Smaže celou složku uživatele/uuid (cleanup po chybě při uploadu)
+     */
+    public function deleteFolder(int $userId, string $uuid): void
+    {
+        $dir = $this->uploadDir . '/' . $userId . '/' . $uuid;
+        if (!is_dir($dir)) return;
+        foreach (glob($dir . '/*') as $file) {
+            @unlink($file);
+        }
+        @rmdir($dir);
     }
 }
