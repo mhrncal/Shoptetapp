@@ -18,7 +18,7 @@ class ShoptetCsvImporter
     private const DELIMITER  = ';';
     // Kódování se detekuje automaticky z BOM nebo prvního chunku
 
-    private Database $db;
+    private \PDO $db;
     private int      $userId;
 
     public function __construct(int $userId)
