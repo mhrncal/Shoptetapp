@@ -98,7 +98,7 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
                             </button>
                         </div>
                         <form method="post" action="/reviews/photo-import/run" class="flex-shrink-0">
-                            <input type="hidden" name="csrf_token" value="<?= $e($csrfToken) ?>">
+                            <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                             <button type="submit" class="btn btn-sm btn-primary"
                                     onclick="this.disabled=true;this.innerHTML='<span class=\'spinner-border spinner-border-sm\'></span>';this.form.submit();">
                                 <i class="bi bi-arrow-repeat me-1"></i>Importovat
@@ -117,7 +117,7 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
                 <!-- Formulář pro změnu/zadání URL (skrytý) -->
                 <div id="importUrlForm" class="mt-2 <?= ($importConfig && !empty($importConfig['csv_url'])) ? 'd-none' : '' ?>">
                     <form method="post" action="/reviews/photo-import/save-url" class="d-flex gap-2">
-                        <input type="hidden" name="csrf_token" value="<?= $e($csrfToken) ?>">
+                        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                         <input type="url" name="csv_url" class="form-control form-control-sm font-monospace"
                                placeholder="https://vas-eshop.cz/export/products.csv?patternId=...&hash=..."
                                value="<?= $e($importConfig['csv_url'] ?? '') ?>" required>

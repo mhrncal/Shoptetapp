@@ -6,7 +6,9 @@ class Response
 {
     public static function redirect(string $url, int $code = 302): never
     {
-        header('Location: ' . APP_URL . $url, true, $code);
+        // Pokud je URL absolutní, nepreponuj APP_URL
+        $location = str_starts_with($url, 'http') ? $url : APP_URL . $url;
+        header('Location: ' . $location, true, $code);
         exit;
     }
 

@@ -39,7 +39,7 @@ $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                         vygeneruj odkaz a vlož ho sem. CSV bude obsahovat SKU a URL fotek na CDN.
                     </p>
                     <form method="post" action="/reviews/photo-import/save-url">
-                        <input type="hidden" name="csrf_token" value="<?= $e($csrfToken) ?>">
+                        <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">URL CSV exportu</label>
                             <input type="url" name="csv_url" class="form-control font-monospace"
@@ -77,7 +77,7 @@ $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                         </dl>
 
                         <form method="post" action="/reviews/photo-import/run" id="importForm">
-                            <input type="hidden" name="csrf_token" value="<?= $e($csrfToken) ?>">
+                            <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                             <button type="submit" class="btn btn-success w-100" id="importBtn"
                                     onclick="return confirmImport()">
                                 <i class="bi bi-arrow-repeat me-1"></i> Spustit import teď
