@@ -91,7 +91,7 @@ class ImageHandler
      * 1024-1600px → ponechat
      * > 1600px → zmenšit (delší strana = 1600px)
      */
-    private function smartResize(\GdImage $img): \GdImage
+    public function smartResize(\GdImage $img): \GdImage
     {
         $w = imagesx($img);
         $h = imagesy($img);
@@ -283,7 +283,7 @@ class ImageHandler
     /**
      * Klonuje GD obrázek
      */
-    private function cloneImage(\GdImage $img): \GdImage
+    public function cloneImage(\GdImage $img): \GdImage
     {
         $w = imagesx($img);
         $h = imagesy($img);
@@ -297,7 +297,7 @@ class ImageHandler
     /**
      * Odstraní EXIF data (GPS, atd.)
      */
-    private function removeExif(\GdImage $img): \GdImage
+    public function removeExif(\GdImage $img): \GdImage
     {
         // GD automaticky odstraní EXIF při rekreaci
         return $this->cloneImage($img);
