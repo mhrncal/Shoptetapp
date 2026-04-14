@@ -443,12 +443,14 @@ class ReviewController extends BaseController
             if (file_exists($abs)) {
                 $zip->addFile($abs, 'foto_' . $photo['id'] . '_' . basename($abs));
                 $count++;
+            } else {
+                error_log('[ZIP] File not found: ' . $abs . ' (path in DB: ' . $photo['path'] . ')');
             }
         }
         $zip->close();
 
         if ($count === 0) {
-            unlink($zipFile);
+            @unlink($zipFile);
             \ShopCode\Core\Session::flash('error', 'Fotky nebyly nalezeny na disku.');
             $this->redirect('/reviews');
         }
