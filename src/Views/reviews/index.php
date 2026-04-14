@@ -274,26 +274,12 @@ document.getElementById('copyFeedUrl')?.addEventListener('click', function() {
                             <div class="d-flex gap-1">
                                 <a href="/reviews/<?= $r['id'] ?>" class="btn btn-sm btn-outline-secondary" title="Detail"><i class="bi bi-eye"></i></a>
                                 <?php if ($r['status'] !== 'approved'): ?>
-                                <form method="POST" action="/reviews/change-status">
-                                    <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
-                                    <input type="hidden" name="id" value="<?= $r['id'] ?>">
-                                    <input type="hidden" name="status" value="approved">
-                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Schválit"><i class="bi bi-check-lg"></i></button>
-                                </form>
+                                <button type="submit" form="frm-approve-<?= $r['id'] ?>" class="btn btn-sm btn-outline-success" title="Schválit"><i class="bi bi-check-lg"></i></button>
                                 <?php endif; ?>
                                 <?php if ($r['status'] !== 'rejected'): ?>
-                                <form method="POST" action="/reviews/change-status">
-                                    <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
-                                    <input type="hidden" name="id" value="<?= $r['id'] ?>">
-                                    <input type="hidden" name="status" value="rejected">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Zamítnout"><i class="bi bi-x-lg"></i></button>
-                                </form>
+                                <button type="submit" form="frm-reject-<?= $r['id'] ?>" class="btn btn-sm btn-outline-danger" title="Zamítnout"><i class="bi bi-x-lg"></i></button>
                                 <?php endif; ?>
-                                <form method="POST" action="/reviews/delete" onsubmit="return confirm('Smazat recenzi?')">
-                                    <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
-                                    <input type="hidden" name="id" value="<?= $r['id'] ?>">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Smazat"><i class="bi bi-trash"></i></button>
-                                </form>
+                                <button type="submit" form="frm-delete-<?= $r['id'] ?>" class="btn btn-sm btn-outline-danger" title="Smazat" onclick="return confirm('Smazat recenzi?')"><i class="bi bi-trash"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -382,7 +368,27 @@ document.getElementById('copyFeedUrl')?.addEventListener('click', function() {
 
 </form>
 
-<!-- Stránkování -->
+<!-- Skryté formy pro quick actions (mimo bulkForm aby se nestaly nested) -->
+<?php foreach ($reviews as $r): ?>
+<?php if ($r['status'] !== 'approved'): ?>
+<form id="frm-approve-<?= $r['id'] ?>" method="POST" action="/reviews/change-status">
+    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+    <input type="hidden" name="id" value="<?= $r['id'] ?>">
+    <input type="hidden" name="status" value="approved">
+</form>
+<?php endif; ?>
+<?php if ($r['status'] !== 'rejected'): ?>
+<form id="frm-reject-<?= $r['id'] ?>" method="POST" action="/reviews/change-status">
+    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+    <input type="hidden" name="id" value="<?= $r['id'] ?>">
+    <input type="hidden" name="status" value="rejected">
+</form>
+<?php endif; ?>
+<form id="frm-delete-<?= $r['id'] ?>" method="POST" action="/reviews/delete">
+    <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
+    <input type="hidden" name="id" value="<?= $r['id'] ?>">
+</form>
+<?php endforeach; ?>
 <?php if ($total > $perPage): ?>
 <?php $pages = ceil($total / $perPage); ?>
 <nav>
