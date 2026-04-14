@@ -457,18 +457,21 @@ class ReviewController extends BaseController
         $db->prepare("INSERT INTO photo_export_log (user_id, exported_at, photo_count) VALUES (?, NOW(), ?)")
            ->execute([$userId, $count]);
 
-        // Vyčisti buffered output před odesláním souboru
+        // Vyčisti buffered output a potlač warningy před odesláním souboru
         while (ob_get_level() > 0) {
             ob_end_clean();
         }
+        $prevErrorReporting = error_reporting(0);
 
         // Pošli soubor
+        $zipSize = filesize($zipFile);
         header('Content-Type: application/zip');
         header('Content-Disposition: attachment; filename="fotorecenze_' . date('Y-m-d') . '.zip"');
-        header('Content-Length: ' . filesize($zipFile));
+        header('Content-Length: ' . $zipSize);
         header('Cache-Control: no-cache');
         readfile($zipFile);
-        unlink($zipFile);
+        @unlink($zipFile);
+        error_reporting($prevErrorReporting);
         exit;
     }
 
