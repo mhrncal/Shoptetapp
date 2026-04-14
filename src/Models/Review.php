@@ -123,8 +123,8 @@ class Review
         ');
         $stmt->execute([
             $userId,
-            $data['author_name'] ?? $data['customer_name'] ?? 'Anonym',
-            $data['author_email'] ?? $data['customer_email'] ?? 'anonym@example.com',
+            $data['author_name'] ?? 'Anonym',
+            $data['author_email'] ?? 'anonym@example.com',
             $data['sku'] ?? null,
             $data['rating']     ?? null,
             $data['comment']    ?? null,

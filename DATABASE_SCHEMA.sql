@@ -38,21 +38,26 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS reviews (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
-    customer_name VARCHAR(100) NOT NULL,
-    customer_email VARCHAR(255) NOT NULL,
-    product_sku VARCHAR(100),
-    rating TINYINT,
-    comment TEXT,
+    product_id INT DEFAULT NULL,
+    shoptet_id VARCHAR(50) DEFAULT NULL,
+    sku VARCHAR(50) DEFAULT NULL,
+    author_name VARCHAR(100) NOT NULL,
+    author_email VARCHAR(255) NOT NULL,
+    rating TINYINT DEFAULT NULL,
+    comment TEXT DEFAULT NULL,
+    photos JSON DEFAULT NULL,
     status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
-    shoptet_imported BOOLEAN NOT NULL DEFAULT FALSE,
-    xml_exported_at DATETIME DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    admin_note TEXT DEFAULT NULL,
+    imported TINYINT(1) NOT NULL DEFAULT 0,
+    imported_at DATETIME DEFAULT NULL,
+    sort_order SMALLINT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at DATETIME DEFAULT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
     INDEX idx_status (status),
     INDEX idx_created (created_at),
-    INDEX idx_sku (product_sku)
+    INDEX idx_sku (sku)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
