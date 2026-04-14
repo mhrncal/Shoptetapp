@@ -180,8 +180,8 @@ class ShoptetCsvImporter
         if (mb_check_encoding($chunk, 'UTF-8')) {
             return 'UTF-8';
         }
-        // Fallback na Windows-1250 (typické pro Shoptet CZ exporty)
-        return 'Windows-1250';
+        // Fallback na CP1250 (Windows-1250, typické pro Shoptet CZ exporty)
+        return 'CP1250';
     }
 
     /**
