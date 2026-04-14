@@ -829,3 +829,4 @@ class DiagController extends BaseController
 
         exit;
     }
+}
