@@ -258,14 +258,18 @@ class Review
         $ids         = array_column($rows, 'id');
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $pStmt       = $db->prepare("
-            SELECT review_id, path FROM review_photos
+            SELECT review_id, path, thumb, shoptet_url FROM review_photos
             WHERE review_id IN ($placeholders) AND path IS NOT NULL
             ORDER BY id ASC
         ");
         $pStmt->execute($ids);
         $photosByReview = [];
         foreach ($pStmt->fetchAll() as $p) {
-            $photosByReview[$p['review_id']][] = ['path' => $p['path']];
+            $photosByReview[$p['review_id']][] = [
+                'path'        => $p['path'],
+                'thumb'       => $p['thumb'],
+                'shoptet_url' => $p['shoptet_url'],
+            ];
         }
 
         foreach ($rows as &$r) {

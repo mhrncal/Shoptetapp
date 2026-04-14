@@ -65,8 +65,11 @@ class XmlFeedGenerator
             }
 
             // Přidej nové zákaznické fotky na konec (bez duplikátů)
+            // Pokud fotka už má shoptet_url, použij ji místo lokální
             foreach ($review['photos'] as $photo) {
-                $url = $this->appUrl . '/public/uploads/' . ltrim($photo['path'], '/');
+                $url = !empty($photo['shoptet_url'])
+                    ? $photo['shoptet_url']
+                    : $this->appUrl . '/public/uploads/' . ltrim($photo['path'], '/');
                 if (!in_array($url, $bySku[$sku], true)) {
                     $bySku[$sku][] = $url;
                 }

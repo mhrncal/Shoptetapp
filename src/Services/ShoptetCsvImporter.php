@@ -300,4 +300,72 @@ class ShoptetCsvImporter
                       WHERE user_id = ?")
            ->execute([$rows, $images, $userId]);
     }
+
+    /**
+     * Načte snapshot aktuálních URL pro všechna SKU uživatele (před reimportem).
+     * @return array<string, string[]>  sku => [url, ...]
+     */
+    public static function snapshotUrls(int $userId): array
+    {
+        $db   = Database::getInstance();
+        $stmt = $db->prepare('SELECT sku, image_urls FROM shoptet_product_images WHERE user_id = ?');
+        $stmt->execute([$userId]);
+        $snapshot = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $snapshot[$row['sku']] = json_decode($row['image_urls'], true) ?? [];
+        }
+        return $snapshot;
+    }
+
+    /**
+     * Po reimportu CSV porovná nové URL se snapshotem a přiřadí nové CDN URL
+     * k dosud nepřiřazeným review_photos daného uživatele (per SKU, v pořadí).
+     *
+     * Logika: pro každé SKU najde URL které jsou v novém stavu ale nebyly ve snapshotu
+     * → to jsou fotky které Shoptet právě stáhl od nás → přiřadí je k review_photos
+     * které ještě nemají shoptet_url, seřazené podle id ASC.
+     *
+     * @return int počet přiřazených fotek
+     */
+    public static function matchNewUrlsToReviews(int $userId, array $snapshot): int
+    {
+        $db      = Database::getInstance();
+        $matched = 0;
+
+        // Načti aktuální stav po importu
+        $stmt = $db->prepare('SELECT sku, image_urls FROM shoptet_product_images WHERE user_id = ?');
+        $stmt->execute([$userId]);
+
+        foreach ($stmt->fetchAll() as $row) {
+            $sku     = $row['sku'];
+            $newUrls = json_decode($row['image_urls'], true) ?? [];
+            $oldUrls = $snapshot[$sku] ?? [];
+
+            // Nové URL = jsou v novém stavu ale nebyly ve snapshotu
+            $addedUrls = array_values(array_diff($newUrls, $oldUrls));
+            if (empty($addedUrls)) continue;
+
+            // Najdi review_photos pro toto SKU bez shoptet_url, seřazené podle id
+            $pStmt = $db->prepare("
+                SELECT rp.id FROM review_photos rp
+                JOIN reviews r ON r.id = rp.review_id
+                WHERE r.user_id = ? AND r.sku = ? AND rp.shoptet_url IS NULL
+                ORDER BY rp.id ASC
+            ");
+            $pStmt->execute([$userId, $sku]);
+            $photoIds = array_column($pStmt->fetchAll(), 'id');
+
+            if (empty($photoIds)) continue;
+
+            // Páruj nové URL s foto ID 1:1 v pořadí
+            $pairs = min(count($addedUrls), count($photoIds));
+            $upd   = $db->prepare('UPDATE review_photos SET shoptet_url = ? WHERE id = ?');
+            for ($i = 0; $i < $pairs; $i++) {
+                $upd->execute([$addedUrls[$i], $photoIds[$i]]);
+                $matched++;
+            }
+        }
+
+        return $matched;
+    }
 }

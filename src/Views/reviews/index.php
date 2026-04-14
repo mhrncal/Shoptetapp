@@ -438,7 +438,9 @@ function startImport() {
         es.close();
         bar.classList.remove('progress-bar-animated', 'progress-bar-striped');
         bar.classList.add('bg-success');
-        text.textContent = '✓ ' + d.rows.toLocaleString('cs') + ' produktů, ' + d.images.toLocaleString('cs') + ' fotek';
+        let msg = '✓ ' + d.rows.toLocaleString('cs') + ' produktů, ' + d.images.toLocaleString('cs') + ' fotek';
+        if (d.matched > 0) msg += ', ' + d.matched + ' fotek spárováno se Shoptetem';
+        text.textContent = msg;
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Reimportovat';
         setTimeout(() => location.reload(), 1500);

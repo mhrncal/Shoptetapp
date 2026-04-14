@@ -70,6 +70,9 @@ class ShoptetPhotoImportController extends BaseController
             set_time_limit(300);
             $send('start', ['message' => 'Stahuji CSV...']);
 
+            // Snapshot před importem – zapamatujeme co Shoptet měl
+            $snapshot = ShoptetCsvImporter::snapshotUrls($userId);
+
             $importer = new ShoptetCsvImporter($userId);
             $result   = $importer->importFromUrl(
                 $config['csv_url'],
@@ -79,9 +82,14 @@ class ShoptetPhotoImportController extends BaseController
             );
 
             ShoptetCsvImporter::updateImportStats($userId, $result['rows'], $result['images']);
+
+            // Spáruj nové CDN URL s review_photos
+            $matched = ShoptetCsvImporter::matchNewUrlsToReviews($userId, $snapshot);
+
             $send('done', [
-                'rows'   => $result['rows'],
-                'images' => $result['images'],
+                'rows'    => $result['rows'],
+                'images'  => $result['images'],
+                'matched' => $matched,
             ]);
         } catch (\Exception $e) {
             $send('error', ['message' => $e->getMessage()]);
@@ -104,15 +112,19 @@ class ShoptetPhotoImportController extends BaseController
 
         try {
             set_time_limit(300);
+            $snapshot = ShoptetCsvImporter::snapshotUrls($userId);
+
             $importer = new ShoptetCsvImporter($userId);
             $result   = $importer->importFromUrl($config['csv_url']);
 
             ShoptetCsvImporter::updateImportStats($userId, $result['rows'], $result['images']);
+            $matched = ShoptetCsvImporter::matchNewUrlsToReviews($userId, $snapshot);
 
             Session::flash('success', sprintf(
-                'Import dokončen: %s produktů, %s fotek.',
+                'Import dokončen: %s produktů, %s fotek%s.',
                 number_format($result['rows'], 0, ',', ' '),
-                number_format($result['images'], 0, ',', ' ')
+                number_format($result['images'], 0, ',', ' '),
+                $matched > 0 ? ", {$matched} fotek spárováno se Shoptetem" : ''
             ));
         } catch (\Exception $e) {
             Session::flash('error', 'Chyba importu: ' . $e->getMessage());
