@@ -33,29 +33,47 @@ class ShoptetCsvImporter
      */
     public function importFromUrl(string $url): array
     {
-        $context = stream_context_create([
-            'http' => [
-                'method'          => 'GET',
-                'timeout'         => 120,
-                'follow_location' => 1,
-                'max_redirects'   => 3,
-                'header'          => "Accept: text/csv,text/plain,*/*\r\nUser-Agent: ShopCode/1.0\r\n",
-            ],
-            'ssl' => [
-                'verify_peer'      => true,
-                'verify_peer_name' => true,
-            ],
+        if (!function_exists('curl_init')) {
+            throw new \RuntimeException('cURL není dostupné.');
+        }
+
+        // Stáhneme do temp souboru streamově
+        $tmpFile = tempnam(sys_get_temp_dir(), 'shopcode_csv_');
+        $fp      = fopen($tmpFile, 'wb');
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_FILE           => $fp,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS      => 5,
+            CURLOPT_TIMEOUT        => 120,
+            CURLOPT_CONNECTTIMEOUT => 15,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; ShopCode/1.0)',
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_ENCODING       => '', // accept gzip/deflate
+            CURLOPT_HTTPHEADER     => ['Accept: text/csv,text/plain,*/*'],
         ]);
 
-        $stream = @fopen($url, 'r', false, $context);
-        if (!$stream) {
-            throw new \RuntimeException('Nelze stáhnout CSV z URL: ' . $url);
+        $ok      = curl_exec($ch);
+        $errMsg  = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        fclose($fp);
+
+        if (!$ok || $httpCode < 200 || $httpCode >= 300) {
+            @unlink($tmpFile);
+            throw new \RuntimeException(
+                "Nelze stáhnout CSV (HTTP {$httpCode})" . ($errMsg ? ": {$errMsg}" : '') . " z URL: {$url}"
+            );
         }
 
         try {
+            $stream = fopen($tmpFile, 'r');
             return $this->processStream($stream);
         } finally {
-            fclose($stream);
+            if (isset($stream) && is_resource($stream)) fclose($stream);
+            @unlink($tmpFile);
         }
     }
 
