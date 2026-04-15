@@ -814,6 +814,37 @@ class DiagController extends BaseController
         exit;
     }
 
+    public function reviewDebug(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $id = (int)($_GET['id'] ?? 0);
+        $db = \ShopCode\Core\Database::getInstance();
+
+        $stmt = $db->prepare('SELECT id, sku, product_name, source_url, author_name, status FROM reviews WHERE id = ?');
+        $stmt->execute([$id]);
+        $r = $stmt->fetch();
+
+        if (!$r) { echo "Recenze #$id nenalezena\n"; exit; }
+
+        echo "ID: {$r['id']}\n";
+        echo "SKU: {$r['sku']}\n";
+        echo "product_name: " . ($r['product_name'] ?? 'NULL') . "\n";
+        echo "source_url: " . ($r['source_url'] ?? 'NULL') . "\n";
+        echo "author: {$r['author_name']}\n";
+        echo "status: {$r['status']}\n\n";
+
+        // Zkontroluj jestli sloupce vůbec existují
+        $stmt = $db->query("SHOW COLUMNS FROM reviews LIKE 'product_name'");
+        echo "Sloupec product_name: " . ($stmt->fetch() ? 'EXISTS' : 'CHYBÍ') . "\n";
+        $stmt = $db->query("SHOW COLUMNS FROM reviews LIKE 'source_url'");
+        echo "Sloupec source_url: " . ($stmt->fetch() ? 'EXISTS' : 'CHYBÍ') . "\n";
+        exit;
+    }
+
     public function unlockUser(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') {

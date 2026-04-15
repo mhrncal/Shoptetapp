@@ -19,6 +19,7 @@ return [
     ['GET', '/diag/rematch-photos', 'DiagController@rematchPhotos', []],
     ['GET', '/diag/unlock-user',    'DiagController@unlockUser',    []],
     ['GET', '/diag/reset-password', 'DiagController@resetPassword', []],
+    ['GET', '/diag/review-debug',   'DiagController@reviewDebug',   []],
     ['GET', '/diag/detect-langs',   'DiagController@detectLangs',      []],
     ['GET', '/diag/fix-cs',         'DiagController@fixCsTranslations', []],
     ['GET', '/diag/test-heureka',   'DiagController@testHeureka',       []],
