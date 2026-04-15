@@ -121,8 +121,8 @@
                     <thead>
                         <tr>
                             <th>Modul</th>
-                            <th style="width:110px">Stav</th>
-                            <th style="width:90px" class="text-end">Aktivní</th>
+                            <th>Stav</th>
+                            <th class="text-end">Aktivní</th>
                         </tr>
                     </thead>
                     <tbody>
