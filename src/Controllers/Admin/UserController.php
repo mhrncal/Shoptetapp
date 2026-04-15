@@ -198,7 +198,7 @@ class UserController extends BaseController
             'last_name'  => $lastName,
             'email'      => $email,
             'shop_name'  => $shopName ?: null,
-            'password'   => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
+            'password'   => $password,
             'role'       => $role,
             'status'     => $status,
         ]);
