@@ -799,6 +799,7 @@ class DiagController extends BaseController
             echo "  SKU={$r['sku']} photos=" . count($r['photos']) . "\n";
             foreach ($r['photos'] as $p) {
                 echo "    path={$p['path']}\n";
+                echo "    shoptet_url=" . ($p['shoptet_url'] ?? 'NULL') . "\n";
             }
         }
 

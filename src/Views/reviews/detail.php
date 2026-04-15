@@ -39,9 +39,17 @@
                 <div class="row g-3">
                     <?php foreach ($review['photos'] as $i => $photo): ?>
                     <div class="col-12 col-md-6 col-lg-4">
-                        <a href="<?= $e(APP_URL . '/public/uploads/' . $photo['path']) ?>"
+                        <?php
+                        $photoUrl  = !empty($photo['shoptet_url'])
+                            ? $photo['shoptet_url']
+                            : APP_URL . '/public/uploads/' . $photo['path'];
+                        $thumbUrl  = !empty($photo['shoptet_url'])
+                            ? $photo['shoptet_url']
+                            : APP_URL . '/public/uploads/' . ($photo['thumb'] ?? $photo['path']);
+                        ?>
+                        <a href="<?= $e($photoUrl) ?>"
                            class="photo-lightbox d-block position-relative" data-lightbox="review-photos">
-                            <img src="<?= $e(APP_URL . '/public/uploads/' . ($photo['thumb'] ?? $photo['path'])) ?>"
+                            <img src="<?= $e($thumbUrl) ?>"
                                  class="img-fluid rounded"
                                  style="width:100%;height:auto;"
                                  alt="Foto <?= $i+1 ?>"
