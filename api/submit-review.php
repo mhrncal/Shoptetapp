@@ -157,6 +157,7 @@ foreach (normalizeFilesArray($_FILES['photos']) as $file) {
 }
 
 // ── Uložení do DB ─────────────────────────────────────────
+error_log('[submit-review] product_name=' . ($_POST['product_name'] ?? 'NULL') . ' source_url=' . ($_POST['source_url'] ?? 'NULL'));
 $reviewId = Review::create($userId, [
     'product_id'   => $productId,
     'shoptet_id'   => $shoptetId ?: null,

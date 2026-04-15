@@ -824,13 +824,14 @@ class DiagController extends BaseController
         $id = (int)($_GET['id'] ?? 0);
         $db = \ShopCode\Core\Database::getInstance();
 
-        $stmt = $db->prepare('SELECT id, sku, product_name, source_url, author_name, status FROM reviews WHERE id = ?');
+        $stmt = $db->prepare('SELECT id, sku, product_name, source_url, author_name, status, created_at FROM reviews WHERE id = ?');
         $stmt->execute([$id]);
         $r = $stmt->fetch();
 
         if (!$r) { echo "Recenze #$id nenalezena\n"; exit; }
 
         echo "ID: {$r['id']}\n";
+        echo "created_at: {$r['created_at']}\n";
         echo "SKU: {$r['sku']}\n";
         echo "product_name: " . ($r['product_name'] ?? 'NULL') . "\n";
         echo "source_url: " . ($r['source_url'] ?? 'NULL') . "\n";
