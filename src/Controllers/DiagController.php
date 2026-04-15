@@ -794,9 +794,23 @@ class DiagController extends BaseController
         if (!$email) { echo "Chybí parametr email\n"; exit; }
 
         $db   = \ShopCode\Core\Database::getInstance();
+
+        // Zobraz stav
+        $stmt = $db->prepare('SELECT id, email, status, login_attempts, locked_until FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if (!$user) { echo "Nenalezen: {$email}\n"; exit; }
+
+        echo "ID: {$user['id']}\n";
+        echo "Email: {$user['email']}\n";
+        echo "Status: {$user['status']}\n";
+        echo "Login attempts: {$user['login_attempts']}\n";
+        echo "Locked until: " . ($user['locked_until'] ?? 'NULL') . "\n\n";
+
+        // Reset
         $stmt = $db->prepare('UPDATE users SET login_attempts = 0, locked_until = NULL WHERE email = ?');
         $stmt->execute([$email]);
-        echo $stmt->rowCount() ? "OK: účet {$email} odblokován\n" : "Nenalezen: {$email}\n";
+        echo "OK: login_attempts reset, locked_until = NULL\n";
         exit;
     }
 
