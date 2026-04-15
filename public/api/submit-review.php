@@ -58,6 +58,8 @@ $shoptetId   = trim($_POST['product_id'] ?? '');
 $sku         = trim($_POST['sku'] ?? '');
 $comment     = trim($_POST['comment'] ?? '');
 $rating      = isset($_POST['rating']) ? (int)$_POST['rating'] : null;
+$productName = trim($_POST['product_name'] ?? '');
+$sourceUrl   = trim($_POST['source_url'] ?? '');
 
 if (empty($authorName) || mb_strlen($authorName) > 100) {
     $errors[] = 'Zadejte jméno (max 100 znaků).';
@@ -139,18 +141,14 @@ if (!$userId) {
 }
 
 // ── Zpracování fotek ──────────────────────────────────────
-$uploadDir = ROOT . '/public/uploads';
-$handler = new ImageHandler($uploadDir);
+$uuid    = bin2hex(random_bytes(8));
+$handler = new ImageHandler();
 $photos  = [];
 
 foreach (normalizeFilesArray($_FILES['photos']) as $file) {
     try {
-        $result   = $handler->process($file, $userId);
-        $photos[] = [
-            'path' => $result['path'], 
-            'thumb' => $result['thumb'],
-            'mime_type' => $result['mime']
-        ];
+        $result   = $handler->process($file, $userId, $uuid);
+        $photos[] = ['path' => $result['path'], 'thumb' => $result['thumb']];
     } catch (\RuntimeException $e) {
         // Smažeme již zpracované fotky a vrátíme chybu
         $handler->deleteFolder($userId, $uuid);
@@ -159,6 +157,7 @@ foreach (normalizeFilesArray($_FILES['photos']) as $file) {
 }
 
 // ── Uložení do DB ─────────────────────────────────────────
+error_log('[submit-review] product_name=' . ($_POST['product_name'] ?? 'NULL') . ' source_url=' . ($_POST['source_url'] ?? 'NULL'));
 $reviewId = Review::create($userId, [
     'product_id'   => $productId,
     'shoptet_id'   => $shoptetId ?: null,
@@ -167,6 +166,8 @@ $reviewId = Review::create($userId, [
     'author_email' => $authorEmail,
     'rating'       => $rating,
     'comment'      => $comment ?: null,
+    'product_name' => $productName ?: null,
+    'source_url'   => $sourceUrl ?: null,
     'photos'       => $photos,
 ]);
 
