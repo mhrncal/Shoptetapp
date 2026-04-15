@@ -117,12 +117,12 @@
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-puzzle me-2 text-muted"></i>Přiřazené moduly</h6>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
                             <th>Modul</th>
-                            <th>Stav</th>
-                            <th class="text-end">Přepínač</th>
+                            <th style="width:100px">Stav</th>
+                            <th style="width:80px" class="text-end">Přepínač</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -133,7 +133,7 @@
                                 <div class="text-muted small"><?= $e($m['description'] ?? '') ?></div>
                             </td>
                             <td>
-                                <span class="badge bg-<?= ($m['status'] ?? 'inactive') === 'active' ? 'success' : 'secondary' ?>">
+                                <span class="badge bg-<?= ($m['status'] ?? 'inactive') === 'active' ? 'success' : 'secondary' ?>" id="badge-<?= $m['id'] ?>">
                                     <?= ($m['status'] ?? 'inactive') === 'active' ? 'Aktivní' : 'Neaktivní' ?>
                                 </span>
                             </td>
@@ -142,42 +142,61 @@
                                     <input class="form-check-input module-toggle" type="checkbox"
                                            data-user="<?= $targetUser['id'] ?>"
                                            data-module="<?= $m['id'] ?>"
-                                           <?= ($m['status'] ?? 'inactive') === 'active' ? 'checked' : '' ?>>
+                                           <?= ($m['status'] ?? 'inactive') === 'active' ? 'checked' : '' ?>
+                                           role="switch">
                                 </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
-                </table></div>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-$(document).on('change', '.module-toggle', function() {
-    const $this    = $(this);
-    const userId   = $this.data('user');
-    const moduleId = $this.data('module');
-    const status   = $this.is(':checked') ? 'active' : 'inactive';
+function copyUserId() {
+    navigator.clipboard.writeText('<?= $targetUser['id'] ?>');
+}
 
-    $.post('<?= APP_URL ?>/admin/modules/assign', {
-        _csrf:     '<?= $e($csrfToken) ?>',
-        user_id:   userId,
-        module_id: moduleId,
-        status:    status
-    })
-    .done(function(resp) {
-        const badge = $this.closest('tr').find('.badge');
-        if (status === 'active') {
-            badge.removeClass('bg-secondary').addClass('bg-success').text('Aktivní');
-        } else {
-            badge.removeClass('bg-success').addClass('bg-secondary').text('Neaktivní');
-        }
-    })
-    .fail(function() {
-        $this.prop('checked', !$this.is(':checked')); // rollback
-        alert('Chyba při ukládání.');
+document.querySelectorAll('.module-toggle').forEach(function(toggle) {
+    toggle.addEventListener('change', function() {
+        const userId   = this.dataset.user;
+        const moduleId = this.dataset.module;
+        const status   = this.checked ? 'active' : 'inactive';
+        const self     = this;
+
+        const formData = new FormData();
+        formData.append('_csrf',     '<?= $e($csrfToken) ?>');
+        formData.append('user_id',   userId);
+        formData.append('module_id', moduleId);
+        formData.append('status',    status);
+
+        fetch('<?= APP_URL ?>/admin/modules/assign', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(function(resp) {
+            if (resp.success) {
+                const badge = document.getElementById('badge-' + moduleId);
+                if (status === 'active') {
+                    badge.className = 'badge bg-success';
+                    badge.textContent = 'Aktivní';
+                } else {
+                    badge.className = 'badge bg-secondary';
+                    badge.textContent = 'Neaktivní';
+                }
+            } else {
+                self.checked = !self.checked;
+                alert('Chyba: ' + (resp.error || 'Neznámá chyba'));
+            }
+        })
+        .catch(function() {
+            self.checked = !self.checked;
+            alert('Chyba při ukládání.');
+        });
     });
 });
 </script>

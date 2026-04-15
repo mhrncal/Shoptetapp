@@ -34,25 +34,14 @@ class ModuleController extends BaseController
         $moduleId = (int)$this->request->post('module_id');
         $status   = $this->request->post('status') === 'active' ? 'active' : 'inactive';
 
-        $user   = User::findById($userId);
-        $module = Module::all();
-
+        $user = User::findById($userId);
         if (!$user) {
-            Session::flash('error', 'Uživatel nenalezen.');
-            $this->redirect('/admin/modules');
+            $this->json(['success' => false, 'error' => 'Uživatel nenalezen.'], 404);
         }
 
         UserModule::setStatus($userId, $moduleId, $status);
-
-        $label = $status === 'active' ? 'aktivován' : 'deaktivován';
         AuditLog::log("module_{$status}", 'user_module', "{$userId}:{$moduleId}");
-        Session::flash('success', "Modul byl {$label}.");
 
-        // AJAX odpověď
-        if ($this->request->isAjax()) {
-            $this->json(['success' => true, 'status' => $status]);
-        }
-
-        $this->redirect('/admin/users/' . $userId);
+        $this->json(['success' => true, 'status' => $status]);
     }
 }
