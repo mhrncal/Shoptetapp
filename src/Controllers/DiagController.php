@@ -785,6 +785,20 @@ class DiagController extends BaseController
         }
     }
 
+    public function watermarkToggle(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+        $userId  = (int)($_GET['user_id'] ?? 0);
+        $enabled = (int)($_GET['enabled'] ?? 0);
+        $db = \ShopCode\Core\Database::getInstance();
+        $db->prepare('UPDATE watermark_settings SET enabled = ? WHERE user_id = ?')->execute([$enabled, $userId]);
+        echo "OK: watermark user_id=$userId enabled=$enabled\n";
+        exit;
+    }
+
     public function resetPassword(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') {
