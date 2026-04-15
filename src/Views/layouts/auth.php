@@ -12,10 +12,6 @@
 <body>
 
 <div class="auth-bg">
-    <!-- Logo viditelné jen na desktopu nad kartou -->
-    <div class="d-none d-md-flex flex-column align-items-center mb-6" style="position:absolute;top:2rem;left:50%;transform:translateX(-50%);">
-        <img src="<?= ASSETS_URL ?>/assets/shopcode-logo.png" alt="ShopCode" style="height:3rem;">
-    </div>
     <div class="auth-card animate-fade-in">
 
         <!-- CardHeader — logo, title, description -->
