@@ -843,6 +843,34 @@ class DiagController extends BaseController
         echo "Sloupec product_name: " . ($stmt->fetch() ? 'EXISTS' : 'CHYBÍ') . "\n";
         $stmt = $db->query("SHOW COLUMNS FROM reviews LIKE 'source_url'");
         echo "Sloupec source_url: " . ($stmt->fetch() ? 'EXISTS' : 'CHYBÍ') . "\n";
+
+        // Zkontroluj watermark settings
+        $stmt = $db->prepare('SELECT user_id FROM reviews WHERE id = ?');
+        $stmt->execute([$id]);
+        $userId = $stmt->fetchColumn();
+        $stmt = $db->prepare('SELECT enabled, text, position FROM watermark_settings WHERE user_id = ?');
+        $stmt->execute([$userId]);
+        $ws = $stmt->fetch();
+        echo "\nWatermark settings (user_id=$userId):\n";
+        if (!$ws) {
+            echo "  CHYBÍ - neexistují pro tohoto uživatele!\n";
+        } else {
+            echo "  enabled: " . ($ws['enabled'] ? 'ANO' : 'NE') . "\n";
+            echo "  text: {$ws['text']}\n";
+            echo "  position: {$ws['position']}\n";
+        }
+
+        // Zkontroluj fotky recenze
+        $stmt = $db->prepare('SELECT id, path FROM review_photos WHERE review_id = ?');
+        $stmt->execute([$id]);
+        echo "\nFotky:\n";
+        foreach ($stmt->fetchAll() as $p) {
+            $abs = '/srv/app/public/uploads/' . ltrim($p['path'], '/');
+            $origAbs = substr($abs, 0, strrpos($abs, '.')) . '_original.' . pathinfo($abs, PATHINFO_EXTENSION);
+            echo "  id={$p['id']} path={$p['path']}\n";
+            echo "    display: " . (file_exists($abs) ? 'EXISTS (' . filesize($abs) . 'b)' : 'CHYBÍ') . "\n";
+            echo "    original: " . (file_exists($origAbs) ? 'EXISTS' : 'CHYBÍ') . "\n";
+        }
         exit;
     }
 
