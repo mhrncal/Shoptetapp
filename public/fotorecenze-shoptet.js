@@ -21,10 +21,12 @@
     $(document).on('click', '.photoRecension', function(e) {
         e.preventDefault();
         
-        const sku = $(this).data('sku') || '';
-        
+        const sku         = $(this).data('sku') || '';
+        const productName = $(this).data('product-name') || '';
+        const sourceUrl   = window.location.href;
+
         $.colorbox({
-            html: generateFormHTML(sku),
+            html: generateFormHTML(sku, productName, sourceUrl),
             maxWidth: "860px",
             maxHeight: "95%",
             height: "95%",
@@ -37,7 +39,7 @@
     });
     
     // Generování HTML formuláře
-    function generateFormHTML(sku) {
+    function generateFormHTML(sku, productName, sourceUrl) {
         return `
             <div class="photoRecensionModal">
                 <h4 style="margin-bottom: 1rem; color: #333;">Podělte se s námi o váš pěstitelský úspěch</h4>
@@ -146,6 +148,8 @@
                     
                     <input type="hidden" name="sku" value="${sku}">
                     <input type="hidden" name="user_id" value="${CONFIG.userId}">
+                    <input type="hidden" name="product_name" value="${productName}">
+                    <input type="hidden" name="source_url" value="${sourceUrl}">
                 </form>
             </div>
         `;

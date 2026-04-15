@@ -133,6 +133,20 @@
                     <code class="small"><?= $e($review['sku']) ?></code>
                 </div>
                 <?php endif; ?>
+                <?php if (!empty($review['product_name'])): ?>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="text-muted small">Produkt</span>
+                    <span class="small fw-semibold text-end" style="max-width:60%"><?= $e($review['product_name']) ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if (!empty($review['source_url'])): ?>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="text-muted small">Zdrojová URL</span>
+                    <a href="<?= $e($review['source_url']) ?>" target="_blank" class="small text-truncate" style="max-width:60%">
+                        <?= $e($review['source_url']) ?>
+                    </a>
+                </div>
+                <?php endif; ?>
                 <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
                     <span class="text-muted small">Datum</span>
                     <span class="small"><?= date('d.m.Y H:i', strtotime($review['created_at'])) ?></span>

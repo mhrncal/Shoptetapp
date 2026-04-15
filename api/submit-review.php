@@ -58,6 +58,8 @@ $shoptetId   = trim($_POST['product_id'] ?? '');
 $sku         = trim($_POST['sku'] ?? '');
 $comment     = trim($_POST['comment'] ?? '');
 $rating      = isset($_POST['rating']) ? (int)$_POST['rating'] : null;
+$productName = trim($_POST['product_name'] ?? '');
+$sourceUrl   = trim($_POST['source_url'] ?? '');
 
 if (empty($authorName) || mb_strlen($authorName) > 100) {
     $errors[] = 'Zadejte jméno (max 100 znaků).';
@@ -163,6 +165,8 @@ $reviewId = Review::create($userId, [
     'author_email' => $authorEmail,
     'rating'       => $rating,
     'comment'      => $comment ?: null,
+    'product_name' => $productName ?: null,
+    'source_url'   => $sourceUrl ?: null,
     'photos'       => $photos,
 ]);
 
