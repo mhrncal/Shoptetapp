@@ -74,8 +74,9 @@
                     <tr><td class="text-muted">Poslední login</td>
                         <td><?= $targetUser['last_login_at'] ? date('d.m.Y H:i', strtotime($targetUser['last_login_at'])) : '—' ?></td>
                     </tr>
-                </table>
+                </table></div>
             </div>
+        </div>
         </div>
 
         <!-- Akce -->
