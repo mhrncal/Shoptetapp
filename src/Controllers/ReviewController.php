@@ -520,27 +520,33 @@ class ReviewController extends BaseController
             if (!$mime) continue;
 
             try {
-                $img        = $handler->removeExif($handler->cloneImage(
-                    match($mime) {
-                        'image/jpeg' => @imagecreatefromjpeg($srcFile),
-                        'image/png'  => @imagecreatefrompng($srcFile),
-                        'image/webp' => @imagecreatefromwebp($srcFile),
-                    }
-                ));
+                $srcImg = match($mime) {
+                    'image/jpeg' => @imagecreatefromjpeg($srcFile),
+                    'image/png'  => @imagecreatefrompng($srcFile),
+                    'image/webp' => @imagecreatefromwebp($srcFile),
+                };
+                if (!$srcImg) {
+                    error_log("[watermark] Cannot load image: {$srcFile}");
+                    continue;
+                }
+                $img         = $handler->removeExif($handler->cloneImage($srcImg));
+                imagedestroy($srcImg);
                 $watermarked = $handler->applyWatermark($img, $userId);
                 $thumb       = $handler->createThumbnail($watermarked);
+                $thumbAbs    = substr($displayAbs, 0, -strlen('.' . $ext)) . '_thumb.' . $ext;
 
                 match($mime) {
-                    'image/jpeg' => [imagejpeg($watermarked, $displayAbs, 90), imagejpeg($thumb, substr($displayAbs, 0, -strlen('.' . $ext)) . '_thumb.' . $ext, 90)],
-                    'image/png'  => [imagepng($watermarked, $displayAbs, 6),   imagepng($thumb,  substr($displayAbs, 0, -strlen('.' . $ext)) . '_thumb.' . $ext, 6)],
-                    'image/webp' => [imagewebp($watermarked, $displayAbs, 90), imagewebp($thumb, substr($displayAbs, 0, -strlen('.' . $ext)) . '_thumb.' . $ext, 90)],
+                    'image/jpeg' => [imagejpeg($watermarked, $displayAbs, 90), imagejpeg($thumb, $thumbAbs, 90)],
+                    'image/png'  => [imagepng($watermarked, $displayAbs, 6),   imagepng($thumb,  $thumbAbs, 6)],
+                    'image/webp' => [imagewebp($watermarked, $displayAbs, 90), imagewebp($thumb, $thumbAbs, 90)],
                 };
 
                 imagedestroy($img);
                 imagedestroy($watermarked);
                 imagedestroy($thumb);
+                error_log("[watermark] OK: {$displayAbs}");
             } catch (\Throwable $e) {
-                error_log("[watermark] review_photo {$photo['id']}: " . $e->getMessage());
+                error_log("[watermark] review_photo {$photo['id']}: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
             }
         }
     }
