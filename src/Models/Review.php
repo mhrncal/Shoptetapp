@@ -360,12 +360,22 @@ class Review
         if (empty($ids)) return 0;
         $db = Database::getInstance();
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $params = array_merge(array_map('intval', $ids), [$userId]);
+
+        // Reset imported flag
         $stmt = $db->prepare("
             UPDATE reviews SET imported = 0, imported_at = NULL
             WHERE id IN ({$placeholders}) AND user_id = ?
         ");
-        $params = array_merge(array_map('intval', $ids), [$userId]);
         $stmt->execute($params);
-        return $stmt->rowCount();
+        $count = $stmt->rowCount();
+
+        // Reset shoptet_url aby fotky znovu vstoupily do XML feedu
+        $db->prepare("
+            UPDATE review_photos SET shoptet_url = NULL
+            WHERE review_id IN ({$placeholders})
+        ")->execute(array_map('intval', $ids));
+
+        return $count;
     }
 }
