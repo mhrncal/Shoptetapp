@@ -362,9 +362,9 @@ class Review
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $params = array_merge(array_map('intval', $ids), [$userId]);
 
-        // Reset imported flag
+        // Reset imported flag + xml_exported_at
         $stmt = $db->prepare("
-            UPDATE reviews SET imported = 0, imported_at = NULL
+            UPDATE reviews SET imported = 0, imported_at = NULL, xml_exported_at = NULL
             WHERE id IN ({$placeholders}) AND user_id = ?
         ");
         $stmt->execute($params);
