@@ -63,7 +63,7 @@
                     <?php foreach ($users as $u): ?>
                     <tr>
                         <td>
-                            <span class="badge bg-primary bg-opacity-10 text-primary font-monospace"><?= $u['id'] ?></span>
+                            <span class="badge bg-primary font-monospace"><?= $u['id'] ?></span>
                         </td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
