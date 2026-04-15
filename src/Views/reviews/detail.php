@@ -119,14 +119,6 @@
                     </div>
                 </div>
                 <?php endif; ?>
-                <?php if (($review['product_name'] ?? null)): ?>
-                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom gap-2">
-                    <span class="text-muted small flex-shrink-0">Produkt</span>
-                    <a href="<?= APP_URL ?>/products/<?= $review['product_id'] ?>" class="text-truncate small">
-                        <?= $e($review['product_name'] ?? '') ?>
-                    </a>
-                </div>
-                <?php endif; ?>
                 <?php if ($review['sku']): ?>
                 <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
                     <span class="text-muted small">SKU</span>
