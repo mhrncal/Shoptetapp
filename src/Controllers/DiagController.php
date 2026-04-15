@@ -783,6 +783,35 @@ class DiagController extends BaseController
         }
     }
 
+    public function resetPassword(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $email    = $_GET['email'] ?? '';
+        $password = $_GET['password'] ?? '';
+        if (!$email || !$password) { echo "Chybí email nebo password\n"; exit; }
+
+        $db   = \ShopCode\Core\Database::getInstance();
+        $stmt = $db->prepare('SELECT id, password_hash FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if (!$user) { echo "Nenalezen: {$email}\n"; exit; }
+
+        echo "Starý hash: {$user['password_hash']}\n";
+        echo "Verify test: " . (password_verify($password, $user['password_hash']) ? 'OK' : 'FAIL') . "\n\n";
+
+        $newHash = password_hash($password, PASSWORD_BCRYPT);
+        $db->prepare('UPDATE users SET password_hash = ?, login_attempts = 0, locked_until = NULL WHERE email = ?')
+           ->execute([$newHash, $email]);
+
+        echo "Nový hash: {$newHash}\n";
+        echo "OK: heslo resetováno\n";
+        exit;
+    }
+
     public function unlockUser(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') {
