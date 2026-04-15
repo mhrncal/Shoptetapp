@@ -77,7 +77,6 @@
                 </table></div>
             </div>
         </div>
-        </div>
 
         <!-- Akce -->
         <?php if ($targetUser['status'] === 'pending'): ?>
@@ -109,7 +108,7 @@
             </div>
         </div>
         <?php endif; ?>
-    </div>
+    </div><!-- /col-lg-4 -->
 
     <!-- Moduly -->
     <div class="col-12 col-lg-8">
