@@ -318,12 +318,10 @@ class ShoptetCsvImporter
     }
 
     /**
-     * Po reimportu CSV porovná nové URL se snapshotem a přiřadí nové CDN URL
-     * k dosud nepřiřazeným review_photos daného uživatele (per SKU, v pořadí).
+     * Po reimportu CSV přiřadí CDN URL k review_photos podle UUID v názvu souboru.
      *
-     * Logika: pro každé SKU najde URL které jsou v novém stavu ale nebyly ve snapshotu
-     * → to jsou fotky které Shoptet právě stáhl od nás → přiřadí je k review_photos
-     * které ještě nemají shoptet_url, seřazené podle id ASC.
+     * Shoptet pojmenovává nahrané fotky jako: {productId}_{uuid}.jpg
+     * Takže hledáme CDN URL které v cestě obsahují UUID zákaznické fotky.
      *
      * @return int počet přiřazených fotek
      */
@@ -332,37 +330,47 @@ class ShoptetCsvImporter
         $db      = Database::getInstance();
         $matched = 0;
 
-        // Načti aktuální stav po importu
-        $stmt = $db->prepare('SELECT sku, image_urls FROM shoptet_product_images WHERE user_id = ?');
+        // Načti všechny review_photos bez shoptet_url pro tohoto uživatele
+        $stmt = $db->prepare("
+            SELECT rp.id, rp.path, r.sku
+            FROM review_photos rp
+            JOIN reviews r ON r.id = rp.review_id
+            WHERE r.user_id = ? AND rp.shoptet_url IS NULL AND rp.path IS NOT NULL
+        ");
         $stmt->execute([$userId]);
+        $unmatched = $stmt->fetchAll();
 
+        if (empty($unmatched)) return 0;
+
+        // Načti aktuální stav po importu pro relevantní SKU
+        $skus = array_unique(array_column($unmatched, 'sku'));
+        $placeholders = implode(',', array_fill(0, count($skus), '?'));
+        $stmt = $db->prepare("SELECT sku, image_urls FROM shoptet_product_images WHERE user_id = ? AND sku IN ($placeholders)");
+        $stmt->execute(array_merge([$userId], $skus));
+        $imagesBySku = [];
         foreach ($stmt->fetchAll() as $row) {
-            $sku     = $row['sku'];
-            $newUrls = json_decode($row['image_urls'], true) ?? [];
-            $oldUrls = $snapshot[$sku] ?? [];
+            $imagesBySku[$row['sku']] = json_decode($row['image_urls'], true) ?? [];
+        }
 
-            // Nové URL = jsou v novém stavu ale nebyly ve snapshotu
-            $addedUrls = array_values(array_diff($newUrls, $oldUrls));
-            if (empty($addedUrls)) continue;
+        $upd = $db->prepare('UPDATE review_photos SET shoptet_url = ? WHERE id = ?');
 
-            // Najdi review_photos pro toto SKU bez shoptet_url, seřazené podle id
-            $pStmt = $db->prepare("
-                SELECT rp.id FROM review_photos rp
-                JOIN reviews r ON r.id = rp.review_id
-                WHERE r.user_id = ? AND r.sku = ? AND rp.shoptet_url IS NULL
-                ORDER BY rp.id ASC
-            ");
-            $pStmt->execute([$userId, $sku]);
-            $photoIds = array_column($pStmt->fetchAll(), 'id');
+        foreach ($unmatched as $photo) {
+            $sku  = $photo['sku'];
+            $urls = $imagesBySku[$sku] ?? [];
+            if (empty($urls)) continue;
 
-            if (empty($photoIds)) continue;
+            // UUID zákaznické fotky = název složky v path (1/UUID/UUID.ext)
+            $parts = explode('/', $photo['path']);
+            $uuid  = $parts[1] ?? null;
+            if (!$uuid) continue;
 
-            // Páruj nové URL s foto ID 1:1 v pořadí
-            $pairs = min(count($addedUrls), count($photoIds));
-            $upd   = $db->prepare('UPDATE review_photos SET shoptet_url = ? WHERE id = ?');
-            for ($i = 0; $i < $pairs; $i++) {
-                $upd->execute([$addedUrls[$i], $photoIds[$i]]);
-                $matched++;
+            // Hledej CDN URL která v cestě obsahuje tento UUID
+            foreach ($urls as $cdnUrl) {
+                if (str_contains(basename($cdnUrl), $uuid)) {
+                    $upd->execute([$cdnUrl, $photo['id']]);
+                    $matched++;
+                    break;
+                }
             }
         }
 
