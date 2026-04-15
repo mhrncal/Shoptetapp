@@ -202,8 +202,9 @@ class ReviewController extends BaseController
     public function changeStatus(): void
     {
         $this->validateCsrf();
-        $id = (int)$this->request->post('id', 0);
+        $id        = (int)$this->request->post('id', 0);
         $newStatus = $this->request->post('status', '');
+        $userId    = $this->user['id'];
         
         if (!in_array($newStatus, ['approved', 'rejected'])) {
             Session::flash('error', 'Neplatný stav');
