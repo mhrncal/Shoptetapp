@@ -17,6 +17,7 @@ return [
     ['GET', '/diag/fill-source-lang', 'DiagController@fillMissingSourceLang', []],
     ['GET', '/diag/test-xml', 'DiagController@testXml', []],
     ['GET', '/diag/rematch-photos', 'DiagController@rematchPhotos', []],
+    ['GET', '/diag/unlock-user',   'DiagController@unlockUser',    []],
     ['GET', '/diag/detect-langs',   'DiagController@detectLangs',      []],
     ['GET', '/diag/fix-cs',         'DiagController@fixCsTranslations', []],
     ['GET', '/diag/test-heureka',   'DiagController@testHeureka',       []],

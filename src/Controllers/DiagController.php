@@ -783,6 +783,23 @@ class DiagController extends BaseController
         }
     }
 
+    public function unlockUser(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $email = $_GET['email'] ?? '';
+        if (!$email) { echo "Chybí parametr email\n"; exit; }
+
+        $db   = \ShopCode\Core\Database::getInstance();
+        $stmt = $db->prepare('UPDATE users SET login_attempts = 0, locked_until = NULL WHERE email = ?');
+        $stmt->execute([$email]);
+        echo $stmt->rowCount() ? "OK: účet {$email} odblokován\n" : "Nenalezen: {$email}\n";
+        exit;
+    }
+
     public function rematchPhotos(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') {
