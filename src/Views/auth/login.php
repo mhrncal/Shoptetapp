@@ -21,8 +21,13 @@
                 Zapomenuté heslo?
             </a>
         </label>
-        <input type="password" name="password" class="form-control"
-               placeholder="••••••••" required autocomplete="current-password">
+        <div class="input-group">
+            <input type="password" name="password" id="passwordInput" class="form-control"
+                   placeholder="••••••••" required autocomplete="current-password">
+            <button class="btn btn-outline-secondary" type="button" id="togglePassword" tabindex="-1">
+                <i class="bi bi-eye" id="toggleIcon"></i>
+            </button>
+        </div>
     </div>
 
     <button type="submit" class="btn btn-primary w-100">
@@ -30,3 +35,17 @@
     </button>
 
 </form>
+
+<script>
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const input = document.getElementById('passwordInput');
+    const icon  = document.getElementById('toggleIcon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+});
+</script>
