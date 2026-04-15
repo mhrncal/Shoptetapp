@@ -249,7 +249,11 @@ document.getElementById('copyFeedUrl')?.addEventListener('click', function() {
                             <div class="fw-semibold"><?= $e($r['author_name']) ?></div>
                             <div class="text-muted small"><?= $e($r['author_email']) ?></div>
                         </td>
-                        <td><?= $r['sku'] ? '<code class="text-primary">'.$e($r['sku']).'</code>' : '<span class="text-muted">—</span>' ?></td>
+                        <td><?= $r['sku'] ? '<code class="text-primary">'.$e($r['sku']).'</code>' : '<span class="text-muted">—</span>' ?>
+                            <?php if (!empty($r['product_name'])): ?>
+                            <div class="text-muted small text-truncate" style="max-width:160px" title="<?= $e($r['product_name']) ?>"><?= $e($r['product_name']) ?></div>
+                            <?php endif; ?>
+                        </td>
                         <td><?= $r['photo_count'] > 0 ? '<span class="badge bg-primary">'.$r['photo_count'].'</span>' : '<span class="text-muted">0</span>' ?></td>
                         <td class="small text-muted"><?= date('d.m.Y H:i', strtotime($r['created_at'])) ?></td>
                         <td>
@@ -313,6 +317,9 @@ document.getElementById('copyFeedUrl')?.addEventListener('click', function() {
                 <div class="d-flex flex-wrap gap-2 mb-3 ps-4" style="font-size:.8rem;">
                     <?php if ($r['sku']): ?>
                     <span class="text-muted"><i class="bi bi-upc me-1"></i><code class="text-primary" style="font-size:.8rem;"><?= $e($r['sku']) ?></code></span>
+                    <?php endif; ?>
+                    <?php if (!empty($r['product_name'])): ?>
+                    <span class="text-muted text-truncate" style="max-width:160px;font-size:.8rem;" title="<?= $e($r['product_name']) ?>"><?= $e($r['product_name']) ?></span>
                     <?php endif; ?>
                     <?php if ($r['photo_count'] > 0): ?>
                     <span class="text-muted"><i class="bi bi-images me-1"></i><?= $r['photo_count'] ?>&nbsp;fotek</span>
