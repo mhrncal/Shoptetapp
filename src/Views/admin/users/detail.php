@@ -25,7 +25,7 @@
 
 <div class="row g-4">
     <!-- Info -->
-    <div class="col-12 col-lg-5">
+    <div class="col-12 col-lg-4">
         <div class="card border-0 mb-4">
             <div class="card-header">
                 <h6 class="mb-0 fw-semibold">Informace o uživateli</h6>
@@ -111,7 +111,7 @@
     </div>
 
     <!-- Moduly -->
-    <div class="col-12 col-lg-7">
+    <div class="col-12 col-lg-8">
         <div class="card border-0">
             <div class="card-header">
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-puzzle me-2 text-muted"></i>Přiřazené moduly</h6>
@@ -121,8 +121,8 @@
                     <thead>
                         <tr>
                             <th>Modul</th>
-                            <th style="width:100px">Stav</th>
-                            <th style="width:80px" class="text-end">Přepínač</th>
+                            <th style="width:110px">Stav</th>
+                            <th style="width:90px" class="text-end">Aktivní</th>
                         </tr>
                     </thead>
                     <tbody>
