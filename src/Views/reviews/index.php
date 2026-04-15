@@ -33,6 +33,19 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
     </a>
 </div>
 
+<?php if (!($watermarkOk ?? true)): ?>
+<div class="alert alert-warning d-flex align-items-center gap-3 mb-3">
+    <i class="bi bi-droplet-half fs-5 flex-shrink-0"></i>
+    <div class="flex-grow-1 small">
+        <strong>Vodoznak není nastaven.</strong>
+        Fotky zákazníků se schvalují bez vodoznaku. Doporučujeme nastavit vodoznak před prvním schválením.
+    </div>
+    <a href="<?= APP_URL ?>/watermark/settings" class="btn btn-sm btn-warning flex-shrink-0">
+        <i class="bi bi-gear me-1"></i>Nastavit vodoznak
+    </a>
+</div>
+<?php endif; ?>
+
 <?php if ($blocked): ?>
 <div class="card"><div class="card-body text-center py-5 text-muted">
     <i class="bi bi-lock fs-1 d-block mb-3"></i>

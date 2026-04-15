@@ -29,6 +29,10 @@ class ReviewController extends BaseController
         $expiry = self::photoExpiryStatus($userId);
         $importConfig = \ShopCode\Services\ShoptetCsvImporter::getImportConfig($userId);
 
+        // Zkontroluj watermark nastavení
+        $watermarkOk = \ShopCode\Models\WatermarkSettings::getForUser($userId) !== null
+                    && (\ShopCode\Models\WatermarkSettings::getForUser($userId)['enabled'] ?? false);
+
         $this->view('reviews/index', [
             'pageTitle' => 'Fotorecenze',
             'expiry'    => $expiry,
@@ -42,6 +46,7 @@ class ReviewController extends BaseController
             'xmlFeedUrl'    => $xmlFeedUrl,
             'xmlFeedExists' => $xmlFeedExists ?? false,
             'importConfig'  => $importConfig,
+            'watermarkOk'   => $watermarkOk,
         ]);
     }
 
