@@ -783,6 +783,49 @@ class DiagController extends BaseController
         }
     }
 
+    public function rematchPhotos(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $userId = (int)($_GET['user_id'] ?? 1);
+        echo "=== Rematch Photos (user_id=$userId) ===\n\n";
+
+        $db = \ShopCode\Core\Database::getInstance();
+
+        // Reset všech shoptet_url pro tohoto uživatele
+        $stmt = $db->prepare("
+            UPDATE review_photos rp
+            JOIN reviews r ON r.id = rp.review_id
+            SET rp.shoptet_url = NULL
+            WHERE r.user_id = ?
+        ");
+        $stmt->execute([$userId]);
+        echo "Reset shoptet_url: " . $stmt->rowCount() . " fotek\n\n";
+
+        // Znovu spáruj
+        $snapshot = \ShopCode\Services\ShoptetCsvImporter::snapshotUrls($userId);
+        $matched  = \ShopCode\Services\ShoptetCsvImporter::matchNewUrlsToReviews($userId, $snapshot);
+        echo "Spárováno: $matched fotek\n\n";
+
+        // Výpis výsledku
+        $stmt = $db->prepare("
+            SELECT rp.id, rp.path, rp.shoptet_url, r.sku
+            FROM review_photos rp
+            JOIN reviews r ON r.id = rp.review_id
+            WHERE r.user_id = ?
+        ");
+        $stmt->execute([$userId]);
+        foreach ($stmt->fetchAll() as $p) {
+            echo "  photo_id={$p['id']} sku={$p['sku']}\n";
+            echo "    path={$p['path']}\n";
+            echo "    shoptet_url=" . ($p['shoptet_url'] ?? 'NULL') . "\n";
+        }
+        exit;
+    }
+
     public function testXml(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') {
