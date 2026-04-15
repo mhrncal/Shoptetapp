@@ -69,6 +69,7 @@ class ReviewController extends BaseController
         if (!$review) Response::notFound();
 
         Review::setStatus($id, $userId, 'approved', $note ?: null);
+        $this->applyWatermarkToReviewPhotos($id, $userId);
         Session::flash('success', 'Recenze byla schválena.');
         $this->redirect('/reviews/' . $id);
     }
@@ -103,6 +104,9 @@ class ReviewController extends BaseController
         switch ($action) {
             case 'approve':
                 $count = Review::bulkSetStatus($ids, $userId, 'approved');
+                foreach ($ids as $rid) {
+                    $this->applyWatermarkToReviewPhotos($rid, $userId);
+                }
                 Session::flash('success', "Schváleno {$count} recenzí.");
                 break;
 
@@ -220,6 +224,9 @@ class ReviewController extends BaseController
         }
         
         if ($result) {
+            if ($newStatus === 'approved') {
+                $this->applyWatermarkToReviewPhotos($id, $userId);
+            }
             $label = $newStatus === 'approved' ? 'schválena' : 'zamítnuta';
             Session::flash('success', "Recenze byla {$label}");
         } else {
@@ -476,6 +483,65 @@ class ReviewController extends BaseController
         @unlink($zipFile);
         error_reporting($prevErrorReporting);
         exit;
+    }
+
+    /**
+     * Aplikuje watermark na všechny fotky recenze (originál → display verze).
+     * Volá se při schválení recenze.
+     */
+    private function applyWatermarkToReviewPhotos(int $reviewId, int $userId): void
+    {
+        $db     = Database::getInstance();
+        $stmt   = $db->prepare('SELECT id, path FROM review_photos WHERE review_id = ? AND path IS NOT NULL');
+        $stmt->execute([$reviewId]);
+        $photos = $stmt->fetchAll();
+
+        if (empty($photos)) return;
+
+        $handler = new ImageHandler(ROOT . '/public/uploads');
+
+        foreach ($photos as $photo) {
+            // Cesta k display verzi (path) a originál (_original.ext)
+            $displayAbs  = ROOT . '/public/uploads/' . ltrim($photo['path'], '/');
+            $ext         = pathinfo($photo['path'], PATHINFO_EXTENSION);
+            $originalAbs = substr($displayAbs, 0, -strlen('.' . $ext)) . '_original.' . $ext;
+
+            // Použij originál pokud existuje, jinak display verzi
+            $srcFile = file_exists($originalAbs) ? $originalAbs : $displayAbs;
+            if (!file_exists($srcFile)) continue;
+
+            $mime = match(strtolower($ext)) {
+                'jpg', 'jpeg' => 'image/jpeg',
+                'png'         => 'image/png',
+                'webp'        => 'image/webp',
+                default       => null,
+            };
+            if (!$mime) continue;
+
+            try {
+                $img        = $handler->removeExif($handler->cloneImage(
+                    match($mime) {
+                        'image/jpeg' => @imagecreatefromjpeg($srcFile),
+                        'image/png'  => @imagecreatefrompng($srcFile),
+                        'image/webp' => @imagecreatefromwebp($srcFile),
+                    }
+                ));
+                $watermarked = $handler->applyWatermark($img, $userId);
+                $thumb       = $handler->createThumbnail($watermarked);
+
+                match($mime) {
+                    'image/jpeg' => [imagejpeg($watermarked, $displayAbs, 90), imagejpeg($thumb, substr($displayAbs, 0, -strlen('.' . $ext)) . '_thumb.' . $ext, 90)],
+                    'image/png'  => [imagepng($watermarked, $displayAbs, 6),   imagepng($thumb,  substr($displayAbs, 0, -strlen('.' . $ext)) . '_thumb.' . $ext, 6)],
+                    'image/webp' => [imagewebp($watermarked, $displayAbs, 90), imagewebp($thumb, substr($displayAbs, 0, -strlen('.' . $ext)) . '_thumb.' . $ext, 90)],
+                };
+
+                imagedestroy($img);
+                imagedestroy($watermarked);
+                imagedestroy($thumb);
+            } catch (\Throwable $e) {
+                error_log("[watermark] review_photo {$photo['id']}: " . $e->getMessage());
+            }
+        }
     }
 
 }

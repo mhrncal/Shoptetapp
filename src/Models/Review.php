@@ -242,11 +242,15 @@ class Review
     {
         $db = Database::getInstance();
 
-        // Načti recenze
+        // Načti recenze kde alespoň jedna fotka ještě nemá shoptet_url
+        // (ty co jsou už plně na CDN není potřeba exportovat znovu)
         $stmt = $db->prepare("
-            SELECT r.*
+            SELECT DISTINCT r.*
             FROM reviews r
-            WHERE r.user_id = ? AND r.status = 'approved' AND r.sku IS NOT NULL AND r.sku != ''
+            JOIN review_photos rp ON rp.review_id = r.id
+            WHERE r.user_id = ? AND r.status = 'approved'
+              AND r.sku IS NOT NULL AND r.sku != ''
+              AND rp.shoptet_url IS NULL
             ORDER BY r.created_at ASC
         ");
         $stmt->execute([$userId]);
