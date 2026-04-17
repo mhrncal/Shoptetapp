@@ -11,6 +11,14 @@
 
 define('ROOT', dirname(__DIR__));
 require ROOT . '/config/config.php';
+spl_autoload_register(function (string $class): void {
+    $prefix = 'ShopCode\\';
+    $base   = ROOT . '/src/';
+    if (!str_starts_with($class, $prefix)) return;
+    $file = $base . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
+    if (file_exists($file)) require $file;
+});
+
 
 use ShopCode\Core\Database;
 use ShopCode\Services\ShoptetCsvImporter;
