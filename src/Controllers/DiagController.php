@@ -1080,7 +1080,6 @@ class DiagController extends BaseController
         }
         exit;
     }
-}
 
     public function svgTest(): void
     {
@@ -1094,3 +1093,4 @@ class DiagController extends BaseController
         echo "convert (ImageMagick): " . (trim(shell_exec('which convert 2>/dev/null') ?? '') ?: 'NE') . "\n";
         exit;
     }
+}
