@@ -62,6 +62,9 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
     <a href="<?= APP_URL ?>/reviews/export/xml" class="btn btn-sm btn-outline-success flex-shrink-0">
         <i class="bi bi-file-earmark-code me-1"></i>Generovat XML
     </a>
+    <a href="<?= APP_URL ?>/reviews/export/emails" class="btn btn-sm btn-outline-secondary flex-shrink-0">
+        <i class="bi bi-envelope me-1"></i>Export e-mailů
+    </a>
 </div>
 
 <!-- XML Feed + Import fotek ze Shoptetu -->

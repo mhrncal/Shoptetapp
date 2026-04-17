@@ -73,11 +73,18 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
                     <i class="bi bi-grid-1x2"></i> Dashboard
                 </a>
             </li>
+            <?php if ($hasModule('xml_import')): ?>
             <li>
                 <a href="<?= APP_URL ?>/products" class="nav-link <?= $active('/products') ?>">
                     <i class="bi bi-box"></i> Produkty
                 </a>
             </li>
+            <li>
+                <a href="<?= APP_URL ?>/feeds" class="nav-link <?= $active('/feeds') ?>">
+                    <i class="bi bi-cloud-download"></i> Importy produktů
+                </a>
+            </li>
+            <?php endif; ?>
 
             <?php if ($hasModule('faq')): ?>
             <li>
@@ -96,11 +103,6 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
             <li>
                 <a href="<?= APP_URL ?>/watermark/settings" class="nav-link <?= $active('/watermark') ?>">
                     <i class="bi bi-droplet"></i> Watermark
-                </a>
-            </li>
-            <li>
-                <a href="<?= APP_URL ?>/feeds" class="nav-link <?= $active('/feeds') ?>">
-                    <i class="bi bi-cloud-download"></i> Importy produktů
                 </a>
             </li>
             <?php endif; ?>
@@ -260,11 +262,13 @@ $impersonating = \ShopCode\Core\Session::get('impersonating_as');
         <i class="bi bi-grid-1x2<?= (str_starts_with($currentPath, '/dashboard') || $currentPath === '/') ? '-fill' : '' ?>"></i>
         <span>Přehled</span>
     </a>
+    <?php if ($hasModule('xml_import')): ?>
     <a href="<?= APP_URL ?>/products"
        class="mobile-nav-item <?= str_starts_with($currentPath, '/products') ? 'active' : '' ?>">
         <i class="bi bi-box<?= str_starts_with($currentPath, '/products') ? '-fill' : '' ?>"></i>
         <span>Produkty</span>
     </a>
+    <?php endif; ?>
     <?php if (in_array('reviews', $activeModules ?? []) || ($currentUser['role'] === 'superadmin')): ?>
     <a href="<?= APP_URL ?>/reviews"
        class="mobile-nav-item <?= str_starts_with($currentPath, '/reviews') ? 'active' : '' ?>">

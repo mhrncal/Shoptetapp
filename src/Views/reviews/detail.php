@@ -46,6 +46,15 @@
                         $thumbUrl  = !empty($photo['shoptet_url'])
                             ? $photo['shoptet_url']
                             : APP_URL . '/public/uploads/' . ($photo['thumb'] ?? $photo['path']);
+                        // Rozměry a velikost originálu
+                        $ext         = pathinfo($photo['path'] ?? '', PATHINFO_EXTENSION);
+                        $displayAbs  = ROOT . '/public/uploads/' . ltrim($photo['path'] ?? '', '/');
+                        $originalAbs = substr($displayAbs, 0, -strlen('.' . $ext)) . '_original.' . $ext;
+                        $srcAbs      = file_exists($originalAbs) ? $originalAbs : $displayAbs;
+                        $imgSize     = file_exists($srcAbs) ? @getimagesize($srcAbs) : null;
+                        $fileSize    = file_exists($srcAbs) ? filesize($srcAbs) : null;
+                        $dimStr      = $imgSize ? ($imgSize[0] . '×' . $imgSize[1] . ' px') : null;
+                        $sizeStr     = $fileSize ? round($fileSize / 1024) . ' KB' : null;
                         ?>
                         <a href="<?= $e($photoUrl) ?>"
                            class="photo-lightbox d-block position-relative" data-lightbox="review-photos">
@@ -61,13 +70,18 @@
                         <div class="mt-2 d-flex gap-1">
                             <?php $isLegacy = is_string($photo['id']) && str_starts_with($photo['id'], 'legacy_'); ?>
                             
+                            <?php if ($dimStr || $sizeStr): ?>
+                            <div class="w-100 text-muted small mb-1 text-center">
+                                <?= $dimStr ?? '' ?><?= ($dimStr && $sizeStr) ? ' · ' : '' ?><?= $sizeStr ?? '' ?>
+                            </div>
+                            <?php endif; ?>
                             <?php if ($isLegacy): ?>
                                 <small class="text-muted flex-fill text-center">
                                     <i class="bi bi-info-circle"></i> Stará fotka - použijte CSV/XML export
                                 </small>
                             <?php else: ?>
                                 <a href="<?= APP_URL ?>/photo/download?id=<?= $photo['id'] ?>" 
-                                   class="btn btn-sm btn-outline-primary flex-fill" title="Stáhnout originál">
+                                   class="btn btn-sm btn-outline-primary flex-fill" title="Stáhnout originál (před úpravami)">
                                     <i class="bi bi-download"></i>
                                 </a>
                                 <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" 

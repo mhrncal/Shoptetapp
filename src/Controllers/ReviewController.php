@@ -178,6 +178,43 @@ class ReviewController extends BaseController
     /**
      * Export schválených recenzí do XML — uloží trvalý feed + nabídne stažení
      */
+    public function exportEmails(): void
+    {
+        $userId  = $this->user['id'];
+        $db      = Database::getInstance();
+        $stmt    = $db->prepare("
+            SELECT author_email, author_name, sku, status, created_at
+            FROM reviews
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute([$userId]);
+        $rows = $stmt->fetchAll();
+
+        while (ob_get_level() > 0) ob_end_clean();
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="recenzenti_' . date('Ymd_His') . '.csv"');
+        header('Cache-Control: no-cache');
+
+        $out = fopen('php://output', 'w');
+        fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM pro Excel
+        fputcsv($out, ['E-mail', 'Jméno', 'SKU', 'Stav', 'Datum'], ';');
+
+        $labels = ['pending' => 'Čekající', 'approved' => 'Schválena', 'rejected' => 'Zamítnuta'];
+        foreach ($rows as $r) {
+            fputcsv($out, [
+                $r['author_email'],
+                $r['author_name'],
+                $r['sku'] ?? '',
+                $labels[$r['status']] ?? $r['status'],
+                date('d.m.Y H:i', strtotime($r['created_at'])),
+            ], ';');
+        }
+        fclose($out);
+        exit;
+    }
+
     public function exportXml(): void
     {
         $userId  = $this->user['id'];

@@ -178,6 +178,7 @@ return [
     ['POST',   '/reviews/bulk',               'ReviewController@bulkAction', ['auth','approved','module:reviews']],
     ['GET',    '/reviews/export-photos',        'ReviewController@exportPhotosZip', ['auth','approved','module:reviews']],
     ['GET',    '/reviews/export/xml',          'ReviewController@exportXml',  ['auth','approved','module:reviews']],
+    ['GET',    '/reviews/export/emails',       'ReviewController@exportEmails', ['auth','approved','module:reviews']],
     ['GET',    '/reviews/{id}',               'ReviewController@detail',     ['auth','approved','module:reviews']],
     ['POST',   '/reviews/{id}/approve',       'ReviewController@approve',    ['auth','approved','module:reviews']],
     ['POST',   '/reviews/{id}/reject',        'ReviewController@reject',     ['auth','approved','module:reviews']],
