@@ -192,6 +192,7 @@ class ReviewController extends BaseController
         $rows = $stmt->fetchAll();
 
         while (ob_get_level() > 0) ob_end_clean();
+        $prevError = error_reporting(0);
 
         header('Content-Type: text/csv; charset=UTF-8');
         header('Content-Disposition: attachment; filename="recenzenti_' . date('Ymd_His') . '.csv"');
@@ -199,7 +200,7 @@ class ReviewController extends BaseController
 
         $out = fopen('php://output', 'w');
         fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM pro Excel
-        fputcsv($out, ['E-mail', 'Jméno', 'SKU', 'Stav', 'Datum'], ';');
+        fputcsv($out, ['E-mail', 'Jméno', 'SKU', 'Stav', 'Datum'], ';', '"', '\\');
 
         $labels = ['pending' => 'Čekající', 'approved' => 'Schválena', 'rejected' => 'Zamítnuta'];
         foreach ($rows as $r) {
@@ -209,9 +210,10 @@ class ReviewController extends BaseController
                 $r['sku'] ?? '',
                 $labels[$r['status']] ?? $r['status'],
                 date('d.m.Y H:i', strtotime($r['created_at'])),
-            ], ';');
+            ], ';', '"', '\\');
         }
         fclose($out);
+        error_reporting($prevError);
         exit;
     }
 
