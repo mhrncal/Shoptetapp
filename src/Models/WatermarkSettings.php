@@ -69,7 +69,8 @@ class WatermarkSettings
             // S shadow_enabled
             $stmt = $db->prepare('
                 UPDATE watermark_settings
-                SET text = ?, font = ?, position = ?, color = ?, size = ?, opacity = ?, padding = ?, shadow_enabled = ?, enabled = ?
+                SET text = ?, font = ?, position = ?, color = ?, size = ?, opacity = ?, padding = ?, shadow_enabled = ?, enabled = ?,
+                    watermark_type = ?, logo_path = ?
                 WHERE user_id = ?
             ');
             return $stmt->execute([
@@ -82,6 +83,8 @@ class WatermarkSettings
                 (int)($data['padding'] ?? 20),
                 isset($data['shadow_enabled']) ? 1 : 0,
                 isset($data['enabled']) ? 1 : 0,
+                $data['watermark_type'] ?? 'text',
+                $data['logo_path'] ?? null,
                 $userId
             ]);
         } else {

@@ -37,16 +37,42 @@ class WatermarkController extends BaseController
         }
         
         $data = [
-            'text' => $this->request->post('text', 'Zákaznická fotka'),
-            'font' => $this->request->post('font', 'Arial'),
-            'position' => $this->request->post('position', 'BR'),
-            'color' => $this->request->post('color', '#FFFFFF'),
-            'size' => $this->request->post('size', 'medium'),
-            'opacity' => (int)$this->request->post('opacity', 80),
-            'padding' => (int)$this->request->post('padding', 20),
+            'text'           => $this->request->post('text', 'Zákaznická fotka'),
+            'font'           => $this->request->post('font', 'Arial'),
+            'position'       => $this->request->post('position', 'BR'),
+            'color'          => $this->request->post('color', '#FFFFFF'),
+            'size'           => $this->request->post('size', 'medium'),
+            'opacity'        => (int)$this->request->post('opacity', 80),
+            'padding'        => (int)$this->request->post('padding', 20),
             'shadow_enabled' => ($this->request->post('shadow_enabled') !== null),
-            'enabled' => ($this->request->post('enabled') !== null),
+            'enabled'        => ($this->request->post('enabled') !== null),
+            'watermark_type' => $this->request->post('watermark_type', 'text'),
         ];
+
+        // Zpracování uploadu loga
+        $currentSettings = WatermarkSettings::getForUser($userId);
+        $data['logo_path'] = $currentSettings['logo_path'] ?? null;
+
+        if (!empty($_FILES['logo']['tmp_name']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $mime = mime_content_type($_FILES['logo']['tmp_name']);
+            if (in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])) {
+                $ext     = match($mime) {
+                    'image/jpeg' => 'jpg', 'image/png' => 'png',
+                    'image/webp' => 'webp', 'image/gif' => 'gif',
+                    'image/svg+xml' => 'svg', default => 'png'
+                };
+                $dir     = ROOT . '/public/uploads/watermarks/';
+                if (!is_dir($dir)) mkdir($dir, 0755, true);
+                // Smaž starý logo pokud existuje
+                if (!empty($currentSettings['logo_path'])) {
+                    @unlink(ROOT . '/public/' . ltrim($currentSettings['logo_path'], '/'));
+                }
+                $filename = 'logo_' . $userId . '_' . time() . '.' . $ext;
+                if (move_uploaded_file($_FILES['logo']['tmp_name'], $dir . $filename)) {
+                    $data['logo_path'] = 'uploads/watermarks/' . $filename;
+                }
+            }
+        }
         
         if (WatermarkSettings::update($userId, $data)) {
             Session::flash('success', 'Nastavení watermarku uloženo');

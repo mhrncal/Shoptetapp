@@ -14,7 +14,7 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
                     <h6 class="mb-0 fw-semibold">Konfigurace</h6>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="<?= APP_URL ?>/watermark/update" id="watermark-form">
+                    <form method="POST" action="<?= APP_URL ?>/watermark/update" id="watermark-form" enctype="multipart/form-data">
                         <input type="hidden" name="_csrf" value="<?= $csrfToken ?>">
                         
                         <!-- Povolit watermark -->
@@ -28,11 +28,42 @@ $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
                             </div>
                         </div>
 
-                        <!-- Text -->
+                        <!-- Typ watermarku -->
                         <div class="mb-3">
+                            <label class="form-label fw-semibold">Typ watermarku</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="watermark_type" id="wm-type-text" value="text"
+                                       <?= ($settings['watermark_type'] ?? 'text') === 'text' ? 'checked' : '' ?>>
+                                <label class="btn btn-outline-primary" for="wm-type-text">
+                                    <i class="bi bi-fonts me-1"></i>Text
+                                </label>
+                                <input type="radio" class="btn-check" name="watermark_type" id="wm-type-logo" value="logo"
+                                       <?= ($settings['watermark_type'] ?? 'text') === 'logo' ? 'checked' : '' ?>>
+                                <label class="btn btn-outline-primary" for="wm-type-logo">
+                                    <i class="bi bi-image me-1"></i>Logo
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Text -->
+                        <div class="mb-3" id="wm-text-section">
                             <label class="form-label fw-semibold">Text watermarku</label>
                             <input type="text" class="form-control" name="text" id="wm-text"
-                                   value="<?= $e($settings['text']) ?>" maxlength="255" required>
+                                   value="<?= $e($settings['text']) ?>" maxlength="255">
+                        </div>
+
+                        <!-- Logo -->
+                        <div class="mb-3" id="wm-logo-section">
+                            <label class="form-label fw-semibold">Logo (PNG, JPG, WEBP)</label>
+                            <?php if (!empty($settings['logo_path'])): ?>
+                            <div class="mb-2 d-flex align-items-center gap-2">
+                                <img src="<?= APP_URL ?>/public/<?= $e($settings['logo_path']) ?>"
+                                     style="max-height:48px;max-width:200px;background:#eee;padding:4px;border-radius:4px;">
+                                <span class="text-muted small">Aktuální logo</span>
+                            </div>
+                            <?php endif; ?>
+                            <input type="file" class="form-control" name="logo" accept="image/png,image/jpeg,image/webp,image/gif">
+                            <div class="form-text">Max 25% šířky fotky, doporučeno PNG s průhledností.</div>
                         </div>
 
                         <!-- Font -->
@@ -307,4 +338,14 @@ document.querySelectorAll('.position-btn').forEach(btn => {
 
 // Initial preview
 updatePreview();
+
+// Toggle text/logo sections
+function toggleWatermarkType() {
+    const isLogo = document.getElementById('wm-type-logo').checked;
+    document.getElementById('wm-text-section').style.display = isLogo ? 'none' : '';
+    document.getElementById('wm-logo-section').style.display = isLogo ? '' : 'none';
+}
+document.getElementById('wm-type-text').addEventListener('change', toggleWatermarkType);
+document.getElementById('wm-type-logo').addEventListener('change', toggleWatermarkType);
+toggleWatermarkType();
 </script>

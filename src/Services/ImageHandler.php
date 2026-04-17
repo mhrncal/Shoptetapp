@@ -201,10 +201,51 @@ class ImageHandler
         if (!$settings || !$settings['enabled']) {
             return $this->cloneImage($img);
         }
-        
+
         $canvas = $this->cloneImage($img);
         $w = imagesx($canvas);
         $h = imagesy($canvas);
+
+        // Logo watermark
+        if (($settings['watermark_type'] ?? 'text') === 'logo' && !empty($settings['logo_path'])) {
+            $logoAbs = ROOT . '/public/' . ltrim($settings['logo_path'], '/');
+            if (file_exists($logoAbs)) {
+                $logoMime = mime_content_type($logoAbs);
+                $logo = match($logoMime) {
+                    'image/jpeg' => @imagecreatefromjpeg($logoAbs),
+                    'image/png'  => @imagecreatefrompng($logoAbs),
+                    'image/webp' => @imagecreatefromwebp($logoAbs),
+                    'image/gif'  => @imagecreatefromgif($logoAbs),
+                    default      => false,
+                };
+                if ($logo) {
+                    $lw = imagesx($logo);
+                    $lh = imagesy($logo);
+                    // Přizpůsob velikost loga (max 25% šířky fotky)
+                    $maxW = (int)($w * 0.25);
+                    if ($lw > $maxW) {
+                        $ratio = $maxW / $lw;
+                        $lw = $maxW;
+                        $lh = (int)($lh * $ratio);
+                    }
+                    $padding = $settings['padding'] ?? 20;
+                    $opacity = (int)($settings['opacity'] ?? 80);
+                    // Pozice
+                    $coords = $this->calculatePosition($settings['position'], $w, $h, $lw, $lh, $padding);
+                    // Resize logo
+                    $resized = imagecreatetruecolor($lw, $lh);
+                    imagealphablending($resized, false);
+                    imagesavealpha($resized, true);
+                    imagecopyresampled($resized, $logo, 0, 0, 0, 0, $lw, $lh, imagesx($logo), imagesy($logo));
+                    imagedestroy($logo);
+                    // Aplikuj s průhledností
+                    imagecopymerge($canvas, $resized, $coords['x'], $coords['y'], 0, 0, $lw, $lh, $opacity);
+                    imagedestroy($resized);
+                    return $canvas;
+                }
+            }
+            // Fallback na text pokud logo nelze načíst
+        }
         
         // Velikost fontu
         $sizeMap = ['small' => 16, 'medium' => 24, 'large' => 36];
