@@ -221,17 +221,35 @@ class ImageHandler
                 if ($logo) {
                     $lw = imagesx($logo);
                     $lh = imagesy($logo);
-                    // Přizpůsob velikost loga (max 25% šířky fotky)
-                    $maxW = (int)($w * 0.25);
+                    $padding = (int)($settings['padding'] ?? 20);
+                    $opacity = (int)($settings['opacity'] ?? 80);
+                    $pos     = $settings['position'] ?? 'BR';
+
+                    // Velikost loga – max 30% šířky fotky, min 80px
+                    $maxW = max(80, (int)($w * 0.30));
                     if ($lw > $maxW) {
                         $ratio = $maxW / $lw;
                         $lw    = $maxW;
                         $lh    = (int)($lh * $ratio);
                     }
-                    $padding = $settings['padding'] ?? 20;
-                    $opacity = (int)($settings['opacity'] ?? 80);
-                    // Pozice – pro logo používáme pixel souřadnice levého horního rohu
-                    $coords = $this->calculatePosition($settings['position'], $w, $h, $lw, $lh, $padding);
+
+                    // Pozicování – levý horní roh loga (nezávislé na textu)
+                    $x = match(true) {
+                        str_starts_with($pos, 'T') || str_starts_with($pos, 'M') || str_starts_with($pos, 'B') => match(substr($pos, 1)) {
+                            'L' => $padding,
+                            'C' => (int)(($w - $lw) / 2),
+                            'R' => $w - $lw - $padding,
+                            default => $w - $lw - $padding
+                        },
+                        default => $w - $lw - $padding
+                    };
+                    $y = match(substr($pos, 0, 1)) {
+                        'T' => $padding,
+                        'M' => (int)(($h - $lh) / 2),
+                        'B' => $h - $lh - $padding,
+                        default => $h - $lh - $padding
+                    };
+                    $coords = ['x' => $x, 'y' => $y];
 
                     // Resize logo do průhledného plátna
                     $resized = imagecreatetruecolor($lw, $lh);
