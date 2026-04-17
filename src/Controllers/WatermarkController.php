@@ -192,6 +192,10 @@ class WatermarkController extends BaseController
                 imagedestroy($thumb);
 
                 if ($saveOk) {
+                    // Oprav špatný mime_type v DB
+                    if ($photo['mime_type'] !== $mime) {
+                        $db->prepare('UPDATE review_photos SET mime_type = ? WHERE id = ?')->execute([$mime, $photo['id']]);
+                    }
                     $success++;
                     error_log("[regen] OK: {$displayPath}");
                 } else {
