@@ -155,7 +155,13 @@ class WatermarkController extends BaseController
                     continue;
                 }
 
-                $mime = $photo['mime_type'] ?: mime_content_type($srcPath);
+                // Detekuj mime z přípony – DB mime_type může být špatně
+                $mime = match(strtolower($ext)) {
+                    'jpg', 'jpeg' => 'image/jpeg',
+                    'png'         => 'image/png',
+                    'webp'        => 'image/webp',
+                    default       => ($photo['mime_type'] ?: mime_content_type($srcPath))
+                };
 
                 $img = match(true) {
                     str_contains($mime, 'jpeg') => @imagecreatefromjpeg($srcPath),

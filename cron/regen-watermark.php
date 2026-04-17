@@ -82,7 +82,13 @@ foreach ($users as $user) {
             continue;
         }
 
-        $mime = $photo['mime_type'] ?: @mime_content_type($src);
+        // Detekuj mime z přípony souboru (DB mime_type může být špatně)
+        $mime = match(strtolower($ext)) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png'         => 'image/png',
+            'webp'        => 'image/webp',
+            default       => ($photo['mime_type'] ?: @mime_content_type($src))
+        };
         $img  = match(true) {
             str_contains((string)$mime, 'jpeg') => @imagecreatefromjpeg($src),
             str_contains((string)$mime, 'png')  => @imagecreatefrompng($src),
@@ -112,6 +118,18 @@ foreach ($users as $user) {
             imagedestroy($img);
             imagedestroy($wm);
             imagedestroy($thumb);
+
+            // Oprav špatný mime_type v DB
+            $correctMime = match(strtolower($ext)) {
+                'jpg', 'jpeg' => 'image/jpeg',
+                'png'         => 'image/png',
+                'webp'        => 'image/webp',
+                default       => $mime
+            };
+            if ($photo['mime_type'] !== $correctMime) {
+                $db->prepare('UPDATE review_photos SET mime_type = ? WHERE id = ?')->execute([$correctMime, $photo['id']]);
+                $log("  FIXED mime: {$photo['mime_type']} → {$correctMime} for " . basename($display));
+            }
 
             if ($saved) {
                 $ok++;
