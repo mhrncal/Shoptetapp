@@ -225,21 +225,44 @@ class ImageHandler
                     $maxW = (int)($w * 0.25);
                     if ($lw > $maxW) {
                         $ratio = $maxW / $lw;
-                        $lw = $maxW;
-                        $lh = (int)($lh * $ratio);
+                        $lw    = $maxW;
+                        $lh    = (int)($lh * $ratio);
                     }
                     $padding = $settings['padding'] ?? 20;
                     $opacity = (int)($settings['opacity'] ?? 80);
-                    // Pozice
+                    // Pozice – pro logo používáme pixel souřadnice levého horního rohu
                     $coords = $this->calculatePosition($settings['position'], $w, $h, $lw, $lh, $padding);
-                    // Resize logo
+
+                    // Resize logo do průhledného plátna
                     $resized = imagecreatetruecolor($lw, $lh);
                     imagealphablending($resized, false);
                     imagesavealpha($resized, true);
+                    $transparent = imagecolorallocatealpha($resized, 0, 0, 0, 127);
+                    imagefilledrectangle($resized, 0, 0, $lw, $lh, $transparent);
                     imagecopyresampled($resized, $logo, 0, 0, 0, 0, $lw, $lh, imagesx($logo), imagesy($logo));
                     imagedestroy($logo);
-                    // Aplikuj s průhledností
-                    imagecopymerge($canvas, $resized, $coords['x'], $coords['y'], 0, 0, $lw, $lh, $opacity);
+
+                    // Aplikuj logo s průhledností zachovávající alpha kanál
+                    imagealphablending($canvas, true);
+                    if ($opacity < 100) {
+                        // Ruční merge s respektováním alpha
+                        for ($px = 0; $px < $lw; $px++) {
+                            for ($py = 0; $py < $lh; $py++) {
+                                $srcColor = imagecolorat($resized, $px, $py);
+                                $srcA = ($srcColor >> 24) & 0x7F;
+                                if ($srcA === 127) continue; // plně průhledný pixel
+                                $srcR = ($srcColor >> 16) & 0xFF;
+                                $srcG = ($srcColor >> 8) & 0xFF;
+                                $srcB = $srcColor & 0xFF;
+                                // Aplikuj opacity nastavení na alpha
+                                $finalA = (int)($srcA + (127 - $srcA) * (1 - $opacity / 100));
+                                $blended = imagecolorallocatealpha($canvas, $srcR, $srcG, $srcB, $finalA);
+                                imagesetpixel($canvas, $coords['x'] + $px, $coords['y'] + $py, $blended);
+                            }
+                        }
+                    } else {
+                        imagecopy($canvas, $resized, $coords['x'], $coords['y'], 0, 0, $lw, $lh);
+                    }
                     imagedestroy($resized);
                     return $canvas;
                 }
