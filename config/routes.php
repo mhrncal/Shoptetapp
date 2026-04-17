@@ -21,6 +21,7 @@ return [
     ['GET', '/diag/reset-password', 'DiagController@resetPassword', []],
     ['GET', '/diag/review-debug',      'DiagController@reviewDebug',     []],
     ['GET', '/diag/watermark-toggle',  'DiagController@watermarkToggle', []],
+    ['GET', '/diag/watermark-test',    'DiagController@watermarkTest',   []],
     ['GET', '/diag/detect-langs',   'DiagController@detectLangs',      []],
     ['GET', '/diag/fix-cs',         'DiagController@fixCsTranslations', []],
     ['GET', '/diag/test-heureka',   'DiagController@testHeureka',       []],

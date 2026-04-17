@@ -964,6 +964,78 @@ class DiagController extends BaseController
         exit;
     }
 
+    public function watermarkTest(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $userId = (int)($_GET['user_id'] ?? 1);
+        $db = \ShopCode\Core\Database::getInstance();
+
+        // Watermark settings
+        $ws = $db->prepare('SELECT * FROM watermark_settings WHERE user_id = ?');
+        $ws->execute([$userId]);
+        $settings = $ws->fetch();
+        echo "=== Watermark Settings ===\n";
+        if (!$settings) { echo "CHYBÍ pro user_id=$userId\n"; exit; }
+        echo "enabled: " . ($settings['enabled'] ? 'ANO' : 'NE') . "\n";
+        echo "type: " . ($settings['watermark_type'] ?? 'text') . "\n";
+        echo "text: {$settings['text']}\n";
+        echo "logo_path: " . ($settings['logo_path'] ?? 'NULL') . "\n\n";
+
+        if (($settings['watermark_type'] ?? 'text') === 'logo' && !empty($settings['logo_path'])) {
+            $logoAbs = ROOT . '/public/' . ltrim($settings['logo_path'], '/');
+            echo "Logo soubor: $logoAbs\n";
+            echo "Existuje: " . (file_exists($logoAbs) ? 'ANO' : 'NE') . "\n\n";
+        }
+
+        // První fotka uživatele
+        $stmt = $db->prepare('SELECT rp.*, r.user_id FROM review_photos rp JOIN reviews r ON r.id = rp.review_id WHERE r.user_id = ? AND rp.path IS NOT NULL LIMIT 1');
+        $stmt->execute([$userId]);
+        $photo = $stmt->fetch();
+        if (!$photo) { echo "Žádná fotka\n"; exit; }
+
+        echo "=== Testovací fotka ===\n";
+        echo "path: {$photo['path']}\n";
+        echo "mime: " . ($photo['mime_type'] ?? 'NULL') . "\n";
+
+        $ext      = pathinfo($photo['path'], PATHINFO_EXTENSION);
+        $display  = ROOT . '/public/uploads/' . ltrim($photo['path'], '/');
+        $original = substr($display, 0, -strlen('.' . $ext)) . '_original.' . $ext;
+
+        echo "display: $display → " . (file_exists($display) ? 'EXISTS (' . filesize($display) . 'b)' : 'CHYBÍ') . "\n";
+        echo "original: $original → " . (file_exists($original) ? 'EXISTS' : 'CHYBÍ') . "\n";
+
+        $src  = file_exists($original) ? $original : $display;
+        $mime = $photo['mime_type'] ?: @mime_content_type($src);
+        echo "src: $src\n";
+        echo "detected mime: $mime\n\n";
+
+        // Zkus načíst
+        $img = match(true) {
+            str_contains((string)$mime, 'jpeg') => @imagecreatefromjpeg($src),
+            str_contains((string)$mime, 'png')  => @imagecreatefrompng($src),
+            str_contains((string)$mime, 'webp') => @imagecreatefromwebp($src),
+            default => false
+        };
+        echo "Načtení obrázku: " . ($img ? 'OK (' . imagesx($img) . 'x' . imagesy($img) . ')' : 'FAIL') . "\n";
+        if (!$img) { exit; }
+
+        // Zkus watermark
+        $handler = new \ShopCode\Services\ImageHandler(ROOT . '/public/uploads');
+        try {
+            $wm = $handler->applyWatermark($img, $userId);
+            echo "applyWatermark: OK (" . imagesx($wm) . 'x' . imagesy($wm) . ")\n";
+            imagedestroy($wm);
+        } catch (\Throwable $e) {
+            echo "applyWatermark: FAIL – " . $e->getMessage() . "\n";
+        }
+        imagedestroy($img);
+        exit;
+    }
+
     public function testXml(): void
     {
         if (($_GET['key'] ?? '') !== 'shopcode_diag') {
