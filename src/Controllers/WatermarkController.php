@@ -118,57 +118,55 @@ class WatermarkController extends BaseController
         
         foreach ($photos as $photo) {
             try {
-                // Cesta k originálnímu souboru
-                $originalPath = ROOT . '/public/uploads/' . str_replace(
-                    ['.jpg', '.png', '.webp'],
-                    ['_original.jpg', '_original.png', '_original.webp'],
-                    $photo['path']
-                );
-                
-                // Pokud originál neexistuje, přeskoč
-                if (!file_exists($originalPath)) {
+                $ext         = pathinfo($photo['path'], PATHINFO_EXTENSION);
+                $displayPath = ROOT . '/public/uploads/' . ltrim($photo['path'], '/');
+                $origPath    = substr($displayPath, 0, -strlen('.' . $ext)) . '_original.' . $ext;
+
+                // Použij originál pokud existuje, jinak display
+                $srcPath = file_exists($origPath) ? $origPath : $displayPath;
+                if (!file_exists($srcPath)) {
+                    error_log("[regen] SKIP (no file): {$srcPath}");
                     $failed++;
                     continue;
                 }
-                
-                // Načti originální obrázek
-                $img = match($photo['mime_type']) {
-                    'image/jpeg' => @imagecreatefromjpeg($originalPath),
-                    'image/png'  => @imagecreatefrompng($originalPath),
-                    'image/webp' => @imagecreatefromwebp($originalPath),
+
+                $mime = $photo['mime_type'] ?: mime_content_type($srcPath);
+
+                $img = match(true) {
+                    str_contains($mime, 'jpeg') => @imagecreatefromjpeg($srcPath),
+                    str_contains($mime, 'png')  => @imagecreatefrompng($srcPath),
+                    str_contains($mime, 'webp') => @imagecreatefromwebp($srcPath),
                     default => false
                 };
-                
+
                 if (!$img) {
+                    error_log("[regen] FAIL load: {$srcPath} mime={$mime}");
                     $failed++;
                     continue;
                 }
-                
-                // Aplikuj nový watermark
+
                 $watermarked = $handler->applyWatermark($img, $userId);
-                
-                // Ulož display verzi (přepiš starou)
-                $displayPath = ROOT . '/public/uploads/' . $photo['path'];
-                match($photo['mime_type']) {
-                    'image/jpeg' => imagejpeg($watermarked, $displayPath, 90),
-                    'image/png'  => imagepng($watermarked, $displayPath, 6),
-                    'image/webp' => imagewebp($watermarked, $displayPath, 90),
+                $thumb       = $handler->createThumbnail($watermarked);
+                $thumbPath   = ROOT . '/public/uploads/' . ltrim($photo['thumb'] ?? '', '/');
+
+                $saveOk = match(true) {
+                    str_contains($mime, 'jpeg') => imagejpeg($watermarked, $displayPath, 90) && imagejpeg($thumb, $thumbPath, 90),
+                    str_contains($mime, 'png')  => imagepng($watermarked, $displayPath, 6)   && imagepng($thumb, $thumbPath, 6),
+                    str_contains($mime, 'webp') => imagewebp($watermarked, $displayPath, 90) && imagewebp($thumb, $thumbPath, 90),
+                    default => false
                 };
-                
-                // Vytvoř nový thumbnail
-                $thumb = $handler->createThumbnail($watermarked);
-                $thumbPath = ROOT . '/public/uploads/' . $photo['thumb'];
-                match($photo['mime_type']) {
-                    'image/jpeg' => imagejpeg($thumb, $thumbPath, 90),
-                    'image/png'  => imagepng($thumb, $thumbPath, 6),
-                    'image/webp' => imagewebp($thumb, $thumbPath, 90),
-                };
-                
+
                 imagedestroy($img);
                 imagedestroy($watermarked);
                 imagedestroy($thumb);
-                
-                $success++;
+
+                if ($saveOk) {
+                    $success++;
+                    error_log("[regen] OK: {$displayPath}");
+                } else {
+                    $failed++;
+                    error_log("[regen] FAIL save: {$displayPath}");
+                }
                 
             } catch (\Exception $e) {
                 $failed++;
