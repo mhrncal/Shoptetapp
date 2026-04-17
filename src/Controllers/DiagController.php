@@ -1081,3 +1081,16 @@ class DiagController extends BaseController
         exit;
     }
 }
+
+    public function svgTest(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+        echo "Imagick: " . (class_exists('Imagick') ? 'ANO' : 'NE') . "\n";
+        echo "rsvg-convert: " . (trim(shell_exec('which rsvg-convert 2>/dev/null') ?? '') ?: 'NE') . "\n";
+        echo "inkscape: " . (trim(shell_exec('which inkscape 2>/dev/null') ?? '') ?: 'NE') . "\n";
+        echo "convert (ImageMagick): " . (trim(shell_exec('which convert 2>/dev/null') ?? '') ?: 'NE') . "\n";
+        exit;
+    }
