@@ -46,15 +46,6 @@
                         $thumbUrl  = !empty($photo['shoptet_url'])
                             ? $photo['shoptet_url']
                             : APP_URL . '/public/uploads/' . ($photo['thumb'] ?? $photo['path']);
-                        // Rozměry a velikost originálu
-                        $ext         = pathinfo($photo['path'] ?? '', PATHINFO_EXTENSION);
-                        $displayAbs  = ROOT . '/public/uploads/' . ltrim($photo['path'] ?? '', '/');
-                        $originalAbs = substr($displayAbs, 0, -strlen('.' . $ext)) . '_original.' . $ext;
-                        $srcAbs      = file_exists($originalAbs) ? $originalAbs : $displayAbs;
-                        $imgSize     = file_exists($srcAbs) ? @getimagesize($srcAbs) : null;
-                        $fileSize    = file_exists($srcAbs) ? filesize($srcAbs) : null;
-                        $dimStr      = $imgSize ? ($imgSize[0] . '×' . $imgSize[1] . ' px') : null;
-                        $sizeStr     = $fileSize ? round($fileSize / 1024) . ' KB' : null;
                         ?>
                         <a href="<?= $e($photoUrl) ?>"
                            class="photo-lightbox d-block position-relative" data-lightbox="review-photos">
@@ -70,11 +61,6 @@
                         <div class="mt-2 d-flex gap-1">
                             <?php $isLegacy = is_string($photo['id']) && str_starts_with($photo['id'], 'legacy_'); ?>
                             
-                            <?php if ($dimStr || $sizeStr): ?>
-                            <div class="w-100 text-muted small mb-1 text-center">
-                                <?= $dimStr ?? '' ?><?= ($dimStr && $sizeStr) ? ' · ' : '' ?><?= $sizeStr ?? '' ?>
-                            </div>
-                            <?php endif; ?>
                             <?php if ($isLegacy): ?>
                                 <small class="text-muted flex-fill text-center">
                                     <i class="bi bi-info-circle"></i> Stará fotka - použijte CSV/XML export
@@ -169,6 +155,31 @@
                     <span class="badge bg-info"><?= date('d.m.Y H:i', strtotime($review['xml_exported_at'])) ?></span>
                 </div>
                 <?php endif; ?>
+                <?php foreach ($review['photos'] as $pi => $photo):
+                    if (is_string($photo['id'] ?? '') && str_starts_with($photo['id'] ?? '', 'legacy_')) continue;
+                    $ext2        = pathinfo($photo['path'] ?? '', PATHINFO_EXTENSION);
+                    $displayAbs2 = ROOT . '/public/uploads/' . ltrim($photo['path'] ?? '', '/');
+                    $origAbs2    = substr($displayAbs2, 0, -strlen('.' . $ext2)) . '_original.' . $ext2;
+                    $srcAbs2     = file_exists($origAbs2) ? $origAbs2 : $displayAbs2;
+                    $imgSize2    = file_exists($srcAbs2) ? @getimagesize($srcAbs2) : null;
+                    $fileSize2   = file_exists($srcAbs2) ? filesize($srcAbs2) : null;
+                    if (!$imgSize2 && !$fileSize2) continue;
+                ?>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span class="text-muted small">Foto <?= $pi + 1 ?></span>
+                    <div class="text-end small">
+                        <?php if ($imgSize2): ?>
+                        <div><?= $imgSize2[0] ?>×<?= $imgSize2[1] ?> px</div>
+                        <?php endif; ?>
+                        <?php if ($fileSize2): ?>
+                        <div class="text-muted"><?= round($fileSize2 / 1024) ?> KB</div>
+                        <?php endif; ?>
+                        <a href="<?= APP_URL ?>/photo/download?id=<?= $photo['id'] ?>" class="small text-primary">
+                            <i class="bi bi-download me-1"></i>Stáhnout originál
+                        </a>
+                    </div>
+                </div>
+                <?php endforeach; ?>
                 <?php if ($review['comment']): ?>
                 <div class="px-3 pb-3">
                     <div class="text-muted small mb-1">Komentář zákazníka:</div>
