@@ -55,21 +55,48 @@ class WatermarkController extends BaseController
 
         if (!empty($_FILES['logo']['tmp_name']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
             $mime = mime_content_type($_FILES['logo']['tmp_name']);
-            if (in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])) {
-                $ext     = match($mime) {
-                    'image/jpeg' => 'jpg', 'image/png' => 'png',
-                    'image/webp' => 'webp', 'image/gif' => 'gif',
-                    'image/svg+xml' => 'svg', default => 'png'
-                };
-                $dir     = ROOT . '/public/uploads/watermarks/';
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+
+            if (in_array($mime, $allowedMimes)) {
+                $dir = ROOT . '/public/uploads/watermarks/';
                 if (!is_dir($dir)) mkdir($dir, 0755, true);
-                // Smaž starý logo pokud existuje
+
+                // Smaž starý logo
                 if (!empty($currentSettings['logo_path'])) {
                     @unlink(ROOT . '/public/' . ltrim($currentSettings['logo_path'], '/'));
                 }
-                $filename = 'logo_' . $userId . '_' . time() . '.' . $ext;
-                if (move_uploaded_file($_FILES['logo']['tmp_name'], $dir . $filename)) {
-                    $data['logo_path'] = 'uploads/watermarks/' . $filename;
+
+                $filename = 'logo_' . $userId . '_' . time();
+                $saved    = false;
+
+                if ($mime === 'image/svg+xml') {
+                    // SVG → konvertuj na PNG přes Imagick nebo odmítni
+                    if (class_exists('Imagick')) {
+                        try {
+                            $im = new \Imagick();
+                            $im->setBackgroundColor(new \ImagickPixel('transparent'));
+                            $im->readImage($_FILES['logo']['tmp_name']);
+                            $im->setImageFormat('png');
+                            $im->writeImage($dir . $filename . '.png');
+                            $im->destroy();
+                            $data['logo_path'] = 'uploads/watermarks/' . $filename . '.png';
+                            $saved = true;
+                        } catch (\Throwable $e) {
+                            Session::flash('error', 'SVG se nepodařilo převést. Nahrajte PNG nebo JPG.');
+                        }
+                    } else {
+                        Session::flash('error', 'SVG není podporován. Nahrajte logo ve formátu PNG nebo JPG.');
+                    }
+                } else {
+                    // PNG/JPG/WEBP/GIF – ulož přímo jako PNG pro konzistenci
+                    $ext = match($mime) {
+                        'image/jpeg' => 'jpg', 'image/png' => 'png',
+                        'image/webp' => 'webp', 'image/gif' => 'gif', default => 'png'
+                    };
+                    if (move_uploaded_file($_FILES['logo']['tmp_name'], $dir . $filename . '.' . $ext)) {
+                        $data['logo_path'] = 'uploads/watermarks/' . $filename . '.' . $ext;
+                        $saved = true;
+                    }
                 }
             }
         }
