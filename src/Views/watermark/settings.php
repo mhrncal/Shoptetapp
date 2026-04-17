@@ -112,8 +112,8 @@ $isLogo = ($settings['watermark_type'] ?? 'text') === 'logo';
                             </div>
                             <?php endif; ?>
                             <input type="file" class="form-control" name="logo" id="logo-input"
-                                   accept="image/png,image/jpeg,image/webp,image/gif">
-                            <div class="form-text">Doporučeno PNG s průhledným pozadím. Logo se škáluje na max 25% šířky fotky. SVG není podporován – použijte PNG.</div>
+                                   accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml">
+                            <div class="form-text">Doporučeno PNG s průhledným pozadím nebo SVG. Logo se škáluje na max 25% šířky fotky.</div>
                         </div>
                     </div>
 

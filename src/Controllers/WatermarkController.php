@@ -70,22 +70,19 @@ class WatermarkController extends BaseController
                 $saved    = false;
 
                 if ($mime === 'image/svg+xml') {
-                    // SVG → konvertuj na PNG přes Imagick nebo odmítni
-                    if (class_exists('Imagick')) {
-                        try {
-                            $im = new \Imagick();
-                            $im->setBackgroundColor(new \ImagickPixel('transparent'));
-                            $im->readImage($_FILES['logo']['tmp_name']);
-                            $im->setImageFormat('png');
-                            $im->writeImage($dir . $filename . '.png');
-                            $im->destroy();
-                            $data['logo_path'] = 'uploads/watermarks/' . $filename . '.png';
-                            $saved = true;
-                        } catch (\Throwable $e) {
-                            Session::flash('error', 'SVG se nepodařilo převést. Nahrajte PNG nebo JPG.');
-                        }
+                    // SVG → PNG přes ImageMagick convert
+                    $pngFile = $dir . $filename . '.png';
+                    $cmd     = sprintf(
+                        '/usr/bin/convert -background none %s %s 2>&1',
+                        escapeshellarg($_FILES['logo']['tmp_name']),
+                        escapeshellarg($pngFile)
+                    );
+                    $output = shell_exec($cmd);
+                    if (file_exists($pngFile) && filesize($pngFile) > 0) {
+                        $data['logo_path'] = 'uploads/watermarks/' . $filename . '.png';
+                        $saved = true;
                     } else {
-                        Session::flash('error', 'SVG není podporován. Nahrajte logo ve formátu PNG nebo JPG.');
+                        Session::flash('error', 'SVG se nepodařilo převést na PNG: ' . ($output ?: 'neznámá chyba'));
                     }
                 } else {
                     // PNG/JPG/WEBP/GIF – ulož přímo jako PNG pro konzistenci
