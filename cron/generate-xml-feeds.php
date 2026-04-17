@@ -127,7 +127,10 @@ try {
 
             // Generujeme permanentní XML feed s timeoutem
             $feedUrl = $xmlGen->generatePermanentFeed($userId, $reviews);
-            
+
+            // Označ recenze jako exportované
+            \ShopCode\Models\Review::markAsXmlExported($userId);
+
             $userElapsed = microtime(true) - $userStart;
             
             // Varování pokud generování trvalo příliš dlouho
