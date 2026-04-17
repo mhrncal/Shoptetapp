@@ -91,7 +91,8 @@ class WatermarkSettings
             // Bez shadow_enabled (fallback)
             $stmt = $db->prepare('
                 UPDATE watermark_settings
-                SET text = ?, font = ?, position = ?, color = ?, size = ?, opacity = ?, padding = ?, enabled = ?
+                SET text = ?, font = ?, position = ?, color = ?, size = ?, opacity = ?, padding = ?, enabled = ?,
+                    watermark_type = ?, logo_path = ?
                 WHERE user_id = ?
             ');
             return $stmt->execute([
@@ -103,6 +104,8 @@ class WatermarkSettings
                 (int)($data['opacity'] ?? 80),
                 (int)($data['padding'] ?? 20),
                 isset($data['enabled']) ? 1 : 0,
+                $data['watermark_type'] ?? 'text',
+                $data['logo_path'] ?? null,
                 $userId
             ]);
         }
