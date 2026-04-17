@@ -138,7 +138,8 @@ class WatermarkController extends BaseController
         $uploadDir = ROOT . '/public/uploads';
         $handler = new \ShopCode\Services\ImageHandler($uploadDir);
         $success = 0;
-        $failed = 0;
+        $failed  = 0;
+        set_time_limit(300);
         
         foreach ($photos as $photo) {
             try {
@@ -192,8 +193,9 @@ class WatermarkController extends BaseController
                     error_log("[regen] FAIL save: {$displayPath}");
                 }
                 
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $failed++;
+                error_log("[regen] EXCEPTION photo_id={$photo['id']}: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
             }
         }
         

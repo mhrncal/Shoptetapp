@@ -243,26 +243,20 @@ class ImageHandler
                     imagedestroy($logo);
 
                     // Aplikuj logo s průhledností zachovávající alpha kanál
-                    imagealphablending($canvas, true);
+                    // Vytvoř mezivrstvu se správnou průhledností
+                    $layer = imagecreatetruecolor($lw, $lh);
+                    imagealphablending($layer, false);
+                    imagesavealpha($layer, true);
+                    // Zkopíruj logo do vrstvy
+                    imagecopy($layer, $resized, 0, 0, 0, 0, $lw, $lh);
+                    // Aplikuj opacity přes imagefilter pokud < 100
                     if ($opacity < 100) {
-                        // Ruční merge s respektováním alpha
-                        for ($px = 0; $px < $lw; $px++) {
-                            for ($py = 0; $py < $lh; $py++) {
-                                $srcColor = imagecolorat($resized, $px, $py);
-                                $srcA = ($srcColor >> 24) & 0x7F;
-                                if ($srcA === 127) continue; // plně průhledný pixel
-                                $srcR = ($srcColor >> 16) & 0xFF;
-                                $srcG = ($srcColor >> 8) & 0xFF;
-                                $srcB = $srcColor & 0xFF;
-                                // Aplikuj opacity nastavení na alpha
-                                $finalA = (int)($srcA + (127 - $srcA) * (1 - $opacity / 100));
-                                $blended = imagecolorallocatealpha($canvas, $srcR, $srcG, $srcB, $finalA);
-                                imagesetpixel($canvas, $coords['x'] + $px, $coords['y'] + $py, $blended);
-                            }
-                        }
-                    } else {
-                        imagecopy($canvas, $resized, $coords['x'], $coords['y'], 0, 0, $lw, $lh);
+                        imagefilter($layer, IMG_FILTER_COLORIZE, 0, 0, 0, (int)(127 * (1 - $opacity / 100)));
                     }
+                    // Vložit vrstvu do canvasu se zachováním alpha
+                    imagealphablending($canvas, true);
+                    imagecopy($canvas, $layer, $coords['x'], $coords['y'], 0, 0, $lw, $lh);
+                    imagedestroy($layer);
                     imagedestroy($resized);
                     return $canvas;
                 }
