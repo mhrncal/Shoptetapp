@@ -59,12 +59,14 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
         <h4 class="fw-bold mb-0"><i class="bi bi-camera me-2"></i>Fotorecenze</h4>
         <p class="text-muted small mb-0">Celkem: <strong><?= $total ?></strong></p>
     </div>
-    <a href="<?= APP_URL ?>/reviews/export/xml" class="btn btn-sm btn-outline-success flex-shrink-0">
-        <i class="bi bi-file-earmark-code me-1"></i>Generovat XML
-    </a>
-    <a href="<?= APP_URL ?>/reviews/export/emails" class="btn btn-sm btn-outline-secondary flex-shrink-0">
-        <i class="bi bi-envelope me-1"></i>Export e-mailů
-    </a>
+    <div class="d-flex gap-2 flex-shrink-0">
+        <a href="<?= APP_URL ?>/reviews/export/xml" class="btn btn-sm btn-outline-success">
+            <i class="bi bi-file-earmark-code me-1"></i>Generovat XML
+        </a>
+        <a href="<?= APP_URL ?>/reviews/export/emails" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-envelope me-1"></i>Export e-mailů
+        </a>
+    </div>
 </div>
 
 <!-- XML Feed + Import fotek ze Shoptetu -->
