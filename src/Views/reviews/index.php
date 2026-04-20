@@ -103,9 +103,6 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
                 <?php
                 $hasUrl      = $importConfig && !empty($importConfig['csv_url']);
                 $hasImported = $hasUrl && !empty($importConfig['last_imported_at']);
-                // DEBUG
-                error_log('[importConfig] hasUrl=' . var_export($hasUrl, true) . ' importConfig=' . var_export($importConfig, true));
-                /* TEMP DEBUG */ echo '<!-- DEBUG: hasUrl=' . var_export($hasUrl,true) . ' importConfig=' . ($importConfig ? 'SET csv=' . ($importConfig['csv_url'] ?? 'NULL') : 'NULL') . ' -->';
                 ?>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="small fw-semibold flex-shrink-0">

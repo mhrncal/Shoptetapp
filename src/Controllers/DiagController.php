@@ -49,6 +49,9 @@ class DiagController extends BaseController
                 "ALTER TABLE reviews ADD COLUMN IF NOT EXISTS source_url VARCHAR(1000) DEFAULT NULL",
                 "ALTER TABLE watermark_settings ADD COLUMN IF NOT EXISTS logo_path VARCHAR(500) DEFAULT NULL",
                 "ALTER TABLE watermark_settings ADD COLUMN IF NOT EXISTS watermark_type ENUM('text','logo') NOT NULL DEFAULT 'text'",
+                "ALTER TABLE shoptet_photo_imports ADD UNIQUE KEY IF NOT EXISTS uniq_spi_user (user_id)",
+                // Smaž duplicitní záznamy pro stejného user_id (nech jen nejnovější)
+                "DELETE t1 FROM shoptet_photo_imports t1 INNER JOIN shoptet_photo_imports t2 WHERE t1.id < t2.id AND t1.user_id = t2.user_id",
                 "CREATE TABLE IF NOT EXISTS shoptet_photo_imports (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, csv_url VARCHAR(2000) NOT NULL, last_imported_at DATETIME DEFAULT NULL, last_row_count INT DEFAULT 0, last_image_count INT DEFAULT 0, INDEX idx_spi_user (user_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
                 "CREATE TABLE IF NOT EXISTS shoptet_product_images (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, sku VARCHAR(100) NOT NULL, image_urls JSON NOT NULL, updated_at DATETIME DEFAULT NOW() ON UPDATE NOW(), UNIQUE KEY uniq_spi_user_sku (user_id, sku), INDEX idx_spim_user (user_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             ];
