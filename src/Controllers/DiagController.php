@@ -1093,4 +1093,33 @@ class DiagController extends BaseController
         echo "convert (ImageMagick): " . (trim(shell_exec('which convert 2>/dev/null') ?? '') ?: 'NE') . "\n";
         exit;
     }
+
+    public function importConfigDebug(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+        $userId = (int)($_GET['user_id'] ?? 1);
+        $db = \ShopCode\Core\Database::getInstance();
+
+        $stmt = $db->prepare('SELECT * FROM shoptet_photo_imports WHERE user_id = ?');
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch();
+
+        echo "user_id: $userId\n";
+        if (!$row) {
+            echo "Žádný záznam v shoptet_photo_imports\n";
+        } else {
+            foreach ($row as $k => $v) {
+                echo "$k: " . var_export($v, true) . "\n";
+            }
+        }
+
+        echo "\ngetImportConfig result:\n";
+        $cfg = \ShopCode\Services\ShoptetCsvImporter::getImportConfig($userId);
+        var_dump($cfg);
+        exit;
+    }
+
 }
