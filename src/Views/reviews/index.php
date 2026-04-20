@@ -146,7 +146,7 @@ $dayWord   = $daysLeft === 1 ? 'den' : ($daysLeft <= 4 ? 'dny' : 'dní');
                     </div>
                 </div>
                 <!-- Formulář pro změnu/zadání URL -->
-                <div id="importUrlForm" class="mt-2<?php if ($hasUrl): ?> d-none<?php endif; ?>">
+                <div id="importUrlForm" class="mt-2<?php if ($hasUrl): ?> d-none<?php endif; ?>"  data-v="2">
                     <form method="post" action="/reviews/photo-import/save-url" class="d-flex gap-2">
                         <input type="hidden" name="_csrf" value="<?= $e($csrfToken) ?>">
                         <input type="url" name="csv_url" class="form-control form-control-sm font-monospace"
