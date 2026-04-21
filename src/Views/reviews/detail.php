@@ -67,6 +67,7 @@
                                     <i class="bi bi-info-circle"></i> Stará fotka - použijte CSV/XML export
                                 </small>
                             <?php else: ?>
+                                <?php if ($review['status'] !== 'approved'): ?>
                                 <button type="button" class="btn btn-sm btn-outline-secondary"
                                         onclick="rotatePhoto(<?= $photo['id'] ?>, 270, this)" title="Otočit doleva">
                                     <i class="bi bi-arrow-counterclockwise"></i>
@@ -75,6 +76,7 @@
                                         onclick="rotatePhoto(<?= $photo['id'] ?>, 90, this)" title="Otočit doprava">
                                     <i class="bi bi-arrow-clockwise"></i>
                                 </button>
+                                <?php endif; ?>
                                 <a href="<?= APP_URL ?>/photo/download?id=<?= $photo['id'] ?>" 
                                    class="btn btn-sm btn-outline-primary flex-fill" title="Stáhnout originál (před úpravami)">
                                     <i class="bi bi-download"></i>
