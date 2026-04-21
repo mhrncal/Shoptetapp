@@ -312,7 +312,10 @@ class PhotoController extends BaseController
                 }
             }
 
-            $this->json(['success' => true]);
+            // Touch updated_at pro cache-busting
+            $db->prepare('UPDATE review_photos SET updated_at = NOW() WHERE id = ?')->execute([$id]);
+            $ts = time();
+            $this->json(['success' => true, 'ts' => $ts]);
         } catch (\Throwable $e) {
             $this->json(['success' => false, 'error' => $e->getMessage()], 500);
         }

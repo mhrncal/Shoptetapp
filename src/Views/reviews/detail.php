@@ -40,12 +40,13 @@
                     <?php foreach ($review['photos'] as $i => $photo): ?>
                     <div class="col-12 col-md-6 col-lg-4">
                         <?php
+                        $cacheBust = !empty($photo['updated_at']) ? '?t=' . strtotime($photo['updated_at']) : '';
                         $photoUrl  = !empty($photo['shoptet_url'])
                             ? $photo['shoptet_url']
-                            : APP_URL . '/public/uploads/' . $photo['path'];
+                            : APP_URL . '/public/uploads/' . $photo['path'] . $cacheBust;
                         $thumbUrl  = !empty($photo['shoptet_url'])
                             ? $photo['shoptet_url']
-                            : APP_URL . '/public/uploads/' . ($photo['thumb'] ?? $photo['path']);
+                            : APP_URL . '/public/uploads/' . ($photo['thumb'] ?? $photo['path']) . $cacheBust;
                         ?>
                         <a href="<?= $e($photoUrl) ?>"
                            class="photo-lightbox d-block position-relative" data-lightbox="review-photos">
@@ -409,14 +410,10 @@ function rotatePhoto(photoId, degrees, btn) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Reload obrázků s cache-bustetem
-            document.querySelectorAll('img').forEach(img => {
-                if (img.src.includes('/' + photoId + '_') || img.src.includes('/' + photoId + '.')) {
-                    img.src = img.src.split('?')[0] + '?t=' + Date.now();
-                }
-            });
-            // Reload stránky po krátké prodlevě
-            setTimeout(() => location.reload(), 500);
+            // Reload stránky s cache-busting parametrem
+            const url = new URL(window.location.href);
+            url.searchParams.set('t', data.ts || Date.now());
+            window.location.href = url.toString();
         } else {
             alert('Chyba: ' + (data.error || 'Neznámá chyba'));
         }
