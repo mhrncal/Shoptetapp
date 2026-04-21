@@ -203,6 +203,7 @@ return [
     ['POST',   '/photo/delete',                'PhotoController@delete',        ['auth','approved']],
     ['POST',   '/photo/reupload',              'PhotoController@reupload',      ['auth','approved']],
     ['GET',    '/photo/download',              'PhotoController@download',      ['auth','approved']],
+    ['POST',   '/photo/rotate',               'PhotoController@rotate',        ['auth','approved']],
 
     // Product Tabs & Videos
     // ============================================================

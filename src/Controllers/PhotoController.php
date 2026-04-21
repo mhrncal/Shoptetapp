@@ -229,4 +229,92 @@ class PhotoController extends BaseController
         readfile($filepath);
         exit;
     }
+
+    public function rotate(): void
+    {
+        $this->validateCsrf();
+        $id      = (int)$this->request->post('id', 0);
+        $degrees = (int)$this->request->post('degrees', 90); // 90 nebo 270
+        $userId  = $this->user['id'];
+
+        if (!in_array($degrees, [90, 180, 270])) {
+            $this->json(['success' => false, 'error' => 'Neplatný úhel rotace.'], 400);
+        }
+
+        $db   = Database::getInstance();
+        $stmt = $db->prepare('SELECT rp.*, r.user_id FROM review_photos rp JOIN reviews r ON r.id = rp.review_id WHERE rp.id = ?');
+        $stmt->execute([$id]);
+        $photo = $stmt->fetch();
+
+        if (!$photo || (int)$photo['user_id'] !== $userId) {
+            $this->json(['success' => false, 'error' => 'Fotka nenalezena.'], 404);
+        }
+
+        $ext        = pathinfo($photo['path'], PATHINFO_EXTENSION);
+        $displayAbs = ROOT . '/public/uploads/' . ltrim($photo['path'], '/');
+        $origAbs    = substr($displayAbs, 0, -strlen('.' . $ext)) . '_original.' . $ext;
+        $thumbAbs   = ROOT . '/public/uploads/' . ltrim($photo['thumb'] ?? '', '/');
+
+        $mime = match(strtolower($ext)) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png'         => 'image/png',
+            'webp'        => 'image/webp',
+            default       => null,
+        };
+        if (!$mime) {
+            $this->json(['success' => false, 'error' => 'Nepodporovaný formát.'], 400);
+        }
+
+        try {
+            $rotateAndSave = function(string $file, string $mime, int $deg): bool {
+                if (!file_exists($file)) return false;
+                $img = match($mime) {
+                    'image/jpeg' => @imagecreatefromjpeg($file),
+                    'image/png'  => @imagecreatefrompng($file),
+                    'image/webp' => @imagecreatefromwebp($file),
+                };
+                if (!$img) return false;
+                // imagerotate rotuje proti směru hodinových ručiček
+                $rotated = imagerotate($img, 360 - $deg, 0);
+                imagedestroy($img);
+                $ok = match($mime) {
+                    'image/jpeg' => imagejpeg($rotated, $file, 90),
+                    'image/png'  => imagepng($rotated, $file, 6),
+                    'image/webp' => imagewebp($rotated, $file, 90),
+                };
+                imagedestroy($rotated);
+                return (bool)$ok;
+            };
+
+            // Rotuj originál
+            $rotateAndSave($origAbs, $mime, $degrees);
+
+            // Rotuj display verzi
+            $rotateAndSave($displayAbs, $mime, $degrees);
+
+            // Znovu vygeneruj thumbnail z rotované display verze
+            if (file_exists($displayAbs)) {
+                $handler = new \ShopCode\Services\ImageHandler(ROOT . '/public/uploads');
+                $dispImg = match($mime) {
+                    'image/jpeg' => @imagecreatefromjpeg($displayAbs),
+                    'image/png'  => @imagecreatefrompng($displayAbs),
+                    'image/webp' => @imagecreatefromwebp($displayAbs),
+                };
+                if ($dispImg) {
+                    $thumb = $handler->createThumbnail($dispImg);
+                    match($mime) {
+                        'image/jpeg' => imagejpeg($thumb, $thumbAbs, 90),
+                        'image/png'  => imagepng($thumb, $thumbAbs, 6),
+                        'image/webp' => imagewebp($thumb, $thumbAbs, 90),
+                    };
+                    imagedestroy($dispImg);
+                    imagedestroy($thumb);
+                }
+            }
+
+            $this->json(['success' => true]);
+        } catch (\Throwable $e) {
+            $this->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
 }

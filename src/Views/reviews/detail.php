@@ -66,6 +66,14 @@
                                     <i class="bi bi-info-circle"></i> Stará fotka - použijte CSV/XML export
                                 </small>
                             <?php else: ?>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        onclick="rotatePhoto(<?= $photo['id'] ?>, 270, this)" title="Otočit doleva">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        onclick="rotatePhoto(<?= $photo['id'] ?>, 90, this)" title="Otočit doprava">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
                                 <a href="<?= APP_URL ?>/photo/download?id=<?= $photo['id'] ?>" 
                                    class="btn btn-sm btn-outline-primary flex-fill" title="Stáhnout originál (před úpravami)">
                                     <i class="bi bi-download"></i>
@@ -384,4 +392,41 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Escape') lightbox.hide();
     });
 });
+
+function rotatePhoto(photoId, degrees, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    fetch('/photo/rotate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({
+            id: photoId,
+            degrees: degrees,
+            _csrf: document.querySelector('input[name="_csrf"]').value
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Reload obrázků s cache-bustetem
+            document.querySelectorAll('img').forEach(img => {
+                if (img.src.includes('/' + photoId + '_') || img.src.includes('/' + photoId + '.')) {
+                    img.src = img.src.split('?')[0] + '?t=' + Date.now();
+                }
+            });
+            // Reload stránky po krátké prodlevě
+            setTimeout(() => location.reload(), 500);
+        } else {
+            alert('Chyba: ' + (data.error || 'Neznámá chyba'));
+        }
+    })
+    .catch(() => alert('Chyba při rotaci.'))
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = degrees === 90
+            ? '<i class="bi bi-arrow-clockwise"></i>'
+            : '<i class="bi bi-arrow-counterclockwise"></i>';
+    });
+}
 </script>
