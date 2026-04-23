@@ -24,6 +24,7 @@ return [
     ['GET', '/diag/watermark-test',    'DiagController@watermarkTest',   []],
     ['GET', '/diag/svg-test',          'DiagController@svgTest',         []],
     ['GET', '/diag/import-config',     'DiagController@importConfigDebug', []],
+    ['GET', '/diag/feed-debug',        'DiagController@feedDebug',        []],
     ['GET', '/diag/detect-langs',   'DiagController@detectLangs',      []],
     ['GET', '/diag/fix-cs',         'DiagController@fixCsTranslations', []],
     ['GET', '/diag/test-heureka',   'DiagController@testHeureka',       []],

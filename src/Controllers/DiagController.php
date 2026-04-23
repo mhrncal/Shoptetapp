@@ -1126,4 +1126,61 @@ class DiagController extends BaseController
         exit;
     }
 
+
+    public function feedDebug(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+        $userId = (int)($_GET['user_id'] ?? 1);
+        $db = \ShopCode\Core\Database::getInstance();
+
+        // Schválené recenze bez shoptet_url
+        $stmt = $db->prepare("
+            SELECT r.id, r.sku, r.source_url, rp.id as photo_id, rp.path, rp.shoptet_url
+            FROM reviews r
+            JOIN review_photos rp ON rp.review_id = r.id
+            WHERE r.user_id = ? AND r.status = 'approved'
+            ORDER BY r.id DESC
+        ");
+        $stmt->execute([$userId]);
+        $rows = $stmt->fetchAll();
+
+        echo "=== Schválené recenze (user_id=$userId) ===\n";
+        foreach ($rows as $r) {
+            $hasUrl = !empty($r['shoptet_url']);
+            echo "\nRecenze #{$r['id']} SKU={$r['sku']}\n";
+            echo "  source_url: " . ($r['source_url'] ?? 'NULL') . "\n";
+            echo "  photo_id: {$r['photo_id']} path: {$r['path']}\n";
+            echo "  shoptet_url: " . ($hasUrl ? $r['shoptet_url'] : 'NULL – nepárováno') . "\n";
+
+            if (!$hasUrl) {
+                // Zkontroluj jestli SKU má vůbec fotky v shoptet_product_images
+                $s = $db->prepare("SELECT image_urls FROM shoptet_product_images WHERE user_id = ? AND sku = ?");
+                $s->execute([$userId, $r['sku']]);
+                $imgs = $s->fetch();
+                if (!$imgs) {
+                    echo "  !!! SKU {$r['sku']} chybí v shoptet_product_images\n";
+                } else {
+                    $urls = json_decode($imgs['image_urls'], true) ?? [];
+                    echo "  CDN fotek pro SKU: " . count($urls) . "\n";
+                    // UUID z path
+                    $parts = explode('/', $r['path']);
+                    $uuid  = $parts[1] ?? '?';
+                    echo "  UUID hledané: $uuid\n";
+                    $found = false;
+                    foreach ($urls as $u) {
+                        if (str_contains(basename($u), $uuid)) { $found = true; break; }
+                    }
+                    echo "  UUID v CDN: " . ($found ? 'ANO' : 'NE – párování selhalo') . "\n";
+                    if (!$found && count($urls) <= 5) {
+                        foreach ($urls as $u) echo "    CDN: $u\n";
+                    }
+                }
+            }
+        }
+        exit;
+    }
+
 }
