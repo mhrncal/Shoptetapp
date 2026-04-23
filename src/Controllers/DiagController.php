@@ -1183,4 +1183,34 @@ class DiagController extends BaseController
         exit;
     }
 
+
+    public function testXmlDebug(): void
+    {
+        if (($_GET['key'] ?? '') !== 'shopcode_diag') {
+            http_response_code(403); die('Forbidden');
+        }
+        header('Content-Type: text/plain; charset=utf-8');
+        $userId = (int)($_GET['user_id'] ?? 1);
+
+        $reviews = \ShopCode\Models\Review::allApproved($userId);
+        echo "allApproved vrátil: " . count($reviews) . " recenzí\n\n";
+        foreach ($reviews as $r) {
+            echo "#{$r['id']} SKU={$r['sku']} xml_exported_at=" . ($r['xml_exported_at'] ?? 'NULL') . "\n";
+            foreach ($r['photos'] as $p) {
+                echo "  foto path={$p['path']} shoptet_url=" . ($p['shoptet_url'] ?? 'NULL') . "\n";
+            }
+        }
+
+        echo "\n=== XML feed obsah ===\n";
+        $gen = new \ShopCode\Services\XmlFeedGenerator(APP_URL);
+        if (empty($reviews)) {
+            echo "Žádné recenze – feed by byl prázdný\n";
+        } else {
+            $feedPath = $gen->generatePermanentFeed($userId, $reviews);
+            echo "Feed vygenerován: $feedPath\n";
+            echo substr(file_get_contents($feedPath), 0, 2000) . "\n";
+        }
+        exit;
+    }
+
 }
