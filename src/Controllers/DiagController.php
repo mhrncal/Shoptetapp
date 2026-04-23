@@ -1206,9 +1206,14 @@ class DiagController extends BaseController
         if (empty($reviews)) {
             echo "Žádné recenze – feed by byl prázdný\n";
         } else {
-            $feedPath = $gen->generatePermanentFeed($userId, $reviews);
-            echo "Feed vygenerován: $feedPath\n";
-            echo substr(file_get_contents($feedPath), 0, 2000) . "\n";
+            $feedUrl = $gen->generatePermanentFeed($userId, $reviews);
+            $feedFile = ROOT . '/public/feeds/user_' . $userId . '_reviews.xml';
+            echo "Feed vygenerován: $feedUrl\n";
+            echo "Lokální soubor: $feedFile\n";
+            echo "Existuje: " . (file_exists($feedFile) ? 'ANO (' . filesize($feedFile) . 'b)' : 'NE') . "\n\n";
+            if (file_exists($feedFile)) {
+                echo substr(file_get_contents($feedFile), 0, 3000) . "\n";
+            }
         }
         exit;
     }
